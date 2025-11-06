@@ -1,0 +1,6 @@
+Django>=4.0
+gunicorn
+psycopg2-binary
+Pillow
+django-environ
+dj-database-url

@@ -15,8 +15,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # Render сам додає сюди адресу сайту
-ALLOWED_HOSTS = ['*']
-if not DEBUG:
+ALLOWED_HOSTS = ['*'] # Починаємо з '*'
+if not DEBUG and os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
     ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME')]
 
 
@@ -37,8 +37,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     
-    # --- ДОДАНО ДЛЯ CSS ---
-    # Помічник WhiteNoise має бути другим у списку
+    # --- ОСЬ ВАШ ПОМІЧНИК CSS ---
+    # Він має бути другим у списку, одразу після SecurityMiddleware
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     
     'django.contrib.sessions.middleware.SessionMiddleware', 
@@ -57,9 +57,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         
-        # --- ДОДАНО ДЛЯ LOGIN.HTML ---
-        # Тепер Django буде шукати HTML не тільки в 'store/' і 'users/',
-        # але й у папці 'TireShop/templates/'
+        # --- ОСЬ ВАШ LOGIN.HTML ---
+        # Це каже Django шукати 'login.html' у папці 'TireShop/templates/'
         'DIRS': [BASE_DIR / 'templates'], 
         
         'APP_DIRS': True,
@@ -82,7 +81,7 @@ WSGI_APPLICATION = 'TireShop.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600 # Додаємо, щоб з'єднання було стабільнішим
+        conn_max_age=600 # Стабільніше з'єднання
     )
 }
 
@@ -107,7 +106,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# --- ДОДАНО ДЛЯ CSS (WhiteNoise) ---
+# --- ОСЬ ДРУГА ЧАСТИНА CSS-ФІКСУ ---
 # Це каже WhiteNoise, як поводитися з файлами
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -122,7 +121,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CART_SESSION_ID = 'cart'
 
 # --- Налаштування для Входу/Виходу ---
-# Кажемо Django, куди перенаправляти після ВХОДУ
+# Кажемо Django, куди перенаправляти після ВХОDU
 LOGIN_REDIRECT_URL = 'users:profile' 
 # Кажемо Django, куди перенаправляти після ВИХОДУ
 LOGOUT_REDIRECT_URL = 'catalog'

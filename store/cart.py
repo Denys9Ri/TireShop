@@ -66,12 +66,12 @@ class Cart:
             item['total_price'] = item['price'] * item['quantity']
             yield item
 
-    def __len__(selfG):
+    def __len__(self):
         """
         Підрахунок всіх товарів в кошику (загальна кількість).
         """
         return sum(item['quantity'] for item in self.cart.values())
-
+        
     def get_total_price(self):
         """
         Підрахунок загальної вартості всіх товарів в кошику.

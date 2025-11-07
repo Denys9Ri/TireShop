@@ -1,1 +1,41 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{% block title %}TireShop.ua - Головна{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
 
+    <header class="navbar">
+        <div class="navbar-brand">
+            <a href="{% url 'catalog' %}">TireShop.ua</a>
+        </div>
+        <nav class="nav-links">
+            <a href="{% url 'store:cart_detail' %}">🛒 Кошик ({{ cart|length }})</a>
+            <span class="cart-total">{{ cart.get_total_price }} грн.</span>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'users:profile' %}">Мій Кабінет</a>
+                <a href="{% url 'logout' %}">Вийти</a>
+            {% else %}
+                <a href="{% url 'login' %}">Увійти / Реєстрація</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 TireShop.ua. Всі права захищено.</p>
+    </footer>
+
+</body>
+</html>

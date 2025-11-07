@@ -1,0 +1,46 @@
+{% extends "store/base.html" %}
+
+{% block title %}TireShop.ua - Реєстрація{% endblock %}
+
+{% block content %}
+    <h2>Створення нового акаунту</h2>
+    <p>Заповніть форму, щоб зареєструватися.</p>
+
+    <form method="post" class="checkout-form">
+        {% csrf_token %}
+        
+        {{ form.as_p }}
+        
+        <button type="submit" class="btn-checkout">Зареєструватися</button>
+    </form>
+    
+    <style>
+        .checkout-form p {
+            margin-bottom: 15px;
+        }
+        .checkout-form p label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .checkout-form p input,
+        .checkout-form p select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkout-form .helptext {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
+        }
+        .checkout-form .errorlist {
+            color: red;
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 10px;
+        }
+    </style>
+{% endblock %}

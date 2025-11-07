@@ -1,1 +1,161 @@
+{% extends "store/base.html" %}
 
+{% block title %}TireShop.ua - Оформлення замовлення{% endblock %}
+
+{% block content %}
+    <h2>Оформлення замовлення</h2>
+
+    <form method="post" class="checkout-form">
+        {% csrf_token %} <fieldset>
+            <legend>1. Виберіть спосіб доставки</legend>
+            <div>
+                <input type="radio" id="shipping_pickup" name="shipping_type" value="pickup" checked
+                       onchange="toggleShippingFields()">
+                <label for="shipping_pickup">Самовивіз (м. Київ)</label>
+            </div>
+            <div>
+                <input type="radio" id="shipping_np" name="shipping_type" value="nova_poshta"
+                       onchange="toggleShippingFields()">
+                <label for="shipping_np">Нова Пошта (по Україні)</label>
+            </div>
+        </fieldset>
+        
+        <fieldset id="novaPoshtaFields" style="display:none;">
+            <legend>2. Дані отримувача "Нова Пошта"</legend>
+            
+            <div class="form-group">
+                <label for="full_name">Прізвище та Ім'я:</label>
+                <input type="text" id="full_name" name="full_name">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Номер телефону:</label>
+                <input type="tel" id="phone" name="phone">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email (для ТТН):</label>
+                <input type="email" id="email" name="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="city">Місто / Село:</label>
+                <input type="text" id="city" name="city">
+            </div>
+            
+            <div class="form-group">
+                <label for="nova_poshta_branch">Номер відділення або Поштомат:</label>
+                <input type="text" id="nova_poshta_branch" name="nova_poshta_branch">
+            </div>
+        </fieldset>
+
+        <fieldset id="pickupFields">
+            <legend>2. Інформація про самовивіз</legend>
+            <p>Наш менеджер зв'яжеться з вами для уточнення деталей замовлення та часу самовивозу з нашого складу в м. Київ.</p>
+            <p><strong>Будь ласка, вкажіть ваш контактний телефон (якщо ви не вказали його для "Нової Пошти"):</strong></p>
+            
+            <div class="form-group">
+                <label for="phone_pickup">Ваш телефон:</label>
+                <input type="tel" id="phone_pickup" name="phone">
+            </div>
+        </fieldset>
+
+        <button type="submit" class="btn-checkout">Підтвердити замовлення</button>
+    </form>
+    
+    <style>
+        .checkout-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .checkout-form fieldset {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        .checkout-form legend {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #004a99; /* Синій */
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Важливо, щоб padding не ламав ширину */
+        }
+        .btn-checkout {
+            /* Використовуємо той же зелений стиль */
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+
+    <script>
+        function toggleShippingFields() {
+            // Знаходимо наші радіокнопки
+            var isNovaPoshta = document.getElementById('shipping_np').checked;
+            
+            // Знаходимо блоки полів
+            var npFields = document.getElementById('novaPoshtaFields');
+            var pickupFields = document.getElementById('pickupFields');
+            
+            // Знаходимо поля всередині блоку НП
+            var npInputs = npFields.querySelectorAll('input');
+            
+            // Знаходимо поле телефону для самовивозу
+            var pickupPhone = document.getElementById('phone_pickup');
+
+            if (isNovaPoshta) {
+                // Якщо обрана НП:
+                npFields.style.display = 'block'; // Показати поля НП
+                pickupFields.style.display = 'none'; // Сховати поля Самовивозу
+                
+                // Зробити поля НП обов'язковими
+                npInputs.forEach(input => input.required = true);
+                
+                // Зробити телефон самовивозу необов'язковим
+                pickupPhone.required = false;
+
+            } else {
+                // Якщо обраний Самовивіз:
+                npFields.style.display = 'none'; // Сховати поля НП
+                pickupFields.style.display = 'block'; // Показати поля Самовивозу
+                
+                // Зробити поля НП необов'язковими
+                npInputs.forEach(input => input.required = false);
+                
+                // Зробити телефон самовивозу обов'язковим
+                pickupPhone.required = true;
+            }
+        }
+        
+        // Викликаємо функцію одразу при завантаженні сторінки,
+        // щоб встановити правильний стан (на випадок, якщо 'Самовивіз' вже обраний)
+        document.addEventListener('DOMContentLoaded', toggleShippingFields);
+    </script>
+
+{% endblock %}

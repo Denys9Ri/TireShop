@@ -1,1 +1,106 @@
+{% extends "store/base.html" %}
 
+{% block title %}TireShop.ua - Каталог Шин{% endblock %}
+
+{% block content %}
+
+    <form class="filter-bar" method="get" action=".">
+        
+        <div>
+            <label for="brand">Бренд:</label>
+            <select name="brand" id="brand">
+                <option value="">Всі Бренди</option>
+                {% for brand in all_brands %}
+                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>
+                        {{ brand.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="width">Ширина:</label>
+            <select name="width" id="width">
+                <option value="">Всі</option>
+                {% for width in all_widths %}
+                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>
+                        {{ width }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="profile">Профіль:</label>
+            <select name="profile" id="profile">
+                <option value="">Всі</option>
+                {% for profile in all_profiles %}
+                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>
+                        {{ profile }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="diameter">Діаметр:</label>
+            <select name="diameter" id="diameter">
+                <option value="">Всі</option>
+                {% for diameter in all_diameters %}
+                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>
+                        R{{ diameter }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="season">Сезон:</label>
+            <select name="season" id="season">
+                <option value="">Всі</option>
+                {% for key, name in all_seasons %}
+                    <option value="{{ key }}" {% if key == selected_season %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit">Фільтрувати</button>
+    </form>
+
+
+    <div class="product-list">
+        
+        {% if products %}
+            {% for product in products %}
+                <div class="product-card">
+                    
+                    {% if product.photo %}
+                        <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/250x200.png?text=TireShop.ua" alt="No image">
+                    {% endif %}
+                    
+                    <h3>{{ product.brand.name }} {{ product.name }}</h3>
+                    
+                    <p class="size">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
+                    
+                    <p class="season">{{ product.get_seasonality_display }}</p>
+                    
+                    <div class="price">{{ product.price }} грн.</div>
+                    
+                    <form action="{% url 'store:cart_add' product.id %}" method="post">
+                        {% csrf_token %} <button type="submit" class="btn-buy">Купити</button>
+                    </form>
+                    
+                </div>
+            {% endfor %}
+        
+        {% else %}
+            <p>На жаль, за вашим запитом шин не знайдено.</p>
+        {% endif %}
+        
+    </div>
+
+{% endblock %}

@@ -1,15 +1,13 @@
 from django.urls import path
 from . import views
 
-# Це потрібно, щоб Django розрізняв, наприклад, 'store:profile' і 'users:profile'
 app_name = 'users'
 
 urlpatterns = [
-    # Ми створимо 'profile_view' у наступному кроці
-    
-    # URL буде: /users/profile/
+    # Старий шлях до кабінету
     path('profile/', views.profile_view, name='profile'),
     
-    # Ми могли б додати тут сторінку реєстрації, 
-    # але Django вже має вбудовану, тож не будемо ускладнювати.
+    # НОВИЙ шлях до реєстрації
+    # (views.RegisterView.as_view() - так викликаються Класи-інженери)
+    path('register/', views.RegisterView.as_view(), name='register'),
 ]

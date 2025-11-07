@@ -23,7 +23,8 @@
                 <a href="{% url 'users:profile' %}">Мій Кабінет</a>
                 <a href="{% url 'logout' %}">Вийти</a>
             {% else %}
-                <a href="{% url 'login' %}">Увійти / Реєстрація</a>
+                <a href="{% url 'login' %}">Увійти</a>
+                <a href="{% url 'users:register' %}">Реєстрація</a>
             {% endif %}
         </nav>
     </header>

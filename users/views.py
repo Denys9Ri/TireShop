@@ -9,19 +9,11 @@ from .forms import CustomUserCreationForm
 
 @login_required 
 def profile_view(request):
-    
-    # --- ТИМЧАСОВИЙ КОД ПІДВИЩЕННЯ ---
-    # Як тільки ви один раз зайдете на цю сторінку,
-    # цей код треба буде НЕГАЙНО видалити.
-    if not request.user.is_superuser:
-        user_to_promote = request.user
-        user_to_promote.is_superuser = True
-        user_to_promote.is_staff = True
-        user_to_promote.save()
-        print(f"!!! АКАУНТ {user_to_promote.username} БУЛО ПІДВИЩЕНО ДО АДМІНА !!!")
-    # --- КІНЕЦЬ ТИМЧАСОВОГО КОДУ ---
-    
+    # "Чарівний" код тут БІЛЬШЕ НЕ ПОТРІБЕН
+
     # Решта коду - як і раніше
+    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    return render(request, 'users/profile.html', {'orders': orders})
     orders = Order.objects.filter(customer=request.user).order_by('-created_at')
     return render(request, 'users/profile.html', {'orders': orders})
 

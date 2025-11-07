@@ -1,34 +1,36 @@
 from django.contrib import admin
-from .models import Product, Order, OrderItem
+# Ми додали 'Brand' до списку імпорту
+from .models import Brand, Product, Order, OrderItem
 
-# --- Налаштування для показу Позицій в Замовленні ---
-# Це дозволить нам бачити і редагувати товари 
-# ПРЯМО всередині картки самого замовлення
+# --- Налаштування для Позицій в Замовленні (без змін) ---
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    # 'readonly_fields' не дасть адміну випадково змінити ціну покупки
     readonly_fields = ('product', 'price_at_purchase', 'quantity')
-    extra = 0 # Не показувати зайвих порожніх слотів для додавання
+    extra = 0 
 
-# --- Налаштування для Замовлень ---
+# --- Налаштування для Замовлень (без змін) ---
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'full_name', 'phone', 'status', 'shipping_type', 'created_at')
-    list_filter = ('status', 'shipping_type') # Фільтри збоку
+    list_filter = ('status', 'shipping_type')
     search_fields = ('id', 'full_name', 'phone', 'email')
-    
-    # Дозволяє редагувати статус прямо зі списку замовлень
     list_editable = ('status',) 
-    
-    # Включаємо Позиції в картку Замовлення
     inlines = [OrderItemInline]
 
-# --- Налаштування для Товарів (Шин) ---
+# --- ОНОВЛЕНІ Налаштування для Товарів (Шин) ---
 class ProductAdmin(admin.ModelAdmin):
-    # 'price' - це ваша властивість з націнкою 30%
-    list_display = ('name', 'size', 'seasonality', 'cost_price', 'price')
-    list_filter = ('seasonality',)
-    search_fields = ('name', 'size')
+    # 'price' - це націнка. 
+    # Ми замінили 'size' на нові поля
+    list_display = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'price')
+    list_filter = ('seasonality', 'brand') # Додали фільтр за брендом
+    # Додали пошук за новими полями
+    search_fields = ('name', 'brand__name', 'width', 'profile', 'diameter')
 
-# Реєструємо наші моделі та їх налаштування в адмінці
+# --- НОВИЙ клас для адмінки Брендів ---
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+# Реєструємо всі моделі
+admin.site.register(Brand, BrandAdmin) # Додали Бренд
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)

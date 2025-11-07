@@ -1,1 +1,130 @@
+{% extends "store/base.html" %}
 
+{% block title %}TireShop.ua - Ваш Кошик{% endblock %}
+
+{% block content %}
+    <h2>Ваш Кошик</h2>
+
+    {% if cart|length == 0 %}
+        <p>Ваш кошик порожній. Час повертатися до <a href="{% url 'catalog' %}">каталогу</a>!</p>
+    {% else %}
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Ціна за 1 шт.</th>
+                    <th>Кількість</th>
+                    <th>Загальна вартість</th>
+                    <th>Видалити</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart %}
+                    <tr>
+                        <td class="cart-product-info">
+                            {% if item.product.photo %}
+                                <img src="{{ item.product.photo.url }}" alt="{{ item.product.name }}" height="60">
+                            {% endif %}
+                            <div>
+                                <strong>{{ item.product.brand.name }} {{ item.product.name }}</strong>
+                                <small>{{ item.product.width }}/{{ item.product.profile }} R{{ item.product.diameter }}</small>
+                            </div>
+                        </td>
+                        
+                        <td class="price">{{ item.price }} грн.</td>
+                        
+                        <td>
+                            <form action="{% url 'store:cart_update_quantity' item.product.id %}" method="post" class="cart-quantity-form">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99">
+                                <button type="submit">🔄</button> </form>
+                        </td>
+                        
+                        <td class="price">{{ item.total_price }} грн.</td>
+                        
+                        <td>
+                            <a href="{% url 'store:cart_remove' item.product.id %}" class="cart-remove-link">❌</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="cart-summary">
+            <h3>Загальна вартість: 
+                <span class="price">{{ cart.get_total_price }} грн.</span>
+            </h3>
+            
+            <a href="{% url 'catalog' %}" class="btn-secondary">Продовжити покупки</a>
+            
+            <a href="{% url 'store:checkout' %}" class="btn-checkout">Перейти до оформлення</a>
+        </div>
+        
+    {% endif %}
+
+    <style>
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .cart-table th, .cart-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        .cart-table th {
+            background-color: #f4f4f4;
+        }
+        .cart-product-info {
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+        .cart-product-info img {
+            margin-right: 15px;
+        }
+        .cart-quantity-form {
+            display: flex;
+            justify-content: center;
+        }
+        .cart-quantity-form input {
+            width: 50px;
+            text-align: center;
+        }
+        .cart-remove-link {
+            color: red;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+        .cart-summary {
+            text-align: right;
+        }
+        .cart-summary .price {
+            color: #000;
+            font-size: 1.5em;
+        }
+        .btn-secondary {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .btn-checkout {
+            /* Використовуємо ту ж зелену кнопку, що й 'btn-buy' */
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+    </style>
+{% endblock %}

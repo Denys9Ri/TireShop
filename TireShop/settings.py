@@ -7,14 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # --- Ключові налаштування безпеки ---
-
-# Render автоматично підставить свій ключ
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
-
-# Render автоматично ставить це в 'False'
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Render сам додає сюди адресу сайту
 ALLOWED_HOSTS = ['*'] # Починаємо з '*'
 if not DEBUG and os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
     ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME')]
@@ -28,19 +23,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Наші додатки
     'store.apps.StoreConfig', 
     'users.apps.UsersConfig', 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    
-    # --- ОСЬ ВАШ ПОМІЧНИК CSS ---
-    # Він має бути другим у списку, одразу після SecurityMiddleware
+    # "Помічник" для CSS (WhiteNoise)
     'whitenoise.middleware.WhiteNoiseMiddleware', 
-    
     'django.contrib.sessions.middleware.SessionMiddleware', 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,11 +46,8 @@ ROOT_URLCONF = 'TireShop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        
-        # --- ОСЬ ВАШ LOGIN.HTML ---
-        # Це каже Django шукати 'login.html' у папці 'TireShop/templates/'
+        # Кажемо Django, де шукати 'login.html'
         'DIRS': [BASE_DIR / 'templates'], 
-        
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,16 +64,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'TireShop.wsgi.application'
 
 
-# --- База Даних (без змін) ---
+# --- База Даних ---
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600 # Стабільніше з'єднання
+        conn_max_age=600 
     )
 }
 
 
-# --- Паролі (без змін) ---
+# --- Паролі ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -95,7 +82,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# --- Мова та Час (без змін) ---
+# --- Мова та Час ---
 LANGUAGE_CODE = 'uk-ua'
 TIME_ZONE = 'Europe/Kiev'
 USE_I18N = True
@@ -104,24 +91,28 @@ USE_TZ = True
 
 # --- Статичні файли (CSS, JS) ---
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Куди 'collectstatic' збирає файли
 
-# --- ОСЬ ДРУГА ЧАСТИНА CSS-ФІКСУ ---
-# Це каже WhiteNoise, як поводитися з файлами
+# --- ОСЬ ВОНО! КЛЮЧОВЕ ВИПРАВЛЕННЯ ---
+# Ми кажемо "колектору", ДЕ шукати "шафу" з одягом (наш 'style.css')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+# --------------------------------------
+
+# Кажемо "помічнику" (WhiteNoise), як обслуговувати ці файли
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# --- Медіа-файли (Фото товарів) (без змін) ---
+# --- Медіа-файли (Фото товарів) ---
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-# --- Налаштування за замовчуванням (без змін) ---
+# --- Налаштування за замовчуванням ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CART_SESSION_ID = 'cart'
 
 # --- Налаштування для Входу/Виходу ---
-# Кажемо Django, куди перенаправляти після ВХОDU
 LOGIN_REDIRECT_URL = 'users:profile' 
-# Кажемо Django, куди перенаправляти після ВИХОДУ
 LOGOUT_REDIRECT_URL = 'catalog'

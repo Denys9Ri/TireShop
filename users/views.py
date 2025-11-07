@@ -15,3 +15,17 @@ def profile_view(request):
     
     # "Малюємо" сторінку 'profile.html', передаючи їй список замовлень
     return render(request, 'users/profile.html', {'orders': orders})
+# Додаємо нові інструменти вгорі файлу
+from django.urls import reverse_lazy
+from django.views import generic
+from .forms import CustomUserCreationForm
+
+# --- 2. СТОРІНКА РЕЄСТРАЦІЇ ---
+# Ми використовуємо "generic view" - це готовий клас від Django
+
+class RegisterView(generic.CreateView):
+    form_class = CustomUserCreationForm
+    # Після успішної реєстрації, перенаправляємо на сторінку ВХОДУ
+    success_url = reverse_lazy('login') 
+    # HTML-файл, який ми створимо наступним кроком
+    template_name = 'registration/register.html'

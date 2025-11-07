@@ -1,1 +1,140 @@
+/* --- 1. Загальний Синьо-Білий Дизайн --- */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    /* Світло-синій/сірий фон для всього сайту */
+    background-color: #f0f4f8; 
+    color: #333; /* Основний колір тексту */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Притискає футер до низу */
+}
 
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto; /* Центрування */
+    flex-grow: 1; /* Основний контент займає весь доступний простір */
+}
+
+/* --- 2. Синя Шапка (Navbar) --- */
+.navbar {
+    background-color: #004a99; /* ВАШ ТЕМНО-СИНІЙ */
+    color: white;
+    padding: 1rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.navbar-brand a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.8em;
+    font-weight: bold;
+}
+.nav-links a, .nav-links span {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+.nav-links .cart-total {
+    font-weight: bold;
+}
+
+/* --- 3. ФІЛЬТР (Ваш запит) --- */
+.filter-bar {
+    /* ВАШ СВІТЛО-СИНІЙ ФОН */
+    background-color: #e0f7ff; 
+    padding: 15px 5%;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #b3e5fc;
+}
+.filter-bar label {
+    /* Ви просили білий текст, але білий на світло-синьому 
+    буде нечитабельним. 
+    Я зробив текст темно-синім - це виглядає стильно 
+    і зберігає читабельність.
+    */
+    color: #003366; 
+    font-weight: bold;
+    margin-right: 5px;
+    align-self: center;
+}
+.filter-bar select, .filter-bar button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.filter-bar button {
+    background-color: #007bff; /* Звичайна синя кнопка для фільтру */
+    color: white;
+    cursor: pointer;
+}
+
+/* --- 4. Картки товарів (для каталогу) --- */
+.product-list {
+    display: grid;
+    /* Адаптивна сітка */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+.product-card {
+    background-color: #ffffff; /* Білі картки */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.product-card img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: contain; /* Щоб шини не розтягувало */
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+.product-card h3 {
+    font-size: 1.1em;
+    margin: 10px 0;
+}
+.product-card .season {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* --- 5. ЦІНА ТА КНОПКА (Ваш запит) --- */
+.product-card .price {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #000000; /* ВАШ ЧОРНИЙ КОЛІР ЦІНИ */
+    margin-bottom: 15px;
+}
+
+.btn-buy {
+    background-color: #28a745; /* ВАША ЗЕЛЕНА КНОПКА */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: background-color 0.2s;
+}
+.btn-buy:hover {
+    background-color: #218838; /* Трохи темніша зелена при наведенні */
+}
+
+/* --- 6. Синій Підвал (Footer) --- */
+.footer {
+    background-color: #004a99; /* ВАШ ТЕМНО-СИНІЙ */
+    color: white;
+    text-align: center;
+    padding: 20px 5%;
+    margin-top: 20px;
+}

@@ -76,11 +76,12 @@
             {% for product in products %}
                 <div class="product-card">
                     
-                    {% if product.photo %}
-                        <img src="{{ product.photo.url }}" alt="{{ product.name }}">
-                    {% else %}
-                        <img src="https://via.placeholder.com/250x200.png?text=TireShop.ua" alt="No image">
-                    {% endif %}
+        {% if product.photo %}
+                     <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+            {% else %}
+                     <img src="https://via.placeholder.com/250x200.png?text=TireShop.ua" alt="No image">
+            {% endif %}
+
                     
                     <h3>{{ product.brand.name }} {{ product.name }}</h3>
                     

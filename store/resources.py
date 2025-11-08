@@ -25,12 +25,18 @@ class ProductResource(resources.ModelResource):
     class Meta:
         model = Product
         
-        # --- (Все як у минулому фіксі) ---
+        # "Розумний" ключ
         import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter') 
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
-        skip_unchanged = True
+        
+        # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
+        # Кажемо "пропускати" рядки, де не збігається кількість стовпців
+        skip_diff = True
+        
+        # (Решта налаштувань для "чистого" файлу)
         report_skipped = True
+        skip_unchanged = True
         
         map_field_name = {
             'name': 'Модель',
@@ -39,13 +45,10 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
         
-        # --- ГОЛОВНА ЗМІНА ---
-        # Ми ПРИБРАЛИ 'skip_rows' і 'from_encoding',
-        # бо файл тепер "чистий"
-        # ---
+        # (Ми прибрали 'skip_rows' і 'from_encoding')
         
 
-    # "Магія" для обробки стовпців (з фіксом для 'None')
+    # "Магія" для обробки стовпців
     def before_import_row(self, row, **kwargs):
         size_str = row.get('Типоразмер', '')
         if size_str:
@@ -54,7 +57,6 @@ class ProductResource(resources.ModelResource):
                 row['width'] = match.group(1)
                 row['profile'] = match.group(2)
                 row['diameter'] = match.group(3)
-        # (Якщо 'match' не знайдено, 'models.py' поставить default=0)
         
         season_str = row.get('Сезон', '').strip().lower()
         if season_str in self.season_mapping:

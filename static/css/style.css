@@ -15,10 +15,7 @@ body {
     flex-grow: 1;
 }
 
-/* ====================================
-  2. Шапка "Гамбургер" (без змін, з минулого кроку)
-  ====================================
-*/
+/* --- 2. Шапка "Гамбургер" (без змін) --- */
 .navbar {
     background-color: #004a99;
     color: white;
@@ -104,34 +101,106 @@ body {
 }
 
 /* ====================================
-  3. НОВИЙ АДАПТИВНИЙ ФІЛЬТР (ПЛИТКА)
+  3. НОВИЙ ФІЛЬТР (Бічна Панель)
   ====================================
 */
-.filter-container {
-    background-color: #ffffff; /* Чистий білий фон */
+
+/* --- Кнопка "Фільтрувати товари" --- */
+.filter-toggle-btn {
+    background-color: #007bff; /* Чистий синій */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 20px;
+}
+.filter-toggle-btn:hover {
+    background-color: #0056b3;
+}
+
+/* --- "Накладка" (затемнення) --- */
+.filter-overlay {
+    display: none; /* Прихована */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 50% чорний */
+    z-index: 998; /* Нижче, ніж бічна панель */
+}
+.filter-overlay.is-active {
+    display: block; /* Показати */
+}
+
+/* --- Сама бічна панель, що виїжджає ЗЛІВА --- */
+.filter-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0; /* Зліва */
+    width: 320px; /* Ширина панелі */
+    max-width: 90%; /* На дуже малих екранах */
+    height: 100%;
+    background-color: #ffffff;
+    z-index: 999; /* Вище, ніж накладка */
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    
+    /* Магія "приховування" */
+    transform: translateX(-100%); /* Сховати за лівим краєм */
+    transition: transform 0.3s ease-in-out;
+}
+.filter-sidebar.is-active {
+    transform: translateX(0); /* "Виїхати" на екран */
+}
+
+/* --- Вміст бічної панелі --- */
+.filter-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 2px solid #f0f4f8;
+}
+.filter-sidebar-header h3 {
+    margin: 0;
+    color: #003366;
+}
+.filter-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 2.5em; /* Великий 'Х' */
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* --- Контент (Плитки фільтра) - РОБИМО ЙОГО ПРОКРУЧУВАНИМ! --- */
+.filter-sidebar-content {
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    flex-grow: 1; /* Займає весь доступний простір */
+    overflow-y: auto; /* ДОДАЄ ПРОКРУТКУ, якщо фільтр довгий */
 }
 .filter-step {
     margin-bottom: 20px;
 }
-.filter-step h3 {
-    font-size: 1.2em;
-    color: #003366; /* Темно-синій заголовок кроку */
+.filter-step h4 { /* Зробимо заголовки меншими */
+    font-size: 1.1em;
+    color: #003366;
     margin: 0 0 10px 0;
-    border-bottom: 2px solid #f0f4f8;
-    padding-bottom: 5px;
 }
 .filter-options {
     display: flex;
-    flex-wrap: wrap; /* Дозволяє кнопкам переноситись */
-    gap: 8px; /* Відстань між кнопками */
+    flex-wrap: wrap;
+    gap: 8px;
 }
-
-/* --- МАГІЯ СТИЛІЗАЦІЇ КНОПОК --- */
 .filter-options input[type="radio"] {
-    display: none; /* Ховаємо справжню радіо-кнопку */
+    display: none;
 }
 .filter-options label {
     display: inline-block;
@@ -139,36 +208,34 @@ body {
     font-size: 0.9em;
     font-weight: bold;
     color: #333;
-    background-color: #f0f4f8; /* Світло-сірий фон кнопки */
+    background-color: #f0f4f8;
     border: 1px solid #ddd;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
-/* Стиль кнопки при наведенні */
 .filter-options label:hover {
     border-color: #007bff;
     color: #007bff;
 }
-/* СТИЛЬ ВИБРАНОЇ КНОПКИ (як у конкурента) */
 .filter-options input[type="radio"]:checked + label {
-    background-color: #004a99; /* Синій фон */
-    color: white; /* Білий текст */
-    border-color: #004a99; /* Синя рамка */
+    background-color: #004a99;
+    color: white;
+    border-color: #004a99;
 }
-/* --- Кінець магії --- */
 
-.filter-controls {
+/* --- "Підвал" бічної панелі (кнопки) --- */
+.filter-sidebar-footer {
+    padding: 20px;
+    border-top: 2px solid #f0f4f8;
     display: flex;
     gap: 15px;
-    margin-top: 20px;
-    border-top: 2px solid #f0f4f8;
-    padding-top: 20px;
 }
 .filter-submit-btn {
-    background-color: #28a745; /* Зелена кнопка */
+    flex-grow: 1; /* Зелена кнопка займає більше місця */
+    background-color: #28a745;
     color: white;
-    padding: 12px 20px;
+    padding: 12px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -176,12 +243,13 @@ body {
     font-size: 1.1em;
 }
 .filter-reset-btn {
-    background-color: #6c757d; /* Сіра кнопка */
+    background-color: #6c757d;
     color: white;
-    padding: 12px 20px;
+    padding: 12px 15px;
     border-radius: 5px;
     text-decoration: none;
     font-size: 1.1em;
+    text-align: center;
 }
 
 
@@ -190,7 +258,6 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
-    margin-top: 30px; /* Додамо відступ від фільтра */
 }
 .product-card {
     background-color: #ffffff;
@@ -249,7 +316,7 @@ body {
     margin-top: 20px;
 }
 
-/* --- 7. Стилі Наявності (з минулого кроку) --- */
+/* --- 7. Стилі Наявності (без змін) --- */
 .stock-available {
     color: #28a745;
     font-weight: bold;

@@ -15,7 +15,10 @@ body {
     flex-grow: 1;
 }
 
-/* --- 2. Шапка "Гамбургер" (без змін) --- */
+/* ====================================
+  2. Шапка "Гамбургер"
+  ====================================
+*/
 .navbar {
     background-color: #004a99;
     color: white;
@@ -58,6 +61,8 @@ body {
 .hamburger.is-active .hamburger-line:nth-child(3) {
     transform: translateY(-11px) rotate(-45deg);
 }
+
+/* --- Меню для ПК --- */
 .nav-links-desktop {
     display: flex;
     align-items: center;
@@ -70,6 +75,8 @@ body {
 .nav-links-desktop .cart-total {
     font-weight: bold;
 }
+
+/* --- Мобільне меню (виїжджає) --- */
 .mobile-menu {
     display: none;
     flex-direction: column;
@@ -91,23 +98,58 @@ body {
     font-size: 1.1em;
     border-bottom: 1px solid #004a99;
 }
+
+/* --- Адаптивність (Медіа-запит) --- */
 @media (max-width: 768px) {
     .nav-links-desktop {
-        display: none;
+        display: none; /* Ховаємо посилання для ПК */
     }
     .hamburger {
-        display: flex;
+        display: flex; /* Показуємо кнопку "Гамбургер" */
     }
 }
 
 /* ====================================
-  3. НОВИЙ ФІЛЬТР (Бічна Панель)
+  НОВІ СТИЛІ ДЛЯ КНОПКИ "Вийти"
   ====================================
 */
+.logout-form-desktop {
+    display: inline; /* Робимо форму частиною рядка */
+    margin-left: 15px;
+}
+.logout-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 1em; /* Як у інших посилань */
+    cursor: pointer;
+    text-decoration: none;
+}
+.logout-button:hover {
+    text-decoration: underline; /* Імітуємо посилання */
+}
+.logout-button-mobile {
+    background: none;
+    border: none;
+    padding: 15px 5%; /* Як у інших мобільних посилань */
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 1.1em; /* Як у інших мобільних посилань */
+    cursor: pointer;
+    text-decoration: none;
+    width: 100%; /* На всю ширину */
+    text-align: left; /* Вирівнювання по лівому краю */
+}
+.logout-button-mobile:hover {
+    background-color: #004a99; /* Імітуємо посилання */
+}
 
-/* --- Кнопка "Фільтрувати товари" --- */
+
+/* --- 3. Фільтр (Бічна Панель) (Без змін) --- */
 .filter-toggle-btn {
-    background-color: #007bff; /* Чистий синій */
+    background-color: #007bff;
     color: white;
     border: none;
     padding: 12px 20px;
@@ -118,48 +160,37 @@ body {
     width: 100%;
     margin-bottom: 20px;
 }
-.filter-toggle-btn:hover {
-    background-color: #0056b3;
-}
-
-/* --- "Накладка" (затемнення) --- */
 .filter-overlay {
-    display: none; /* Прихована */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* 50% чорний */
-    z-index: 998; /* Нижче, ніж бічна панель */
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 998;
 }
 .filter-overlay.is-active {
-    display: block; /* Показати */
+    display: block;
 }
-
-/* --- Сама бічна панель, що виїжджає ЗЛІВА --- */
 .filter-sidebar {
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 0;
-    left: 0; /* Зліва */
-    width: 320px; /* Ширина панелі */
-    max-width: 90%; /* На дуже малих екранах */
+    left: 0;
+    width: 320px;
+    max-width: 90%;
     height: 100%;
     background-color: #ffffff;
-    z-index: 999; /* Вище, ніж накладка */
+    z-index: 999;
     box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-    
-    /* Магія "приховування" */
-    transform: translateX(-100%); /* Сховати за лівим краєм */
+    transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
 }
 .filter-sidebar.is-active {
-    transform: translateX(0); /* "Виїхати" на екран */
+    transform: translateX(0);
 }
-
-/* --- Вміст бічної панелі --- */
 .filter-sidebar-header {
     display: flex;
     justify-content: space-between;
@@ -174,22 +205,20 @@ body {
 .filter-close-btn {
     background: transparent;
     border: none;
-    font-size: 2.5em; /* Великий 'Х' */
+    font-size: 2.5em;
     color: #aaa;
     cursor: pointer;
     line-height: 1;
 }
-
-/* --- Контент (Плитки фільтра) - РОБИМО ЙОГО ПРОКРУЧУВАНИМ! --- */
 .filter-sidebar-content {
     padding: 20px;
-    flex-grow: 1; /* Займає весь доступний простір */
-    overflow-y: auto; /* ДОДАЄ ПРОКРУТКУ, якщо фільтр довгий */
+    flex-grow: 1;
+    overflow-y: auto;
 }
 .filter-step {
     margin-bottom: 20px;
 }
-.filter-step h4 { /* Зробимо заголовки меншими */
+.filter-step h4 {
     font-size: 1.1em;
     color: #003366;
     margin: 0 0 10px 0;
@@ -223,8 +252,6 @@ body {
     color: white;
     border-color: #004a99;
 }
-
-/* --- "Підвал" бічної панелі (кнопки) --- */
 .filter-sidebar-footer {
     padding: 20px;
     border-top: 2px solid #f0f4f8;
@@ -232,7 +259,7 @@ body {
     gap: 15px;
 }
 .filter-submit-btn {
-    flex-grow: 1; /* Зелена кнопка займає більше місця */
+    flex-grow: 1;
     background-color: #28a745;
     color: white;
     padding: 12px;
@@ -252,8 +279,7 @@ body {
     text-align: center;
 }
 
-
-/* --- 4. Картки товарів (без змін) --- */
+/* --- 4. Картки товарів (Без змін) --- */
 .product-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -284,7 +310,7 @@ body {
     margin-bottom: 10px;
 }
 
-/* --- 5. Ціна та Кнопка (без змін) --- */
+/* --- 5. Ціна та Кнопка (Без змін) --- */
 .product-card .price {
     font-size: 1.5em;
     font-weight: bold;
@@ -307,7 +333,7 @@ body {
     background-color: #218838;
 }
 
-/* --- 6. Підвал (Footer) (без змін) --- */
+/* --- 6. Підвал (Footer) (Без змін) --- */
 .footer {
     background-color: #004a99;
     color: white;
@@ -316,7 +342,7 @@ body {
     margin-top: 20px;
 }
 
-/* --- 7. Стилі Наявності (без змін) --- */
+/* --- 7. Стилі Наявності (Без змін) --- */
 .stock-available {
     color: #28a745;
     font-weight: bold;

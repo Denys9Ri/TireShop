@@ -4,70 +4,77 @@
 
 {% block content %}
 
-    <form class="filter-bar" method="get" action=".">
-        
-        <div>
-            <label for="brand">Бренд:</label>
-            <select name="brand" id="brand">
-                <option value="">Всі Бренди</option>
-                {% for brand in all_brands %}
-                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>
-                        {{ brand.name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="filter-container">
+        <form method="get" action=".">
+            
+            <div class="filter-step">
+                <h3>1. Виберіть Бренд</h3>
+                <div class="filter-options">
+                    <input type="radio" name="brand" value="" id="brand-all" {% if not selected_brand %}checked{% endif %}>
+                    <label for="brand-all">Всі Бренди</label>
+                    
+                    {% for brand in all_brands %}
+                        <input type="radio" name="brand" value="{{ brand.id }}" id="brand-{{ brand.id }}" {% if brand.id == selected_brand %}checked{% endif %}>
+                        <label for="brand-{{ brand.id }}">{{ brand.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <div>
-            <label for="width">Ширина:</label>
-            <select name="width" id="width">
-                <option value="">Всі</option>
-                {% for width in all_widths %}
-                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>
-                        {{ width }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="filter-step">
+                <h3>2. Виберіть Ширину</h3>
+                <div class="filter-options">
+                    <input type="radio" name="width" value="" id="width-all" {% if not selected_width %}checked{% endif %}>
+                    <label for="width-all">Всі</label>
+                    {% for width in all_widths %}
+                        <input type="radio" name="width" value="{{ width }}" id="width-{{ width }}" {% if width == selected_width %}checked{% endif %}>
+                        <label for="width-{{ width }}">{{ width }}</label>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <div>
-            <label for="profile">Профіль:</label>
-            <select name="profile" id="profile">
-                <option value="">Всі</option>
-                {% for profile in all_profiles %}
-                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>
-                        {{ profile }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="filter-step">
+                <h3>3. Виберіть Профіль</h3>
+                <div class="filter-options">
+                    <input type="radio" name="profile" value="" id="profile-all" {% if not selected_profile %}checked{% endif %}>
+                    <label for="profile-all">Всі</label>
+                    {% for profile in all_profiles %}
+                        <input type="radio" name="profile" value="{{ profile }}" id="profile-{{ profile }}" {% if profile == selected_profile %}checked{% endif %}>
+                        <label for="profile-{{ profile }}">{{ profile }}</label>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <div>
-            <label for="diameter">Діаметр:</label>
-            <select name="diameter" id="diameter">
-                <option value="">Всі</option>
-                {% for diameter in all_diameters %}
-                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>
-                        R{{ diameter }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="filter-step">
+                <h3>4. Виберіть Діаметр</h3>
+                <div class="filter-options">
+                    <input type="radio" name="diameter" value="" id="diameter-all" {% if not selected_diameter %}checked{% endif %}>
+                    <label for="diameter-all">Всі</label>
+                    {% for diameter in all_diameters %}
+                        <input type="radio" name="diameter" value="{{ diameter }}" id="diameter-{{ diameter }}" {% if diameter == selected_diameter %}checked{% endif %}>
+                        <label for="diameter-{{ diameter }}">R{{ diameter }}</label>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <div>
-            <label for="season">Сезон:</label>
-            <select name="season" id="season">
-                <option value="">Всі</option>
-                {% for key, name in all_seasons %}
-                    <option value="{{ key }}" {% if key == selected_season %}selected{% endif %}>
-                        {{ name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="filter-step">
+                <h3>5. Виберіть Сезон</h3>
+                <div class="filter-options">
+                    <input type="radio" name="season" value="" id="season-all" {% if not selected_season %}checked{% endif %}>
+                    <label for="season-all">Всі</label>
+                    {% for key, name in all_seasons %}
+                        <input type="radio" name="season" value="{{ key }}" id="season-{{ key }}" {% if key == selected_season %}checked{% endif %}>
+                        <label for="season-{{ key }}">{{ name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <button type="submit">Фільтрувати</button>
-    </form>
+            <div class="filter-controls">
+                <button type="submit" class="filter-submit-btn">Фільтрувати</button>
+                <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути все</a>
+            </div>
+            
+        </form>
+    </div>
 
 
     <div class="product-list">
@@ -83,15 +90,22 @@
                     {% endif %}
                     
                     <h3>{{ product.brand.name }} {{ product.name }}</h3>
-                    
                     <p class="size">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
-                    
                     <p class="season">{{ product.get_seasonality_display }}</p>
+                    
+                    {% if product.stock_quantity > 5 %}
+                        <p class="stock-available">В наявності (багато)</p>
+                    {% elif product.stock_quantity > 0 %}
+                        <p class="stock-ending">Закінчується ({{ product.stock_quantity }} шт.)</p>
+                    {% else %}
+                        <p class="stock-unavailable">Немає в наявності</p>
+                    {% endif %}
                     
                     <div class="price">{{ product.price }} грн.</div>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post">
-                        {% csrf_token %} <button type="submit" class="btn-buy">Купити</button>
+                        {% csrf_token %} 
+                        <button type="submit" class="btn-buy">Купити</button>
                     </form>
                     
                 </div>

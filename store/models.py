@@ -25,7 +25,7 @@ class Product(models.Model):
     seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, verbose_name="Сезонність")
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна з прайсу (закупка)")
     
-    # --- ОСЬ ВОНО, НАШЕ ПОЛЕ! ---
+    # --- ОСЬ НАШЕ ПОЛЕ ---
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
@@ -55,7 +55,7 @@ class Order(models.Model):
         ('nova_poshta', 'Нова Пошта'),
     ]
 
-    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клінт")
+    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клієнт")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
     shipping_type = models.CharField(max_length=20, choices=SHIPPING_CHOICES, default='pickup', verbose_name="Тип доставки")

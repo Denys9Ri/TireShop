@@ -11,10 +11,10 @@ class ProductResource(resources.ModelResource):
         attribute='brand',
         widget=ForeignKeyWidget(Brand, 'name'))
 
-    # "Віртуальні" поля (вони не мають 'column_name')
-    width = fields.Field(attribute='width')
-    profile = fields.Field(attribute='profile')
-    diameter = fields.Field(attribute='diameter')
+    # "Віртуальні" поля
+    width = fields.Field()
+    profile = fields.Field()
+    diameter = fields.Field()
     
     season_mapping = {
         'зима': 'winter',
@@ -25,13 +25,8 @@ class ProductResource(resources.ModelResource):
     class Meta:
         model = Product
         
-        # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ (Помилка 1) ---
-        # Ми використовуємо ВНУТРІШНІ імена полів
+        # --- (Все як у минулому фіксі) ---
         import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter') 
-        
-        # Ми прибрали 'skip_rows' і 'from_encoding', 
-        # бо ви дасте нам "чистий" UTF-8 файл
-        
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         skip_unchanged = True
@@ -44,14 +39,21 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
         
-    # "Магія" для обробки стовпців (виправлено 'else')
+        # --- ГОЛОВНА ЗМІНА ---
+        # Ми ПРИБРАЛИ 'skip_rows' і 'from_encoding',
+        # бо файл тепер "чистий"
+        # ---
+        
+
+    # "Магія" для обробки стовпців (з фіксом для 'None')
     def before_import_row(self, row, **kwargs):
         size_str = row.get('Типоразмер', '')
-        match = SIZE_REGEX.search(size_str)
-        if match:
-            row['width'] = match.group(1)
-            row['profile'] = match.group(2)
-            row['diameter'] = match.group(3)
+        if size_str:
+            match = SIZE_REGEX.search(size_str)
+            if match:
+                row['width'] = match.group(1)
+                row['profile'] = match.group(2)
+                row['diameter'] = match.group(3)
         # (Якщо 'match' не знайдено, 'models.py' поставить default=0)
         
         season_str = row.get('Сезон', '').strip().lower()
@@ -66,7 +68,13 @@ class ProductResource(resources.ModelResource):
         
         brand_name = row.get('Бренд')
         if brand_name:
-            Brand.objects.get_or_create(name=brand_name)
+            brand_name = brand_name.strip().replace('“', '').replace('”', '')
+            if brand_name:
+                row['Бренд'] = brand_name
+                Brand.objects.get_or_create(name=brand_name)
+            else:
+                row['Бренд'] = 'Unknown'
+                Brand.objects.get_or_create(name='Unknown')
         else:
             row['Бренд'] = 'Unknown' 
             Brand.objects.get_or_create(name='Unknown')

@@ -23,9 +23,15 @@
         <nav class="nav-links-desktop">
             <a href="{% url 'store:cart_detail' %}">🛒 Кошик ({{ cart|length }})</a>
             <span class="cart-total">{{ cart.get_total_price }} грн.</span>
+            
             {% if user.is_authenticated %}
                 <a href="{% url 'users:profile' %}">Мій Кабінет</a>
-                <a href="{% url 'logout' %}">Вийти</a>
+                
+                <form action="{% url 'logout' %}" method="post" class="logout-form-desktop">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">Вийти</button>
+                </form>
+                
             {% else %}
                 <a href="{% url 'login' %}">Увійти</a>
                 <a href="{% url 'users:register' %}">Реєстрація</a>
@@ -35,9 +41,15 @@
 
     <div class="mobile-menu" id="mobile-menu">
         <a href="{% url 'store:cart_detail' %}">🛒 Кошик ({{ cart|length }}) - {{ cart.get_total_price }} грн.</a>
+        
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}">Мій Кабінет</a>
-            <a href="{% url 'logout' %}">Вийти</a>
+            
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="logout-button-mobile">Вийти</button>
+            </form>
+            
         {% else %}
             <a href="{% url 'login' %}">Увійти</a>
             <a href="{% url 'users:register' %}">Реєстрація</a>
@@ -54,14 +66,10 @@
     </footer>
 
     <script>
-        // Знаходимо кнопку і меню
         const hamburgerButton = document.getElementById('hamburger-button');
         const mobileMenu = document.getElementById('mobile-menu');
 
-        // Коли хтось клікає на кнопку...
         hamburgerButton.addEventListener('click', function() {
-            // ...додати/видалити клас 'is-active'
-            // Це буде "показувати" або "ховати" меню
             mobileMenu.classList.toggle('is-active');
             hamburgerButton.classList.toggle('is-active');
         });

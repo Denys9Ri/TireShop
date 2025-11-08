@@ -20,8 +20,12 @@ class Product(models.Model):
     ]
  
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
-    photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото")
-    
+    # ... всередині 'class Product':
+    photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
+    photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="URL Фото (Вставляти посилання сюди)")
+
+    # ... (решта полів: width, profile...)
+
     # Зв'язок з довідником Брендів
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     

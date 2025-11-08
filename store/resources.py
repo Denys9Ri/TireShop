@@ -24,7 +24,7 @@ class ProductResource(resources.ModelResource):
     class Meta:
         model = Product
         
-        # --- ГОЛОВНІ ЗМІНИ (з минулого разу) ---
+        # "Розумний" ключ
         import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter')
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
@@ -38,9 +38,8 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
         
-        # --- ОСЬ ВИРІШЕННЯ! ---
-        # Ми примусово кажемо імпортеру читати файл у "старому" кодуванні
-        from_encoding = 'windows-1251'
+        # Ми прибрали звідси 'from_encoding', бо він не спрацював
+
 
     # (Решта коду 'before_import_row' і 'dehydrate_...' залишається без змін)
     

@@ -7,15 +7,13 @@ from .models import Product, Brand
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 
 class ProductResource(resources.ModelResource):
-    # Кажемо імпортеру, що 'Бренд' - це не просто текст,
-    # а посилання на іншу таблицю 'Brand'.
-    # Він автоматично знайде 'Michelin' або СТВОРИТЬ його, якщо не знайде.
+    # Посилання на Бренд (без змін)
     brand = fields.Field(
         column_name='Бренд',
         attribute='brand',
         widget=ForeignKeyWidget(Brand, 'name'))
 
-    # Створюємо "віртуальні" поля, бо 'Типоразмер' не існує в базі
+    # "Віртуальні" поля (без змін)
     width = fields.Field()
     profile = fields.Field()
     diameter = fields.Field()
@@ -28,17 +26,25 @@ class ProductResource(resources.ModelResource):
 
     class Meta:
         model = Product
-        # Вказуємо, які поля моделі ми хочемо заповнити
-        fields = ('id', 'name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
-        # Вказуємо, які стовпці читати з CSV
-        export_order = ('id', 'Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         
-        # Це "клей" - кажемо, як називаються стовпці у файлі
-        import_id_fields = ('id',)
+        # --- ГОЛОВНІ ЗМІНИ ТУТ ---
+        
+        # 1. "Унікальний Ключ" (Natural Key)
+        # Ми кажемо, що комбінація цих 5 полів = 1 унікальний товар.
+        # Імпортер буде шукати товар за цим ключем.
+        import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter')
+
+        # 2. "Тільки Ціна та Наявність"
+        # Ми кажемо, що при імпорті ми читаємо ТІЛЬКИ ці поля.
+        # Оскільки 'photo_url' тут НЕМАЄ, імпортер його НЕ чіпатиме.
+        fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
+        
+        # 3. Карта стовпців (ми видалили 'id' звідси)
+        export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         skip_unchanged = True
         report_skipped = True
         
-        # Назви стовпців у вашому CSV (з вашого скріншоту)
+        # Назви стовпців у вашому CSV (без змін)
         map_field_name = {
             'name': 'Модель',
             'seasonality': 'Сезон',
@@ -46,8 +52,7 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
 
-    # "Магія" для обробки стовпців перед збереженням
-
+    # "Магія" для обробки стовпців (без змін)
     def before_import_row(self, row, **kwargs):
         # 1. Обробка 'Типоразмер'
         size_str = row.get('Типоразмер', '')
@@ -56,26 +61,37 @@ class ProductResource(resources.ModelResource):
             row['width'] = match.group(1)
             row['profile'] = match.group(2)
             row['diameter'] = match.group(3)
+        else:
+            # Якщо розмір не розпізнано, ставимо "заглушки"
+            # Це важливо, щоб "унікальний ключ" не зламався
+            row['width'] = 0
+            row['profile'] = 0
+            row['diameter'] = 0
         
         # 2. Обробка 'Сезон'
         season_str = row.get('Сезон', '').strip().lower()
         if season_str in self.season_mapping:
-            row['Сезон'] = self.season_mapping[season_str] # Замінюємо "зима" на "winter"
-
-        # 3. Обробка 'Кол-во' (Наявність)
+            row['Сезон'] = self.season_mapping[season_str]
+        else:
+            row['Сезон'] = 'all-season' # Заглушка, якщо сезон не вказано
+            
+        # 3. Обробка 'Кол-во'
         quantity_str = row.get('Кол-во', '0').strip()
         if quantity_str == '>12':
-            row['Кол-во'] = 20 # Ставимо "багато"
+            row['Кол-во'] = 20
         elif not quantity_str.isdigit():
-            row['Кол-во'] = 0 # Якщо там "немає" або інший текст
+            row['Кол-во'] = 0
         
         # 4. Обробка 'Бренд'
-        # (ми робимо це, щоб 'Brand.objects.get_or_create' спрацював)
         brand_name = row.get('Бренд')
         if brand_name:
             Brand.objects.get_or_create(name=brand_name)
+        else:
+            # Якщо бренд не вказано, це проблема для ключа
+            row['Бренд'] = 'Unknown' # Ставимо "заглушку"
+            Brand.objects.get_or_create(name='Unknown')
             
-    # Прив'язуємо наші "віртуальні" поля до реальних
+    # Прив'язуємо "віртуальні" поля (без змін)
     def dehydrate_width(self, product):
         return product.width
     def dehydrate_profile(self, product):

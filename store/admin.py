@@ -16,14 +16,12 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ('status',) 
     inlines = [OrderItemInline]
 
-# --- ОНОВЛЕНІ Налаштування для Товарів (Шин) ---
 class ProductAdmin(admin.ModelAdmin):
-    # 'price' - це націнка. 
-    # Ми замінили 'size' на нові поля
-    list_display = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'price')
-    list_filter = ('seasonality', 'brand') # Додали фільтр за брендом
-    # Додали пошук за новими полями
+    # Додаємо 'photo_url'
+    list_display = ('name', 'brand', 'photo_url', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'price')
+    list_filter = ('seasonality', 'brand') 
     search_fields = ('name', 'brand__name', 'width', 'profile', 'diameter')
+
 
 # --- НОВИЙ клас для адмінки Брендів ---
 class BrandAdmin(admin.ModelAdmin):

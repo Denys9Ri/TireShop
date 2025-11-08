@@ -1,5 +1,4 @@
 from django.contrib import admin
-# Ми додали 'Brand' до списку імпорту
 from .models import Brand, Product, Order, OrderItem
 
 # --- Налаштування для Позицій в Замовленні (без змін) ---
@@ -16,19 +15,37 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ('status',) 
     inlines = [OrderItemInline]
 
+# --- ОНОВЛЕНІ Налаштування для Товарів (Шин) ---
 class ProductAdmin(admin.ModelAdmin):
-    # Додаємо 'photo_url'
-    list_display = ('name', 'brand', 'photo_url', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'price')
+    # 'list_display' - це СПИСОК. Він у нас був правильний.
+    list_display = ('name', 'brand', 'stock_quantity', 'seasonality', 'cost_price', 'price')
     list_filter = ('seasonality', 'brand') 
     search_fields = ('name', 'brand__name', 'width', 'profile', 'diameter')
+    
+    # --- ОСЬ ВИРІШЕННЯ: ---
+    # 'fieldsets' - це СТОРІНКА РЕДАГУВАННЯ.
+    # Ми групуємо всі наші поля для зручності.
+    fieldsets = (
+        (None, { # Головна інформація
+            'fields': ('name', 'brand', 'seasonality')
+        }),
+        ('Розмір', { # Група "Розмір"
+            'fields': ('width', 'profile', 'diameter')
+        }),
+        ('Ціна та Наявність', { # Група "Ціна та Наявність"
+            'fields': ('cost_price', 'stock_quantity') # <--- ОСЬ ВАШЕ ПОЛЕ!
+        }),
+        ('Фото (Посилання)', { # Група "Фото"
+            'fields': ('photo_url',)
+        }),
+    )
 
-
-# --- НОВИЙ клас для адмінки Брендів ---
+# --- Налаштування для Брендів (без змін) ---
 class BrandAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
 # Реєструємо всі моделі
-admin.site.register(Brand, BrandAdmin) # Додали Бренд
+admin.site.register(Brand, BrandAdmin) 
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)

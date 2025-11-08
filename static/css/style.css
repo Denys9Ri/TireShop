@@ -1,30 +1,32 @@
-/* --- 1. Загальний Синьо-Білий Дизайн --- */
+/* --- 1. Загальний Дизайн --- */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    /* Світло-синій/сірий фон для всього сайту */
     background-color: #f0f4f8; 
-    color: #333; /* Основний колір тексту */
+    color: #333;
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Притискає футер до низу */
+    min-height: 100vh;
 }
-
 .container {
     width: 90%;
     max-width: 1200px;
-    margin: 20px auto; /* Центрування */
-    flex-grow: 1; /* Основний контент займає весь доступний простір */
+    margin: 20px auto;
+    flex-grow: 1;
 }
 
-/* --- 2. Синя Шапка (Navbar) --- */
+/* ====================================
+  2. НОВА АДАПТИВНА ШАПКА (Navbar)
+  ====================================
+*/
 .navbar {
-    background-color: #004a99; /* ВАШ ТЕМНО-СИНІЙ */
+    background-color: #004a99;
     color: white;
     padding: 1rem 5%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Лого зліва, решта справа */
     align-items: center;
+    position: relative; /* Потрібно для мобільного меню */
 }
 .navbar-brand a {
     color: white;
@@ -32,57 +34,156 @@ body {
     font-size: 1.8em;
     font-weight: bold;
 }
-.nav-links a, .nav-links span {
+
+/* --- Кнопка "Гамбургер" (тільки для мобільних) --- */
+.hamburger {
+    display: none; /* Прихована на ПК */
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+.hamburger-line {
+    width: 100%;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+/* Анімація "хрестика" для гамбургера */
+.hamburger.is-active .hamburger-line:nth-child(1) {
+    transform: translateY(11px) rotate(45deg);
+}
+.hamburger.is-active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+.hamburger.is-active .hamburger-line:nth-child(3) {
+    transform: translateY(-11px) rotate(-45deg);
+}
+
+/* --- Посилання на ПК (приховані на мобільних) --- */
+.nav-links-desktop {
+    display: flex; /* Горизонтально на ПК */
+    align-items: center;
+}
+.nav-links-desktop a, .nav-links-desktop span {
     color: white;
     text-decoration: none;
     margin-left: 15px;
 }
-.nav-links .cart-total {
+.nav-links-desktop .cart-total {
     font-weight: bold;
 }
 
-/* --- 3. ФІЛЬТР (Ваш запит) --- */
+/* --- Мобільне меню (виїжджає) --- */
+.mobile-menu {
+    display: none; /* За замовчуванням ПРИХОВАНО */
+    flex-direction: column;
+    width: 100%;
+    background-color: #003366; /* Трохи темніший фон */
+    position: absolute; /* Випадає поверх контенту */
+    top: 68px; /* Висота нашої шапки */
+    left: 0;
+    z-index: 100;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.mobile-menu.is-active {
+    display: flex; /* ПОКАЗУЄМО, коли кнопка натиснута */
+}
+.mobile-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 15px 5%;
+    font-size: 1.1em;
+    border-bottom: 1px solid #004a99;
+}
+.mobile-menu a:hover {
+    background-color: #004a99;
+}
+
+
+/* --- Адаптивність (Медіа-запит) --- */
+@media (max-width: 768px) {
+    .nav-links-desktop {
+        display: none; /* Ховаємо посилання для ПК */
+    }
+    .hamburger {
+        display: flex; /* Показуємо кнопку "Гамбургер" */
+    }
+}
+
+
+/* ====================================
+  3. АДАПТИВНИЙ ФІЛЬТР (Ми його вже робили, залишаємо)
+  ====================================
+*/
 .filter-bar {
-    /* ВАШ СВІТЛО-СИНІЙ ФОН */
     background-color: #e0f7ff; 
     padding: 15px 5%;
     display: flex;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    border-bottom: 1px solid #b3e5fc;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+.filter-bar div {
+    display: flex;
+    flex-direction: column;
 }
 .filter-bar label {
-    /* Ви просили білий текст, але білий на світло-синьому 
-    буде нечитабельним. 
-    Я зробив текст темно-синім - це виглядає стильно 
-    і зберігає читабельність.
-    */
     color: #003366; 
     font-weight: bold;
-    margin-right: 5px;
-    align-self: center;
+    margin-bottom: 5px;
 }
 .filter-bar select, .filter-bar button {
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    font-size: 1em;
 }
 .filter-bar button {
-    background-color: #007bff; /* Звичайна синя кнопка для фільтру */
+    background-color: #007bff;
     color: white;
     cursor: pointer;
+    margin-top: 10px;
 }
 
-/* --- 4. Картки товарів (для каталогу) --- */
+/* СТИЛІ ФІЛЬТРА ДЛЯ ПК (теж залишаємо) */
+@media (min-width: 768px) {
+    .filter-bar {
+        flex-direction: row; 
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .filter-bar div {
+        flex-direction: row;
+        align-items: center;
+    }
+    .filter-bar label {
+        margin-bottom: 0;
+        margin-right: 5px;
+    }
+    .filter-bar select {
+        padding: 8px;
+    }
+    .filter-bar button {
+        margin-top: 0;
+    }
+}
+
+/* --- 4. Картки товарів (без змін) --- */
 .product-list {
     display: grid;
-    /* Адаптивна сітка */
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
 }
 .product-card {
-    background-color: #ffffff; /* Білі картки */
+    background-color: #ffffff;
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 15px;
@@ -92,7 +193,7 @@ body {
 .product-card img {
     max-width: 100%;
     height: 200px;
-    object-fit: contain; /* Щоб шини не розтягувало */
+    object-fit: contain;
     cursor: pointer;
     margin-bottom: 10px;
 }
@@ -106,16 +207,15 @@ body {
     margin-bottom: 10px;
 }
 
-/* --- 5. ЦІНА ТА КНОПКА (Ваш запит) --- */
+/* --- 5. Ціна та Кнопка (без змін) --- */
 .product-card .price {
     font-size: 1.5em;
     font-weight: bold;
-    color: #000000; /* ВАШ ЧОРНИЙ КОЛІР ЦІНИ */
+    color: #000000;
     margin-bottom: 15px;
 }
-
 .btn-buy {
-    background-color: #28a745; /* ВАША ЗЕЛЕНА КНОПКА */
+    background-color: #28a745;
     color: white;
     padding: 12px 20px;
     border: none;
@@ -127,14 +227,32 @@ body {
     transition: background-color 0.2s;
 }
 .btn-buy:hover {
-    background-color: #218838; /* Трохи темніша зелена при наведенні */
+    background-color: #218838;
 }
 
-/* --- 6. Синій Підвал (Footer) --- */
+/* --- 6. Підвал (Footer) (без змін) --- */
 .footer {
-    background-color: #004a99; /* ВАШ ТЕМНО-СИНІЙ */
+    background-color: #004a99;
     color: white;
     text-align: center;
     padding: 20px 5%;
     margin-top: 20px;
+}
+
+/* --- 7. Стилі Наявності (без змін) --- */
+/* (Я прибрав їх, бо ви просили відкласти імпорт, але якщо ви їх додали, не страшно) */
+.stock-available {
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+.stock-ending {
+    color: #ffc107;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+.stock-unavailable {
+    color: #dc3545;
+    font-style: italic;
+    margin-bottom: 15px;
 }

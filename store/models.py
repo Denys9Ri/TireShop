@@ -12,7 +12,6 @@ class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     
-    # --- ОСЬ ВИРІШЕННЯ (Помилка 2) ---
     width = models.IntegerField(default=0, verbose_name="Ширина (напр. 205)")
     profile = models.IntegerField(default=0, verbose_name="Профіль (напр. 55)")
     diameter = models.IntegerField(default=0, verbose_name="Діаметр (напр. 16)")
@@ -21,7 +20,8 @@ class Product(models.Model):
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
-    photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="URL Фото (Вставляти посилання сюди)")
+    # Це буде 'Головне Фото' або 'Обкладинка'
+    photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Головне URL Фото (Обкладинка)")
 
     @property
     def price(self):
@@ -36,6 +36,7 @@ class Product(models.Model):
 
 # --- (Код для Order та OrderItem залишається без змін) ---
 class Order(models.Model):
+    # ... (весь ваш код Order)
     STATUS_CHOICES = [('new', 'Нове замовлення'), ('processing', 'В обробці'), ('shipped', 'Відправлено'), ('completed', 'Завершено'), ('canceled', 'Скасовано')]
     SHIPPING_CHOICES = [('pickup', 'Самовивіз'), ('nova_poshta', 'Нова Пошта')]
     customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клієнт")
@@ -51,9 +52,22 @@ class Order(models.Model):
         return f"Замовлення #{self.id} від {self.created_at.strftime('%Y-%m-%d')}"
 
 class OrderItem(models.Model):
+    # ... (весь ваш код OrderItem)
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name="Замовлення")
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, verbose_name="Товар")
     quantity = models.IntegerField(default=1, verbose_name="Кількість")
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна (на момент покупки)")
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+
+# --- 
+# --- ОСЬ НОВИЙ "ФОТОАЛЬБОМ" ---
+# --- 
+class ProductImage(models.Model):
+    # Прив'язка до товару
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name="Товар")
+    # Посилання на фото
+    image_url = models.URLField(max_length=1024, verbose_name="URL Додаткового Фото")
+    
+    def __str__(self):
+        return f"Фото для {self.product.name}"

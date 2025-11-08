@@ -10,8 +10,13 @@ class ProductResource(resources.ModelResource):
         column_name='Бренд',
         attribute='brand',
         widget=ForeignKeyWidget(Brand, 'name'))
+    
+    # Ми явно прив'язуємо 'name' до 'Модель'
+    name = fields.Field(
+        column_name='Модель',
+        attribute='name')
 
-    # "Віртуальні" поля
+    # "Віртуальні" поля (ми їх створюємо, але не чіпаємо)
     width = fields.Field()
     profile = fields.Field()
     diameter = fields.Field()
@@ -25,17 +30,19 @@ class ProductResource(resources.ModelResource):
     class Meta:
         model = Product
         
-        # "Розумний" ключ
-        import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter') 
-        fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
-        export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
+        # --- ФІКС 1: "Розумний" ключ (використовуємо імена з CSV) ---
+        import_id_fields = ('Бренд', 'Модель', 'Типоразмер') 
         
-        # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
-        # Кажемо імпортеру, що файл може мати "невидимий" BOM-маркер
+        # --- ФІКС 2: Повертаємо "детектор BOM" ---
         from_encoding = 'utf-8-sig'
         
-        # (Залишаємо ці налаштування про всяк випадок)
+        # --- ФІКС 3: Повертаємо "режим поблажливості" ---
         skip_diff = True
+        
+        # (Ми прибрали 'skip_rows', бо файл "чистий")
+        
+        fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
+        export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         report_skipped = True
         skip_unchanged = True
         

@@ -23,6 +23,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # --- ОСЬ ВИРІШЕННЯ! ---
+    # Ми "вмикаємо" наш "кран" (імпортер)
+    'import_export',
+    
+    # Наші додатки
     'store.apps.StoreConfig', 
     'users.apps.UsersConfig', 
 ]
@@ -92,15 +98,9 @@ USE_TZ = True
 # --- Статичні файли (CSS, JS) ---
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Куди 'collectstatic' збирає файли
-
-# --- ОСЬ ВОНО! КЛЮЧОВЕ ВИПРАВЛЕННЯ ---
-# Ми кажемо "колектору", ДЕ шукати "шафу" з одягом (наш 'style.css')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-# --------------------------------------
-
-# Кажемо "помічнику" (WhiteNoise), як обслуговувати ці файли
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
@@ -116,3 +116,4 @@ CART_SESSION_ID = 'cart'
 # --- Налаштування для Входу/Виходу ---
 LOGIN_REDIRECT_URL = 'users:profile' 
 LOGOUT_REDIRECT_URL = 'catalog'
+

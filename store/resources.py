@@ -30,11 +30,8 @@ class ProductResource(resources.ModelResource):
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         
-        # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
-        # Кажемо "пропускати" рядки, де не збігається кількість стовпців
+        # "Режим поблажливості" (наш останній фікс)
         skip_diff = True
-        
-        # (Решта налаштувань для "чистого" файлу)
         report_skipped = True
         skip_unchanged = True
         
@@ -45,9 +42,6 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
         
-        # (Ми прибрали 'skip_rows' і 'from_encoding')
-        
-
     # "Магія" для обробки стовпців
     def before_import_row(self, row, **kwargs):
         size_str = row.get('Типоразмер', '')

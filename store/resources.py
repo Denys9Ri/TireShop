@@ -11,9 +11,10 @@ class ProductResource(resources.ModelResource):
         attribute='brand',
         widget=ForeignKeyWidget(Brand, 'name'))
 
-    width = fields.Field(column_name='width') # Ми створюємо "віртуальні" стовпці
-    profile = fields.Field(column_name='profile')
-    diameter = fields.Field(column_name='diameter')
+    # "Віртуальні" поля (вони не мають 'column_name')
+    width = fields.Field(attribute='width')
+    profile = fields.Field(attribute='profile')
+    diameter = fields.Field(attribute='diameter')
     
     season_mapping = {
         'зима': 'winter',
@@ -25,13 +26,12 @@ class ProductResource(resources.ModelResource):
         model = Product
         
         # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ (Помилка 1) ---
-        # Ми кажемо імпортеру пропустити перші 7 "сміттєвих" рядків.
-        skip_rows = 7
+        # Ми використовуємо ВНУТРІШНІ імена полів
+        import_id_fields = ('brand', 'name', 'width', 'profile', 'diameter') 
         
-        # Ми кажемо, що "унікальний ключ" - це 3 стовпці з CSV
-        import_id_fields = ('Бренд', 'Модель', 'Типоразмер') 
+        # Ми прибрали 'skip_rows' і 'from_encoding', 
+        # бо ви дасте нам "чистий" UTF-8 файл
         
-        # --- (Решта коду з минулого разу) ---
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         skip_unchanged = True
@@ -44,7 +44,7 @@ class ProductResource(resources.ModelResource):
             'stock_quantity': 'Кол-во',
         }
         
-    # "Магія" для обробки стовпців (без змін)
+    # "Магія" для обробки стовпців (виправлено 'else')
     def before_import_row(self, row, **kwargs):
         size_str = row.get('Типоразмер', '')
         match = SIZE_REGEX.search(size_str)
@@ -52,8 +52,7 @@ class ProductResource(resources.ModelResource):
             row['width'] = match.group(1)
             row['profile'] = match.group(2)
             row['diameter'] = match.group(3)
-        # (Якщо 'match' не знайдено, 'width' і т.д. будуть 'None', 
-        # але Крок 2 зараз це виправить у базі даних)
+        # (Якщо 'match' не знайдено, 'models.py' поставить default=0)
         
         season_str = row.get('Сезон', '').strip().lower()
         if season_str in self.season_mapping:
@@ -72,6 +71,7 @@ class ProductResource(resources.ModelResource):
             row['Бренд'] = 'Unknown' 
             Brand.objects.get_or_create(name='Unknown')
             
+    # Прив'язуємо "віртуальні" поля
     def dehydrate_width(self, product):
         return product.width
     def dehydrate_profile(self, product):

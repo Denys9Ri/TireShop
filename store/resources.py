@@ -30,7 +30,11 @@ class ProductResource(resources.ModelResource):
         fields = ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'cost_price', 'stock_quantity')
         export_order = ('Бренд', 'Модель', 'Типоразмер', 'Сезон', 'Цена', 'Кол-во')
         
-        # "Режим поблажливості" (наш останній фікс)
+        # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
+        # Кажемо імпортеру, що наш роздільник - це КРАПКА З КОМОЮ
+        delimiter = ';'
+        
+        # (Залишаємо ці налаштування про всяк випадок)
         skip_diff = True
         report_skipped = True
         skip_unchanged = True

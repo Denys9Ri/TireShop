@@ -4,28 +4,19 @@ import decimal
 
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Назва бренду")
-
     def __str__(self):
         return self.name
 
 class Product(models.Model):
-    SEASON_CHOICES = [
-        ('winter', 'Зимові'),
-        ('summer', 'Літні'),
-        ('all-season', 'Всесезонні'),
-    ]
-
+    SEASON_CHOICES = [('winter', 'Зимові'), ('summer', 'Літні'), ('all-season', 'Всесезонні')]
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     
     # --- ОСЬ ВИРІШЕННЯ (Помилка 2) ---
-    # Ми додаємо default=0 до всіх числових полів,
-    # щоб уникнути помилки 'violates not-null constraint'
     width = models.IntegerField(default=0, verbose_name="Ширина (напр. 205)")
     profile = models.IntegerField(default=0, verbose_name="Профіль (напр. 55)")
     diameter = models.IntegerField(default=0, verbose_name="Діаметр (напр. 16)")
-    
-    seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season') # Теж додамо default
+    seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season')
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ціна з прайсу (закупка)")
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
@@ -39,7 +30,6 @@ class Product(models.Model):
         return display_price.quantize(decimal.Decimal('0.01'))
 
     def __str__(self):
-        # Додамо перевірку, бо 'brand' може бути 'None'
         if self.brand:
             return f"{self.brand.name} {self.name} ({self.width}/{self.profile} R{self.diameter})"
         return f"{self.name} ({self.width}/{self.profile} R{self.diameter})"

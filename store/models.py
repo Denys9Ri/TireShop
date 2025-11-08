@@ -2,15 +2,11 @@ from django.db import models
 from django.contrib.auth.models import User
 import decimal
 
-# --- НОВЕ КРЕСЛЕННЯ: Бренд ---
-# Це довідник для ваших брендів
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Назва бренду")
 
     def __str__(self):
         return self.name
-
-# --- ОНОВЛЕНЕ КРЕСЛЕННЯ: Шина (Товар) ---
 
 class Product(models.Model):
     SEASON_CHOICES = [
@@ -18,24 +14,22 @@ class Product(models.Model):
         ('summer', 'Літні'),
         ('all-season', 'Всесезонні'),
     ]
- 
+
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
-    # ... всередині 'class Product':
-    photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
-    photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="URL Фото (Вставляти посилання сюди)")
-
-    # ... (решта полів: width, profile...)
-
-    # Зв'язок з довідником Брендів
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     
-    # Нові поля для фільтрів (замість старого 'size')
     width = models.IntegerField(verbose_name="Ширина (напр. 205)")
     profile = models.IntegerField(verbose_name="Профіль (напр. 55)")
     diameter = models.IntegerField(verbose_name="Діаметр (напр. 16)")
     
     seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, verbose_name="Сезонність")
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна з прайсу (закупка)")
+    
+    # --- ОСЬ ВОНО, НАШЕ ПОЛЕ! ---
+    stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
+    
+    photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
+    photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="URL Фото (Вставляти посилання сюди)")
 
     @property
     def price(self):
@@ -44,10 +38,9 @@ class Product(models.Model):
         return display_price.quantize(decimal.Decimal('0.01'))
 
     def __str__(self):
-        # Оновлений підпис, щоб показувати повний розмір
         return f"{self.brand.name} {self.name} ({self.width}/{self.profile} R{self.diameter})"
 
-# --- Креслення 2 і 3 (Order, OrderItem) залишаються БЕЗ ЗМІН ---
+# --- (Код для Order та OrderItem залишається без змін) ---
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -62,7 +55,7 @@ class Order(models.Model):
         ('nova_poshta', 'Нова Пошта'),
     ]
 
-    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клієнт")
+    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клінт")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
     shipping_type = models.CharField(max_length=20, choices=SHIPPING_CHOICES, default='pickup', verbose_name="Тип доставки")

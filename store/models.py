@@ -18,14 +18,15 @@ class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     
-    width = models.IntegerField(verbose_name="Ширина (напр. 205)")
-    profile = models.IntegerField(verbose_name="Профіль (напр. 55)")
-    diameter = models.IntegerField(verbose_name="Діаметр (напр. 16)")
+    # --- ОСЬ ВИРІШЕННЯ (Помилка 2) ---
+    # Ми додаємо default=0 до всіх числових полів,
+    # щоб уникнути помилки 'violates not-null constraint'
+    width = models.IntegerField(default=0, verbose_name="Ширина (напр. 205)")
+    profile = models.IntegerField(default=0, verbose_name="Профіль (напр. 55)")
+    diameter = models.IntegerField(default=0, verbose_name="Діаметр (напр. 16)")
     
-    seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, verbose_name="Сезонність")
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна з прайсу (закупка)")
-    
-    # --- ОСЬ НАШЕ ПОЛЕ ---
+    seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season') # Теж додамо default
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ціна з прайсу (закупка)")
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (НЕ ВИКОРИСТОВУВАТИ)")
@@ -38,23 +39,15 @@ class Product(models.Model):
         return display_price.quantize(decimal.Decimal('0.01'))
 
     def __str__(self):
-        return f"{self.brand.name} {self.name} ({self.width}/{self.profile} R{self.diameter})"
+        # Додамо перевірку, бо 'brand' може бути 'None'
+        if self.brand:
+            return f"{self.brand.name} {self.name} ({self.width}/{self.profile} R{self.diameter})"
+        return f"{self.name} ({self.width}/{self.profile} R{self.diameter})"
 
 # --- (Код для Order та OrderItem залишається без змін) ---
-
 class Order(models.Model):
-    STATUS_CHOICES = [
-        ('new', 'Нове замовлення'),
-        ('processing', 'В обробці'),
-        ('shipped', 'Відправлено'),
-        ('completed', 'Завершено'),
-        ('canceled', 'Скасовано'),
-    ]
-    SHIPPING_CHOICES = [
-        ('pickup', 'Самовивіз'),
-        ('nova_poshta', 'Нова Пошта'),
-    ]
-
+    STATUS_CHOICES = [('new', 'Нове замовлення'), ('processing', 'В обробці'), ('shipped', 'Відправлено'), ('completed', 'Завершено'), ('canceled', 'Скасовано')]
+    SHIPPING_CHOICES = [('pickup', 'Самовивіз'), ('nova_poshta', 'Нова Пошта')]
     customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клієнт")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
@@ -64,7 +57,6 @@ class Order(models.Model):
     email = models.EmailField(blank=True, null=True, verbose_name="Email")
     city = models.CharField(max_length=100, blank=True, null=True, verbose_name="Місто/Село")
     nova_poshta_branch = models.CharField(max_length=100, blank=True, null=True, verbose_name="Відділення НП")
-
     def __str__(self):
         return f"Замовлення #{self.id} від {self.created_at.strftime('%Y-%m-%d')}"
 
@@ -73,6 +65,5 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, verbose_name="Товар")
     quantity = models.IntegerField(default=1, verbose_name="Кількість")
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна (на момент покупки)")
-
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

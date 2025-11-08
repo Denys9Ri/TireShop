@@ -1,4 +1,4 @@
-{% extends "store/base.html" %}
+{% extends "store/base.html" %} 
 
 {% block title %}TireShop.ua - Ваш Кошик{% endblock %}
 
@@ -22,8 +22,8 @@
                 {% for item in cart %}
                     <tr>
                         <td class="cart-product-info">
-                            {% if item.product.photo %}
-                                <img src="{{ item.product.photo.url }}" alt="{{ item.product.name }}" height="60">
+                            {% if item.product.photo_url %}
+                                <img src="{{ item.product.photo_url }}" alt="{{ item.product.name }}" height="60">
                             {% endif %}
                             <div>
                                 <strong>{{ item.product.brand.name }} {{ item.product.name }}</strong>

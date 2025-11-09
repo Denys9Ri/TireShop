@@ -109,7 +109,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-import re
+import re # <--- Наш інструмент для "витягування" цифр
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 SEASON_MAPPING = {
@@ -119,12 +119,11 @@ SEASON_MAPPING = {
 }
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v3 - "Ручний" парсинг)
+# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v5 - "Розумна" Наявність)
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):
     
-    # --- ВАШЕ НОВЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
         
     try:
@@ -135,13 +134,22 @@ def sync_google_sheet_view(request):
         )
         client = gspread.authorize(creds)
 
-        # 2. ВІДКРИВАЄМО ЗА ПРЯМИМ ПОСИЛАННЯМ
-        sheet = client.open_by_url(GOOGLE_SHEET_URL).sheet1
+        # 2. ВІДКРИВАЄМО "Аркуш 1" (або "Шини Легкові" - вставте вашу назву)
+        try:
+            sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Аркуш1")
+        except gspread.exceptions.WorksheetNotFound:
+            # Якщо "Аркуш1" не знайдено, пробуємо "Шини Легкові"
+            try:
+                sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Шини Легкові")
+            except gspread.exceptions.WorksheetNotFound:
+                messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Аркуш1" або "Шини Легкові".')
+                return redirect('admin:store_product_changelist')
+
         
         # 3. "Висмоктуємо" ВСІ дані
         all_data = sheet.get_all_values()
         
-        if not all_data or len(all_data) < 2: # Перевірка, що є хоча б заголовки і 1 товар
+        if not all_data or len(all_data) < 2: 
             messages.error(request, "Помилка: Таблиця порожня або містить лише заголовки.")
             return redirect('admin:store_product_changelist')
 
@@ -170,7 +178,6 @@ def sync_google_sheet_view(request):
 
         # 7. "Пробігаємо" по кожному рядку
         for row in data_rows:
-            # (Перевірка, що рядок не порожній)
             if not any(row):
                 continue
                 
@@ -179,7 +186,7 @@ def sync_google_sheet_view(request):
             size_str = row[col_map['size']].strip()
             season_str = row[col_map['season']].strip().lower()
             price_str = row[col_map['price']]
-            quantity_str = row[col_map['quantity']]
+            quantity_str = str(row[col_map['quantity']]).strip() # <--- Перетворюємо на 'str'
             
             if not brand_name or not model_name or not size_str:
                 continue 
@@ -201,15 +208,20 @@ def sync_google_sheet_view(request):
             except ValueError:
                 price_val = 0
                 
-            if quantity_str == '>12':
-                quantity_val = 20
-            elif isinstance(quantity_str, str) and not quantity_str.isdigit():
-                quantity_val = 0
-            else:
+            # --- ОСЬ "РОЗУМНИЙ" ФІКС ДЛЯ НАЯВНОСТІ ---
+            quantity_val = 0 # За замовчуванням 0
+            
+            # Шукаємо будь-яке число у рядку
+            quantity_match = re.search(r'\d+', quantity_str) 
+            
+            if quantity_match:
+                # Якщо знайшли число (напр. '20' з '<20' або '8' з '8 шт.')
                 try:
-                    quantity_val = int(quantity_str)
+                    quantity_val = int(quantity_match.group(0))
                 except ValueError:
-                    quantity_val = 0
+                    quantity_val = 0 # На випадок дивної помилки
+            # (Якщо 'quantity_match' не знайдено, 'quantity_val' залишиться 0)
+
 
             # 9. Знайти або Створити
             product, created = Product.objects.update_or_create(
@@ -233,6 +245,8 @@ def sync_google_sheet_view(request):
         # 10. Звіт
         messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
         
+    except gspread.exceptions.WorksheetNotFound:
+        messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку). Перевірте, що вона називається "Аркуш1" або "Шини Легкові".')
     except Exception as e:
         messages.error(request, f"Помилка синхронізації: {e}")
 

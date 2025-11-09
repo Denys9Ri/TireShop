@@ -119,15 +119,13 @@ SEASON_MAPPING = {
 }
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК"
+# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v3 - "Ручний" парсинг)
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):
     
-    # --- ВАШЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
+    # --- ВАШЕ НОВЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
-    
-    # --- Я ВИДАЛИВ "ЗЛАМАНИЙ" ЗАПОБІЖНИК (IF-блок) ---
         
     try:
         # 1. Автентифікація
@@ -140,25 +138,53 @@ def sync_google_sheet_view(request):
         # 2. ВІДКРИВАЄМО ЗА ПРЯМИМ ПОСИЛАННЯМ
         sheet = client.open_by_url(GOOGLE_SHEET_URL).sheet1
         
-        # 3. Отримуємо дані
-        rows = sheet.get_all_records() 
+        # 3. "Висмоктуємо" ВСІ дані
+        all_data = sheet.get_all_values()
         
+        if not all_data or len(all_data) < 2: # Перевірка, що є хоча б заголовки і 1 товар
+            messages.error(request, "Помилка: Таблиця порожня або містить лише заголовки.")
+            return redirect('admin:store_product_changelist')
+
+        # 4. "Очищуємо" заголовки (Рядок 1)
+        header_row = [h.strip() for h in all_data[0]]
+        
+        # 5. Беремо решту рядків (з Рядка 2)
+        data_rows = all_data[1:]
+
+        # 6. Створюємо "карту", щоб знати, який стовпець де
+        try:
+            col_map = {
+                'brand': header_row.index('Бренд'),
+                'model': header_row.index('Модель'),
+                'size': header_row.index('Типоразмер'),
+                'season': header_row.index('Сезон'),
+                'price': header_row.index('Цена'),
+                'quantity': header_row.index('Кол-во'),
+            }
+        except ValueError as e:
+            messages.error(request, f"Помилка: Не знайдено стовпець у заголовках! {e}. Перевірте Рядок 1.")
+            return redirect('admin:store_product_changelist')
+
         created_count = 0
         updated_count = 0
 
-        # 4. "Пробігаємо" по кожному рядку
-        for row in rows:
-            brand_name = row.get('Бренд', '').strip()
-            model_name = row.get('Модель', '').strip()
-            size_str = row.get('Типоразмер', '')
-            season_str = row.get('Сезон', '').strip().lower()
-            price_str = row.get('Цена', '0')
-            quantity_str = row.get('Кол-во', '0')
+        # 7. "Пробігаємо" по кожному рядку
+        for row in data_rows:
+            # (Перевірка, що рядок не порожній)
+            if not any(row):
+                continue
+                
+            brand_name = row[col_map['brand']].strip()
+            model_name = row[col_map['model']].strip()
+            size_str = row[col_map['size']].strip()
+            season_str = row[col_map['season']].strip().lower()
+            price_str = row[col_map['price']]
+            quantity_str = row[col_map['quantity']]
             
             if not brand_name or not model_name or not size_str:
                 continue 
 
-            # 5. "Чистимо" дані
+            # 8. "Чистимо" дані
             brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
             
             width_val, profile_val, diameter_val = 0, 0, 0
@@ -185,7 +211,7 @@ def sync_google_sheet_view(request):
                 except ValueError:
                     quantity_val = 0
 
-            # 6. Знайти або Створити
+            # 9. Знайти або Створити
             product, created = Product.objects.update_or_create(
                 brand=brand_obj,
                 name=model_name,
@@ -204,11 +230,11 @@ def sync_google_sheet_view(request):
             else:
                 updated_count += 1
         
-        # 7. Звіт
+        # 10. Звіт
         messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
         
     except Exception as e:
         messages.error(request, f"Помилка синхронізації: {e}")
 
-    # 8. Повертаємо адміна назад
+    # 11. Повертаємо адміна назад
     return redirect('admin:store_product_changelist')

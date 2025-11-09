@@ -1,151 +1,140 @@
-{% extends "store/base.html" %}
+{% extends 'store/base.html' %}
+{% load static %}
 
-{% block title %}TireShop.ua - Каталог Шин{% endblock %}
+{% block title %}Каталог - TireShop.ua{% endblock %}
 
 {% block content %}
+<div class="catalog-wrapper">
 
-    <button class="filter-toggle-btn" id="open-filter-btn">
-        ☰ Фільтрувати товари
+    <button class="filter-toggle-button" id="filter-toggle">
+        &#9776; Фільтри
     </button>
 
-    <div class="filter-overlay" id="filter-overlay"></div>
-
-    <div class="filter-sidebar" id="filter-sidebar">
-        
-        <div class="filter-sidebar-header">
-            <h3>Фільтр товарів</h3>
-            <button class="filter-close-btn" id="close-filter-btn">&times;</button>
-        </div>
-
-        <form class="filter-sidebar-content" method="get" action=".">
+    <aside class="filter-sidebar" id="filter-sidebar">
+        <form method="get" action="{% url 'catalog' %}" class="filter-form">
             
-            <div class="filter-container">
-                <div class="filter-step">
-                    <h4>1. Виберіть Бренд</h4>
-                    <div class="filter-options">
-                        <input type="radio" name="brand" value="" id="brand-all" {% if not selected_brand %}checked{% endif %}>
-                        <label for="brand-all">Всі Бренди</label>
-                        {% for brand in all_brands %}
-                            <input type="radio" name="brand" value="{{ brand.id }}" id="brand-{{ brand.id }}" {% if brand.id == selected_brand %}checked{% endif %}>
-                            <label for="brand-{{ brand.id }}">{{ brand.name }}</label>
-                        {% endfor %}
-                    </div>
-                </div>
+            <h4>Бренд</h4>
+            <select name="brand">
+                <option value="">Всі бренди</option>
+                {% for brand in all_brands %}
+                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>
+                        {{ brand.name }}
+                    </option>
+                {% endfor %}
+            </select>
 
-                <div class="filter-step">
-                    <h4>2. Виберіть Ширину</h4>
-                    <div class="filter-options">
-                        <input type="radio" name="width" value="" id="width-all" {% if not selected_width %}checked{% endif %}>
-                        <label for="width-all">Всі</label>
-                        {% for width in all_widths %}
-                            <input type="radio" name="width" value="{{ width }}" id="width-{{ width }}" {% if width == selected_width %}checked{% endif %}>
-                            <label for="width-{{ width }}">{{ width }}</label>
-                        {% endfor %}
-                    </div>
-                </div>
+            <h4>Сезон</h4>
+            <select name="season">
+                <option value="">Будь-який</option>
+                {% for value, display in all_seasons %}
+                    <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>
+                        {{ display }}
+                    </option>
+                {% endfor %}
+            </select>
 
-                <div class="filter-step">
-                    <h4>3. Виберіть Профіль</h4>
-                    <div class="filter-options">
-                        <input type="radio" name="profile" value="" id="profile-all" {% if not selected_profile %}checked{% endif %}>
-                        <label for="profile-all">Всі</label>
-                        {% for profile in all_profiles %}
-                            <input type="radio" name="profile" value="{{ profile }}" id="profile-{{ profile }}" {% if profile == selected_profile %}checked{% endif %}>
-                            <label for="profile-{{ profile }}">{{ profile }}</label>
-                        {% endfor %}
-                    </div>
-                </div>
+            <h4>Ширина</h4>
+            <select name="width">
+                <option value="">Всі</option>
+                {% for width in all_widths %}
+                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>
+                        {{ width }}
+                    </option>
+                {% endfor %}
+            </select>
 
-                <div class="filter-step">
-                    <h4>4. Виберіть Діаметр</h4>
-                    <div class="filter-options">
-                        <input type="radio" name="diameter" value="" id="diameter-all" {% if not selected_diameter %}checked{% endif %}>
-                        <label for="diameter-all">Всі</label>
-                        {% for diameter in all_diameters %}
-                            <input type="radio" name="diameter" value="{{ diameter }}" id="diameter-{{ diameter }}" {% if diameter == selected_diameter %}checked{% endif %}>
-                            <label for="diameter-{{ diameter }}">R{{ diameter }}</label>
-                        {% endfor %}
-                    </div>
-                </div>
+            <h4>Профіль</h4>
+            <select name="profile">
+                <option value="">Всі</option>
+                {% for profile in all_profiles %}
+                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>
+                        {{ profile }}
+                    </option>
+                {% endfor %}
+            </select>
 
-                <div class="filter-step">
-                    <h4>5. Виберіть Сезон</h4>
-                    <div class="filter-options">
-                        <input type="radio" name="season" value="" id="season-all" {% if not selected_season %}checked{% endif %}>
-                        <label for="season-all">Всі</label>
-                        {% for key, name in all_seasons %}
-                            <input type="radio" name="season" value="{{ key }}" id="season-{{ key }}" {% if key == selected_season %}checked{% endif %}>
-                            <label for="season-{{ key }}">{{ name }}</label>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div> <div class="filter-sidebar-footer">
-                <button type="submit" class="filter-submit-btn">Застосувати</button>
-                <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
-            </div>
-            
+            <h4>Діаметр</h4>
+            <select name="diameter">
+                <option value="">Всі</option>
+                {% for diameter in all_diameters %}
+                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>
+                        R{{ diameter }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="filter-submit-btn">Застосувати</button>
+            <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
         </form>
-    </div> <div class="product-list">
-        
-        {% if products %}
-            {% for product in products %}
+    </aside>
+
+    <div class="catalog-content">
+        <h1 class="page-title">Каталог Товарів</h1>
+
+        <div class="product-grid">
+            {% for product in page_obj %}
                 <div class="product-card">
+                    
                     {% if product.photo_url %}
-                        <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                        <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
                     {% else %}
-                        <img src="https://via.placeholder.com/250x200.png?text=TireShop.ua" alt="No image">
+                        <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
                     {% endif %}
                     
-                    <h3>{{ product.brand.name }} {{ product.name }}</h3>
-                    <p class="size">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
-                    <p class="season">{{ product.get_seasonality_display }}</p>
-                    
-                    {% if product.stock_quantity > 5 %}
-                        <p class="stock-available">В наявності (багато)</p>
-                    {% elif product.stock_quantity > 0 %}
-                        <p class="stock-ending">Закінчується ({{ product.stock_quantity }} шт.)</p>
-                    {% else %}
-                        <p class="stock-unavailable">Немає в наявності</p>
-                    {% endif %}
-                    
-                    <div class="price">{{ product.price }} грн.</div>
+                    <h3 class="product-name">
+                        {{ product.brand.name }} {{ product.name }}
+                    </h3>
+                    <p class="product-specs">
+                        {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
+                    </p>
+                    <p class="product-price">{{ product.cost_price|floatformat:2 }} грн</p>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post">
-                        {% csrf_token %} 
-                        <button type="submit" class="btn-buy">Купити</button>
+                        {% csrf_token %}
+                        <button type="submit" class="add-to-cart-btn">В кошик</button>
                     </form>
                 </div>
+            {% empty %}
+                <p class="no-products-found">Товарів за вашим запитом не знайдено.</p>
             {% endfor %}
-        
-        {% else %}
-            <p>На жаль, за вашим запитом шин не знайдено.</p>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination">
+            <div class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>
+                {% else %}
+                    <span class="disabled">Попередня</span>
+                {% endif %}
+
+                <span class="current">
+                    Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
+                {% else %}
+                    <span class="disabled">Наступна</span>
+                {% endif %}
+            </div>
+        </nav>
         {% endif %}
-        
-    </div>
+        </div>
+</div>
 
-    <script>
-        // Знаходимо всі наші 4 елементи
-        const openBtn = document.getElementById('open-filter-btn');
-        const closeBtn = document.getElementById('close-filter-btn');
-        const sidebar = document.getElementById('filter-sidebar');
-        const overlay = document.getElementById('filter-overlay');
+<script>
+    const filterButton = document.getElementById('filter-toggle');
+    const filterSidebar = document.getElementById('filter-sidebar');
+    const pageContent = document.querySelector('.catalog-content');
 
-        // Функція "Відкрити"
-        function openFilter() {
-            sidebar.classList.add('is-active');
-            overlay.classList.add('is-active');
-        }
+    if (filterButton) {
+        filterButton.addEventListener('click', function() {
+            filterSidebar.classList.toggle('is-active');
+            // Можна додати оверлей
+            // document.body.classList.toggle('overlay-active'); 
+        });
+    }
+</script>
 
-        // Функція "Закрити"
-        function closeFilter() {
-            sidebar.classList.remove('is-active');
-            overlay.classList.remove('is-active');
-        }
-
-        // Вішаємо "слухачів" на кнопки
-        openBtn.addEventListener('click', openFilter);
-        closeBtn.addEventListener('click', closeFilter);
-        overlay.addEventListener('click', closeFilter); // Закриваємо по кліку на темний фон
-
-    </script>
 {% endblock %}

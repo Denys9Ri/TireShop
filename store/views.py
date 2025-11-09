@@ -1,77 +1,33 @@
-# --- 1. ІМПОРТИ (Всі інструменти тут, нагорі) ---
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.core.paginator import Paginator  # <--- "Нарізувач" сторінок
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
-import gspread  # <--- "Акведук" Google
-from oauth2client.service_account import ServiceAccountCredentials
-import re  # <--- "Чистильник"
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
 
-# --- 2. КОНСТАНТИ (Наші "словники" і правила) ---
-SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
-SEASON_MAPPING = {
-    'зимова': 'winter',
-    'літня': 'summer',
-    'всесезонна': 'all-season',
-}
-
-# --- "Розумний" парсер для цифр ---
-def parse_int_from_string(s):
-    cleaned_s = re.sub(r'[^\d]', '', str(s))
-    if cleaned_s:
-        try:
-            return int(cleaned_s)
-        except ValueError:
-            return 0
-    return 0
-
-# --- 3. "ІНЖЕНЕРИ" (Views) ---
-
+# --- (Код для каталогу, кошика і т.д. - без змін) ---
 def catalog_view(request):
-    products_list = Product.objects.all().order_by('brand__name', 'name')
+    products = Product.objects.all().order_by('brand__name', 'name')
     brands = Brand.objects.all().order_by('name')
     widths = Product.objects.values_list('width', flat=True).distinct().order_by('width')
     profiles = Product.objects.values_list('profile', flat=True).distinct().order_by('profile')
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
-    
-    # --- Логіка Фільтрації ---
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
     selected_diameter = request.GET.get('diameter')
     selected_season = request.GET.get('season')
-    
     if selected_brand:
-        products_list = products_list.filter(brand__id=selected_brand)
+        products = products.filter(brand__id=selected_brand)
     if selected_width:
-        products_list = products_list.filter(width=selected_width)
+        products = products.filter(width=selected_width)
     if selected_profile:
-        products_list = products_list.filter(profile=selected_profile)
+        products = products.filter(profile=selected_profile)
     if selected_diameter:
-        products_list = products_list.filter(diameter=selected_diameter)
+        products = products.filter(diameter=selected_diameter)
     if selected_season:
-        products_list = products_list.filter(seasonality=selected_season)
-        
-    # --- Логіка Пагінації ---
-    paginator = Paginator(products_list, 24) # 24 товари на сторінку
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    get_params = request.GET.copy()
-    if 'page' in get_params:
-        del get_params['page'] 
-    filter_params = get_params.urlencode() 
-    
-    # --- Відправляємо все на "вітрину" ---
+        products = products.filter(seasonality=selected_season)
     context = {
-        'page_obj': page_obj, # Наша "порція" товарів
-        'filter_params': filter_params, # Наші фільтри
-        
+        'products': products,
         'all_brands': brands,
         'all_widths': widths,
         'all_profiles': profiles,
@@ -85,7 +41,6 @@ def catalog_view(request):
     }
     return render(request, 'store/catalog.html', context)
 
-# --- (Код Кошика) ---
 def cart_detail_view(request):
     cart = Cart(request)
     return render(request, 'store/cart.html', {'cart': cart})
@@ -148,34 +103,67 @@ def checkout_view(request):
         return redirect('catalog') 
     return render(request, 'store/checkout.html', {})
 
-# --- (Код "Акведука") ---
+# --- (Імпорти для "Акведука") ---
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+import re 
+
+SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
+SEASON_MAPPING = {
+    'зима': 'winter',
+    'лето': 'summer',
+    'всесез': 'all-season',
+}
+def parse_int_from_string(s):
+    cleaned_s = re.sub(r'[^\d]', '', str(s))
+    if cleaned_s:
+        try:
+            return int(cleaned_s)
+        except ValueError:
+            return 0
+    return 0
+
+# ---
+# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v8 - "Sheet1")
+# ---
 @staff_member_required 
 def sync_google_sheet_view(request):
     
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
         
     try:
+        # 1. Автентифікація
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_name(
             settings.GSPREAD_CREDENTIALS_PATH, scope
         )
         client = gspread.authorize(creds)
 
+        # 2. --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
+        # Ми шукаємо вкладку з назвою "Sheet1"
         try:
             sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
-            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1".')
+            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1". Перевірте, що назва правильна і без пробілів.')
             return redirect('admin:store_product_changelist')
         
+        # 3. "Висмоктуємо" ВСІ дані
         all_data = sheet.get_all_values()
         
         if not all_data or len(all_data) < 2: 
             messages.error(request, "Помилка: Таблиця порожня або містить лише заголовки.")
             return redirect('admin:store_product_changelist')
 
+        # 4. "Очищуємо" заголовки (Рядок 1)
         header_row = [h.strip() for h in all_data[0]]
+        
+        # 5. Беремо решту рядків (з Рядка 2)
         data_rows = all_data[1:]
 
+        # 6. Створюємо "карту"
         try:
             col_map = {
                 'brand': header_row.index('Бренд'),
@@ -192,6 +180,7 @@ def sync_google_sheet_view(request):
         created_count = 0
         updated_count = 0
 
+        # 7. "Пробігаємо" по кожному рядку
         for row in data_rows:
             if not any(row):
                 continue
@@ -206,6 +195,7 @@ def sync_google_sheet_view(request):
             if not brand_name or not model_name or not size_str:
                 continue 
 
+            # 8. "Чистимо" дані
             brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
             
             width_val, profile_val, diameter_val = 0, 0, 0
@@ -224,6 +214,7 @@ def sync_google_sheet_view(request):
                 
             quantity_val = parse_int_from_string(quantity_str)
 
+            # 9. Знайти або Створити
             product, created = Product.objects.update_or_create(
                 brand=brand_obj,
                 name=model_name,
@@ -242,6 +233,7 @@ def sync_google_sheet_view(request):
             else:
                 updated_count += 1
         
+        # 10. Звіт
         messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
         
     except gspread.exceptions.WorksheetNotFound:
@@ -249,4 +241,5 @@ def sync_google_sheet_view(request):
     except Exception as e:
         messages.error(request, f"Помилка синхронізації: {e}")
 
+    # 11. Повертаємо адміна назад
     return redirect('admin:store_product_changelist')

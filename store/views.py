@@ -1,21 +1,29 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
+# <--- 1. ДОДАНО ІМПОРТ ДЛЯ ПАГІНАЦІЇ ---
+from django.core.paginator import Paginator
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
 
-# --- (Код для каталогу, кошика і т.д. - без змін) ---
+# --- (Код для кошика і т.д. - без змін) ---
+
+# <--- 2. ОНОВЛЕНО ЛИШЕ ЦЮ ФУНКЦІЮ 'catalog_view' ---
 def catalog_view(request):
-    products = Product.objects.all().order_by('brand__name', 'name')
+    # --- Ваша існуюча логіка отримання фільтрів (без змін) ---
     brands = Brand.objects.all().order_by('name')
     widths = Product.objects.values_list('width', flat=True).distinct().order_by('width')
     profiles = Product.objects.values_list('profile', flat=True).distinct().order_by('profile')
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
+    
+    # --- Ваша існуюча логіка фільтрації (без змін) ---
+    products = Product.objects.all().order_by('brand__name', 'name')
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
     selected_diameter = request.GET.get('diameter')
     selected_season = request.GET.get('season')
+    
     if selected_brand:
         products = products.filter(brand__id=selected_brand)
     if selected_width:
@@ -26,8 +34,29 @@ def catalog_view(request):
         products = products.filter(diameter=selected_diameter)
     if selected_season:
         products = products.filter(seasonality=selected_season)
+    
+    # --- 3. НОВА ЛОГІКА ПАГІНАЦІЇ ---
+    # Вона застосовується до вже відфільтрованого списку `products`
+    paginator = Paginator(products, 12) # Наприклад, по 12 товарів на сторінку
+    page_number = request.GET.get('page')
+    # .get_page() автоматично обробляє помилки (неправильний номер, порожня сторінка)
+    page_obj = paginator.get_page(page_number) 
+
+    # --- 4. НОВА ЛОГІКА ЗБЕРЕЖЕННЯ ФІЛЬТРІВ ---
+    # Це потрібно, щоб кнопки "Наступна сторінка" пам'ятали про фільтри
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+    filter_query_string = query_params.urlencode() # -> "brand=2&width=205"
+
+    # --- 5. ОНОВЛЕНИЙ КОНТЕКСТ ---
     context = {
-        'products': products,
+        # Ми передаємо 'page_obj' замість 'products'
+        'page_obj': page_obj, 
+        # Передаємо рядок з фільтрами для кнопок пагінації
+        'filter_query_string': filter_query_string, 
+        
+        # Вся ваша стара логіка для фільтрів залишається
         'all_brands': brands,
         'all_widths': widths,
         'all_profiles': profiles,
@@ -40,6 +69,10 @@ def catalog_view(request):
         'selected_season': selected_season,
     }
     return render(request, 'store/catalog.html', context)
+
+# -----------------------------------------------------------------
+# ↓↓↓↓ ВЕСЬ ІНШИЙ КОД (КОШИК, ОФОРМЛЕННЯ, АКВЕДУК) БЕЗ ЗМІН ↓↓↓↓
+# -----------------------------------------------------------------
 
 def cart_detail_view(request):
     cart = Cart(request)
@@ -127,7 +160,7 @@ def parse_int_from_string(s):
     return 0
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v8 - "Sheet1")
+# --- "АКВЕДУК" (v8 - "Sheet1")
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):

@@ -43,7 +43,6 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="filter-step">
                     <h4>3. Виберіть Профіль</h4>
                     <div class="filter-options">
@@ -55,7 +54,6 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="filter-step">
                     <h4>4. Виберіть Діаметр</h4>
                     <div class="filter-options">
@@ -67,7 +65,6 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="filter-step">
                     <h4>5. Виберіть Сезон</h4>
                     <div class="filter-options">
@@ -79,7 +76,9 @@
                         {% endfor %}
                     </div>
                 </div>
-            </div> <div class="filter-sidebar-footer">
+            </div> 
+            
+            <div class="filter-sidebar-footer">
                 <button type="submit" class="filter-submit-btn">Застосувати</button>
                 <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
             </div>
@@ -87,9 +86,11 @@
         </form>
     </div> <div class="product-list">
         
-        {% if products %}
-            {% for product in products %}
+        {% if page_obj %}
+            
+            {% for product in page_obj %}
                 <div class="product-card">
+                    
                     {% if product.photo_url %}
                         <img src="{{ product.photo_url }}" alt="{{ product.name }}">
                     {% else %}
@@ -114,6 +115,7 @@
                         {% csrf_token %} 
                         <button type="submit" class="btn-buy">Купити</button>
                     </form>
+                    
                 </div>
             {% endfor %}
         
@@ -121,31 +123,41 @@
             <p>На жаль, за вашим запитом шин не знайдено.</p>
         {% endif %}
         
+    </div> <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?{{ filter_params }}&page={{ page_obj.previous_page_number }}">&larr; Попередня</a>
+            {% else %}
+                <span class="disabled">&larr; Попередня</span>
+            {% endif %}
+
+            <span class="current">
+                Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?{{ filter_params }}&page={{ page_obj.next_page_number }}">Наступна &rarr;</a>
+            {% else %}
+                <span class="disabled">Наступна &rarr;</span>
+            {% endif %}
+        </span>
     </div>
 
     <script>
-        // Знаходимо всі наші 4 елементи
         const openBtn = document.getElementById('open-filter-btn');
         const closeBtn = document.getElementById('close-filter-btn');
         const sidebar = document.getElementById('filter-sidebar');
         const overlay = document.getElementById('filter-overlay');
-
-        // Функція "Відкрити"
         function openFilter() {
             sidebar.classList.add('is-active');
             overlay.classList.add('is-active');
         }
-
-        // Функція "Закрити"
         function closeFilter() {
             sidebar.classList.remove('is-active');
             overlay.classList.remove('is-active');
         }
-
-        // Вішаємо "слухачів" на кнопки
         openBtn.addEventListener('click', openFilter);
         closeBtn.addEventListener('click', closeFilter);
-        overlay.addEventListener('click', closeFilter); // Закриваємо по кліку на темний фон
-
+        overlay.addEventListener('click', closeFilter); 
     </script>
 {% endblock %}

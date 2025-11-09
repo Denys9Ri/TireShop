@@ -112,10 +112,14 @@ from django.contrib.admin.views.decorators import staff_member_required
 import re 
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
+
+# ---
+# --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ (v9 - "Українська Сезонність")
+# ---
 SEASON_MAPPING = {
-    'зима': 'winter',
-    'лето': 'summer',
-    'всесез': 'all-season',
+    'зимова': 'winter',
+    'літня': 'summer',
+    'всесезонна': 'all-season',
 }
 def parse_int_from_string(s):
     cleaned_s = re.sub(r'[^\d]', '', str(s))
@@ -127,7 +131,7 @@ def parse_int_from_string(s):
     return 0
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v8 - "Sheet1")
+# --- "АКВЕДУК"
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):
@@ -142,12 +146,11 @@ def sync_google_sheet_view(request):
         )
         client = gspread.authorize(creds)
 
-        # 2. --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
-        # Ми шукаємо вкладку з назвою "Sheet1"
+        # 2. ВІДКРИВАЄМО "Sheet1"
         try:
             sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
-            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1". Перевірте, що назва правильна і без пробілів.')
+            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1".')
             return redirect('admin:store_product_changelist')
         
         # 3. "Висмоктуємо" ВСІ дані
@@ -188,6 +191,8 @@ def sync_google_sheet_view(request):
             brand_name = row[col_map['brand']].strip()
             model_name = row[col_map['model']].strip()
             size_str = row[col_map['size']].strip()
+            # --- ВИПРАВЛЕННЯ СЕЗОННОСТІ ---
+            # (Ми "чистимо" її тут)
             season_str = row[col_map['season']].strip().lower()
             price_str = row[col_map['price']]
             quantity_str = str(row[col_map['quantity']]).strip()
@@ -205,6 +210,8 @@ def sync_google_sheet_view(request):
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
             
+            # --- ВИПРАВЛЕННЯ СЕЗОННОСТІ ---
+            # (Тепер він шукає "зимова" і т.д. у нашому новому словнику)
             season_val = SEASON_MAPPING.get(season_str, 'all-season')
             
             try:

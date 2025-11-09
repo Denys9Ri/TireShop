@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TireShop.ua - Головна{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <style>
+        .cart-icon {
+            height: 20px; /* Висота іконки */
+            width: 20px; /* Ширина іконки */
+            vertical-align: middle; /* Вирівнюємо по центру тексту */
+            margin-right: 5px; /* Відступ від слова 'Кошик' */
+        }
+    </style>
 </head>
 <body>
 
@@ -21,17 +30,20 @@
         </button>
 
         <nav class="nav-links-desktop">
-            <a href="{% url 'store:cart_detail' %}">🛒 Кошик ({{ cart|length }})</a>
+            
+            <a href="{% url 'store:cart_detail' %}">
+                <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi" alt="Кошик" class="cart-icon">
+                Кошик ({{ cart|length }})
+            </a>
+            
             <span class="cart-total">{{ cart.get_total_price }} грн.</span>
             
             {% if user.is_authenticated %}
                 <a href="{% url 'users:profile' %}">Мій Кабінет</a>
-                
                 <form action="{% url 'logout' %}" method="post" class="logout-form-desktop">
                     {% csrf_token %}
                     <button type="submit" class="logout-button">Вийти</button>
                 </form>
-                
             {% else %}
                 <a href="{% url 'login' %}">Увійти</a>
                 <a href="{% url 'users:register' %}">Реєстрація</a>
@@ -40,16 +52,18 @@
     </header>
 
     <div class="mobile-menu" id="mobile-menu">
-        <a href="{% url 'store:cart_detail' %}">🛒 Кошик ({{ cart|length }}) - {{ cart.get_total_price }} грн.</a>
+        
+        <a href="{% url 'store:cart_detail' %}">
+            <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi" alt="Кошик" class="cart-icon">
+            Кошик ({{ cart|length }}) - {{ cart.get_total_price }} грн.
+        </a>
         
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}">Мій Кабінет</a>
-            
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="logout-button-mobile">Вийти</button>
             </form>
-            
         {% else %}
             <a href="{% url 'login' %}">Увійти</a>
             <a href="{% url 'users:register' %}">Реєстрація</a>

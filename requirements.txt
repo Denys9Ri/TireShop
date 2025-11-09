@@ -5,4 +5,5 @@ Pillow
 django-environ
 dj-database-url
 whitenoise
-django-import-export
+gspread
+oauth2client

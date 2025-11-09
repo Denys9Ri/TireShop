@@ -3,6 +3,7 @@
     margin: 40px auto;
     text-align: center;
 }
+
 .pagination .step-links a,
 .pagination .step-links .disabled {
     display: inline-block;
@@ -15,13 +16,19 @@
     text-decoration: none;
     font-weight: bold;
 }
+
 .pagination .step-links a:hover {
     background-color: #f0f4f8;
 }
+
 .pagination .step-links .disabled {
     color: #aaa;
     background-color: #f9f9f9;
 }
+
+/* ОСЬ ВИПРАВЛЕНИЙ БЛОК:
+   Я додав значення "8px 12px;" та закриваючу дужку "}"
+*/
 .pagination .step-links .current {
     font-size: 1.1em;
     font-weight: bold;

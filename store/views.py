@@ -109,7 +109,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-import re # <--- Наш інструмент для "чистки"
+import re 
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 SEASON_MAPPING = {
@@ -117,9 +117,7 @@ SEASON_MAPPING = {
     'лето': 'summer',
     'всесез': 'all-season',
 }
-# --- "Розумний" парсер для цифр ---
 def parse_int_from_string(s):
-    # "Чистимо" рядок, залишаючи ТІЛЬКИ цифри
     cleaned_s = re.sub(r'[^\d]', '', str(s))
     if cleaned_s:
         try:
@@ -129,7 +127,7 @@ def parse_int_from_string(s):
     return 0
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v7 - "Фінальний")
+# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v8 - "Sheet1")
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):
@@ -144,16 +142,13 @@ def sync_google_sheet_view(request):
         )
         client = gspread.authorize(creds)
 
-        # 2. ВІДКРИВАЄМО "Аркуш 1" (або "Шини Легкові")
+        # 2. --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
+        # Ми шукаємо вкладку з назвою "Sheet1"
         try:
-            sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Аркуш1")
+            sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
-            try:
-                sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Шини Легкові")
-            except gspread.exceptions.WorksheetNotFound:
-                messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Аркуш1" або "Шини Легкові".')
-                return redirect('admin:store_product_changelist')
-
+            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1". Перевірте, що назва правильна і без пробілів.')
+            return redirect('admin:store_product_changelist')
         
         # 3. "Висмоктуємо" ВСІ дані
         all_data = sheet.get_all_values()
@@ -210,8 +205,6 @@ def sync_google_sheet_view(request):
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
             
-            # --- ФІКС СЕЗОННОСТІ ---
-            # (Тепер він 100% працює)
             season_val = SEASON_MAPPING.get(season_str, 'all-season')
             
             try:
@@ -219,10 +212,7 @@ def sync_google_sheet_view(request):
             except ValueError:
                 price_val = 0
                 
-            # --- ФІКС НАЯВНОСТІ v7 ---
-            # (Використовуємо нашу нову "розумну" функцію)
             quantity_val = parse_int_from_string(quantity_str)
-            # --- КІНЕЦЬ ФІКСУ v7 ---
 
             # 9. Знайти або Створити
             product, created = Product.objects.update_or_create(
@@ -247,7 +237,7 @@ def sync_google_sheet_view(request):
         messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
         
     except gspread.exceptions.WorksheetNotFound:
-        messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку). Перевірте, що вона називається "Аркуш1" або "Шини Легкові".')
+        messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку). Перевірте, що вона називається "Sheet1".')
     except Exception as e:
         messages.error(request, f"Помилка синхронізації: {e}")
 

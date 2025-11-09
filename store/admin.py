@@ -1,7 +1,7 @@
 from django.contrib import admin
-from import_export.admin import ImportExportModelAdmin
+# Ми ВИДАЛИЛИ 'ImportExportModelAdmin'
 from .models import Brand, Product, Order, OrderItem, ProductImage
-from .resources import ProductResource 
+# Ми ВИДАЛИЛИ '.resources' 
 
 # --- (Код OrderItemInline та OrderAdmin без змін) ---
 class OrderItemInline(admin.TabularInline):
@@ -23,23 +23,15 @@ class ProductImageInline(admin.TabularInline):
     fields = ('image_url',) 
 
 # --- ОНОВЛЕНІ Налаштування для Товарів (Шин) ---
-class ProductAdmin(ImportExportModelAdmin):
-    resource_class = ProductResource 
-    
-    # 1. Додаємо 'photo_url' до списку видимих полів
+# Ми повернули 'admin.ModelAdmin'
+class ProductAdmin(admin.ModelAdmin):
+    # Ми ВИДАЛИЛИ 'resource_class'
     list_display = ('name', 'brand', 'stock_quantity', 'cost_price', 'price', 'photo_url') 
-    
     list_filter = ('seasonality', 'brand') 
-    search_fields = ('name', 'brand__name') # Пошук за назвою та брендом
-    
-    # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
-    # 2. Кажемо, що ці 3 поля можна редагувати ПРЯМО У СПИСКУ
+    search_fields = ('name', 'brand__name')
     list_editable = ('stock_quantity', 'cost_price', 'photo_url')
-    
-    # 3. Прискорюємо завантаження адмінки
     list_per_page = 50 
     
-    # 'fieldsets' та 'inlines' (для сторінки деталей) залишаються без змін
     fieldsets = (
         (None, {'fields': ('name', 'brand', 'seasonality')}),
         ('Розмір', {'fields': ('width', 'profile', 'diameter')}),

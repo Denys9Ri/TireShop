@@ -109,7 +109,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-import re # <--- Наш інструмент для "витягування" цифр
+import re # <--- Наш інструмент для "чистки"
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 SEASON_MAPPING = {
@@ -117,9 +117,19 @@ SEASON_MAPPING = {
     'лето': 'summer',
     'всесез': 'all-season',
 }
+# --- "Розумний" парсер для цифр ---
+def parse_int_from_string(s):
+    # "Чистимо" рядок, залишаючи ТІЛЬКИ цифри
+    cleaned_s = re.sub(r'[^\d]', '', str(s))
+    if cleaned_s:
+        try:
+            return int(cleaned_s)
+        except ValueError:
+            return 0
+    return 0
 
 # ---
-# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v5 - "Розумна" Наявність)
+# --- ОСЬ ОНОВЛЕНИЙ "АКВЕДУК" (v7 - "Фінальний")
 # ---
 @staff_member_required 
 def sync_google_sheet_view(request):
@@ -134,11 +144,10 @@ def sync_google_sheet_view(request):
         )
         client = gspread.authorize(creds)
 
-        # 2. ВІДКРИВАЄМО "Аркуш 1" (або "Шини Легкові" - вставте вашу назву)
+        # 2. ВІДКРИВАЄМО "Аркуш 1" (або "Шини Легкові")
         try:
             sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Аркуш1")
         except gspread.exceptions.WorksheetNotFound:
-            # Якщо "Аркуш1" не знайдено, пробуємо "Шини Легкові"
             try:
                 sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Шини Легкові")
             except gspread.exceptions.WorksheetNotFound:
@@ -159,7 +168,7 @@ def sync_google_sheet_view(request):
         # 5. Беремо решту рядків (з Рядка 2)
         data_rows = all_data[1:]
 
-        # 6. Створюємо "карту", щоб знати, який стовпець де
+        # 6. Створюємо "карту"
         try:
             col_map = {
                 'brand': header_row.index('Бренд'),
@@ -186,7 +195,7 @@ def sync_google_sheet_view(request):
             size_str = row[col_map['size']].strip()
             season_str = row[col_map['season']].strip().lower()
             price_str = row[col_map['price']]
-            quantity_str = str(row[col_map['quantity']]).strip() # <--- Перетворюємо на 'str'
+            quantity_str = str(row[col_map['quantity']]).strip()
             
             if not brand_name or not model_name or not size_str:
                 continue 
@@ -201,6 +210,8 @@ def sync_google_sheet_view(request):
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
             
+            # --- ФІКС СЕЗОННОСТІ ---
+            # (Тепер він 100% працює)
             season_val = SEASON_MAPPING.get(season_str, 'all-season')
             
             try:
@@ -208,20 +219,10 @@ def sync_google_sheet_view(request):
             except ValueError:
                 price_val = 0
                 
-            # --- ОСЬ "РОЗУМНИЙ" ФІКС ДЛЯ НАЯВНОСТІ ---
-            quantity_val = 0 # За замовчуванням 0
-            
-            # Шукаємо будь-яке число у рядку
-            quantity_match = re.search(r'\d+', quantity_str) 
-            
-            if quantity_match:
-                # Якщо знайшли число (напр. '20' з '<20' або '8' з '8 шт.')
-                try:
-                    quantity_val = int(quantity_match.group(0))
-                except ValueError:
-                    quantity_val = 0 # На випадок дивної помилки
-            # (Якщо 'quantity_match' не знайдено, 'quantity_val' залишиться 0)
-
+            # --- ФІКС НАЯВНОСТІ v7 ---
+            # (Використовуємо нашу нову "розумну" функцію)
+            quantity_val = parse_int_from_string(quantity_str)
+            # --- КІНЕЦЬ ФІКСУ v7 ---
 
             # 9. Знайти або Створити
             product, created = Product.objects.update_or_create(

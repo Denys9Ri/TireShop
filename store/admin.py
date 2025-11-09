@@ -1,6 +1,5 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-# --- ДОДАЄМО 'ProductImage' ---
 from .models import Brand, Product, Order, OrderItem, ProductImage
 from .resources import ProductResource 
 
@@ -17,22 +16,30 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ('status',) 
     inlines = [OrderItemInline]
 
-# --- НОВИЙ КЛАС ДЛЯ "ФОТОАЛЬБОМУ" ---
-# Це каже "Показуй фотоальбом як рядки"
+# --- (Код ProductImageInline без змін) ---
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
-    # Даємо 3 порожніх слоти для додавання посилань
     extra = 3 
-    # Вказуємо, що поле одне
     fields = ('image_url',) 
 
 # --- ОНОВЛЕНІ Налаштування для Товарів (Шин) ---
 class ProductAdmin(ImportExportModelAdmin):
     resource_class = ProductResource 
-    list_display = ('name', 'brand', 'stock_quantity', 'seasonality', 'cost_price', 'price')
-    list_filter = ('seasonality', 'brand') 
-    search_fields = ('name', 'brand__name', 'width', 'profile', 'diameter')
     
+    # 1. Додаємо 'photo_url' до списку видимих полів
+    list_display = ('name', 'brand', 'stock_quantity', 'cost_price', 'price', 'photo_url') 
+    
+    list_filter = ('seasonality', 'brand') 
+    search_fields = ('name', 'brand__name') # Пошук за назвою та брендом
+    
+    # --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
+    # 2. Кажемо, що ці 3 поля можна редагувати ПРЯМО У СПИСКУ
+    list_editable = ('stock_quantity', 'cost_price', 'photo_url')
+    
+    # 3. Прискорюємо завантаження адмінки
+    list_per_page = 50 
+    
+    # 'fieldsets' та 'inlines' (для сторінки деталей) залишаються без змін
     fieldsets = (
         (None, {'fields': ('name', 'brand', 'seasonality')}),
         ('Розмір', {'fields': ('width', 'profile', 'diameter')}),
@@ -41,18 +48,13 @@ class ProductAdmin(ImportExportModelAdmin):
             'fields': ('photo_url',)
         }),
     )
-    
-    # --- ДОДАЄМО "ФОТОАЛЬБОМ" СЮДИ ---
-    # Це додасть секцію "+ Add another Product Image"
     inlines = [ProductImageInline]
 
-# --- Налаштування для Брендів (без змін) ---
+# --- (Решта коду без змін) ---
 class BrandAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
-
-# --- РЕЄСТРУЄМО ВСЕ (включаючи ProductImage) ---
 admin.site.register(Brand, BrandAdmin) 
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(ProductImage) # Можна, але не обов'язково
+admin.site.register(ProductImage)

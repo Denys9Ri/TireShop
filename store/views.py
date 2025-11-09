@@ -103,7 +103,7 @@ def checkout_view(request):
         return redirect('catalog') 
     return render(request, 'store/checkout.html', {})
 
-# --- (Імпорти для "Акведука" - додаємо їх вгору) ---
+# --- (Імпорти для "Акведука") ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
@@ -124,14 +124,10 @@ SEASON_MAPPING = {
 @staff_member_required 
 def sync_google_sheet_view(request):
     
-    # --- ВАЖЛИВО: ВАШЕ ПОСИЛАННЯ ---
-    # Вставте сюди ПОВНЕ посилання на ваш Google Sheet
+    # --- ВАШЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HGgZvuKfPA3FGTkKwqoLHa76CF8objvi/edit?usp=drivesdk&ouid=102242252197503688959&rtpof=true&sd=true'
     
-    # Перевірка, чи ви вставили посилання
-    if 'https://docs.google.com/spreadsheets/d/1HGgZvuKfPA3FGTkKwqoLHa76CF8objvi/edit?usp=drivesdk&ouid=102242252197503688959&rtpof=true&sd=true' in GOOGLE_SHEET_URL:
-        messages.error(request, "Помилка: URL таблиці не вказано у файлі store/views.py. Зверніться до розробника.")
-        return redirect('admin:store_product_changelist')
+    # --- Я ВИДАЛИВ "ЗЛАМАНИЙ" ЗАПОБІЖНИК ---
         
     try:
         # 1. Автентифікація
@@ -141,7 +137,7 @@ def sync_google_sheet_view(request):
         )
         client = gspread.authorize(creds)
 
-        # 2. ВІДКРИВАЄМО ЗА ПРЯМИМ ПОСИЛАННЯМ (НОВИЙ МЕТОД)
+        # 2. ВІДКРИВАЄМО ЗА ПРЯМИМ ПОСИЛАННЯМ
         sheet = client.open_by_url(GOOGLE_SHEET_URL).sheet1
         
         # 3. Отримуємо дані

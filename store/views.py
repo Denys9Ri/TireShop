@@ -127,7 +127,7 @@ def sync_google_sheet_view(request):
     # --- ВАШЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HGgZvuKfPA3FGTkKwqoLHa76CF8objvi/edit?usp=drivesdk&ouid=102242252197503688959&rtpof=true&sd=true'
     
-    # --- Я ВИДАЛИВ "ЗЛАМАНИЙ" ЗАПОБІЖНИК ---
+    # --- Я ВИДАЛИВ "ЗЛАМАНИЙ" ЗАПОБІЖНИК (IF-блок) ---
         
     try:
         # 1. Автентифікація

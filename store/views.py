@@ -125,7 +125,7 @@ SEASON_MAPPING = {
 def sync_google_sheet_view(request):
     
     # --- ВАШЕ ПОСИЛАННЯ ВЖЕ ТУТ ---
-    GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HGgZvuKfPA3FGTkKwqoLHa76CF8objvi/edit?usp=drivesdk&ouid=102242252197503688959&rtpof=true&sd=true'
+    GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
     
     # --- Я ВИДАЛИВ "ЗЛАМАНИЙ" ЗАПОБІЖНИК (IF-блок) ---
         

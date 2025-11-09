@@ -136,3 +136,123 @@ def checkout_view(request):
         return redirect('catalog') 
 
     return render(request, 'store/checkout.html', {})
+
+# ... (всі ваші 'import' згори)
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+import re
+
+# --- "Розумний" код для розбору розміру (з нашого старого 'resources.py') ---
+SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
+SEASON_MAPPING = {
+    'зима': 'winter',
+    'лето': 'summer',
+    'всесез': 'all-season',
+}
+
+# ---
+# --- ОСЬ НАШ НОВИЙ "АКВЕДУК"
+# ---
+@staff_member_required # Доступ тільки для Адмінів
+def sync_google_sheet_view(request):
+    
+    # --- ВАЖЛИВО: Назва Вашої Таблиці ---
+    # Переконайтеся, що ваша Google Таблиця називається ТОЧНО ТАК:
+    GOOGLE_SHEET_NAME = 'TireShopPrice'
+    
+    try:
+        # 1. Автентифікація (використовуємо "Секретний Файл" з Render)
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name(
+            settings.GSPREAD_CREDENTIALS_PATH, scope
+        )
+        client = gspread.authorize(creds)
+
+        # 2. Відкриваємо таблицю і перший аркуш
+        sheet = client.open(GOOGLE_SHEET_NAME).sheet1
+        
+        # 3. Отримуємо ВСІ дані (крім першого рядка заголовків)
+        rows = sheet.get_all_records() # Це "читає" заголовки автоматично
+        
+        # Лічильники для звіту
+        created_count = 0
+        updated_count = 0
+
+        # 4. "Пробігаємо" по кожному рядку з прайсу
+        for row in rows:
+            # Отримуємо дані (за назвами стовпців з файлу)
+            brand_name = row.get('Бренд', '').strip()
+            model_name = row.get('Модель', '').strip()
+            size_str = row.get('Типоразмер', '')
+            season_str = row.get('Сезон', '').strip().lower()
+            price_str = row.get('Цена', '0')
+            quantity_str = row.get('Кол-во', '0')
+            
+            # (Пропускаємо "порожні" рядки)
+            if not brand_name or not model_name or not size_str:
+                continue 
+
+            # 5. "Чистимо" дані (той самий код, що й раніше)
+            # 5.1. Бренд
+            brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
+            
+            # 5.2. Розмір
+            width_val, profile_val, diameter_val = 0, 0, 0
+            match = SIZE_REGEX.search(size_str)
+            if match:
+                width_val = int(match.group(1))
+                profile_val = int(match.group(2))
+                diameter_val = int(match.group(3))
+            
+            # 5.3. Сезон
+            season_val = SEASON_MAPPING.get(season_str, 'all-season')
+            
+            # 5.4. Ціна
+            try:
+                # Видаляємо пробіли і замінюємо кому на крапку
+                price_val = float(str(price_str).replace(' ', '').replace(',', '.'))
+            except ValueError:
+                price_val = 0
+                
+            # 5.5. Наявність
+            if quantity_str == '>12':
+                quantity_val = 20
+            elif isinstance(quantity_str, str) and not quantity_str.isdigit():
+                quantity_val = 0
+            else:
+                quantity_val = int(quantity_str)
+
+            # 6. ГОЛОВНА КОМАНДА: Знайти (за "розумним" ключем) або Створити
+            product, created = Product.objects.update_or_create(
+                brand=brand_obj,
+                name=model_name,
+                width=width_val,
+                profile=profile_val,
+                diameter=diameter_val,
+                # 'defaults' - це те, що ми ОНОВЛЮЄМО
+                defaults={
+                    'seasonality': season_val,
+                    'cost_price': price_val,
+                    'stock_quantity': quantity_val
+                    # 'photo_url' НЕ ЧІПАЄМО!
+                }
+            )
+            
+            if created:
+                created_count += 1
+            else:
+                updated_count += 1
+        
+        # 7. Звіт
+        messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
+        
+    except Exception as e:
+        # Якщо щось пішло не так (наприклад, "TireShopPrice" не знайдено)
+        messages.error(request, f"Помилка синхронізації: {e}")
+
+    # 8. Повертаємо адміна назад на сторінку "Products"
+    return redirect('admin:store_product_changelist')
+

@@ -11,7 +11,7 @@ body {
 h1, h2, h3 { font-weight: 600; }
 a { text-decoration: none; color: #004a99; }
 
-/* --- 2. СИНЯ ШАПКА І ФУТЕР --- */
+/* --- 2. ШАПКА І ФУТЕР --- */
 .main-header,
 .main-footer {
     background-color: #004a99;
@@ -19,8 +19,7 @@ a { text-decoration: none; color: #004a99; }
     padding: 15px 30px;
     flex-shrink: 0;
 }
-
-/* Базовий вигляд шапки */
+/* Шапка */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -54,24 +53,24 @@ a { text-decoration: none; color: #004a99; }
     vertical-align: middle;
 }
 
-/* Приховуємо меню на мобільних */
-@media (max-width: 991px) {
-    .navbar-menu {
-        display: none;
-    }
-    .hamburger {
-        display: flex;
-    }
+/* --- ГАМБУРГЕР --- */
+.hamburger {
+    display: none; /* показуємо на мобільних через media-query */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+    cursor: pointer;
 }
-
-/* Відображаємо меню на десктопах, ховаємо гамбургер */
-@media (min-width: 992px) {
-    .navbar-menu {
-        display: flex;
-    }
-    .hamburger {
-        display: none;
-    }
+.hamburger-line {
+    width: 24px;
+    height: 3px;
+    background-color: #fff;
+    margin: 3px 0;
 }
 
 /* --- 3. БЛОК КОНТЕНТУ --- */
@@ -226,20 +225,7 @@ a { text-decoration: none; color: #004a99; }
     padding: 8px 12px;
 }
 
-/* --- 7. МОБІЛЬНА НАВІГАЦІЯ --- */
-.hamburger {
-    display: none;
-    flex-direction: column;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-}
-.hamburger-line {
-    width: 25px;
-    height: 3px;
-    background-color: #fff;
-    margin: 4px 0;
-}
+/* --- 7. МОБІЛЬНЕ МЕНЮ --- */
 .mobile-menu {
     display: none;
     flex-direction: column;
@@ -260,4 +246,16 @@ a { text-decoration: none; color: #004a99; }
 }
 .mobile-menu.is-active {
     display: flex;
+}
+
+/* --- 8. МЕДІА‑ЗАПИТИ --- */
+/* На екранах до 991px ховаємо основне меню і показуємо гамбургер */
+@media (max-width: 991px) {
+    .navbar-menu { display: none; }
+    .hamburger { display: flex; }
+}
+/* На екранах від 992px і ширше – навпаки */
+@media (min-width: 992px) {
+    .navbar-menu { display: flex; }
+    .hamburger { display: none; }
 }

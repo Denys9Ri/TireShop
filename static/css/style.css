@@ -89,7 +89,7 @@ a { text-decoration: none; color: #004a99; }
     padding-bottom: 10px;
 }
 
-/* --- Слайд‑фільтр, який виїжджає зліва --- */
+/* --- 4. ФІЛЬТР: кнопка, оверлей і панель --- */
 .filter-toggle-btn {
     background-color: #004a99;
     color: #fff;
@@ -116,7 +116,7 @@ a { text-decoration: none; color: #004a99; }
     display: block;
 }
 
-/* бічна панель фільтрів — тепер ліворуч */
+/* бічна панель фільтрів — виїжджає зліва */
 .filter-panel {
     position: fixed;
     top: 0;
@@ -126,7 +126,7 @@ a { text-decoration: none; color: #004a99; }
     height: 100%;
     background-color: #fff;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-    transform: translateX(-100%);       /* ховаємо за лівим краєм */
+    transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
     overflow-y: auto;
@@ -134,10 +134,10 @@ a { text-decoration: none; color: #004a99; }
     border-radius: 0 8px 8px 0;
 }
 .filter-panel.is-active {
-    transform: translateX(0);           /* виїжджає у видиму зону */
+    transform: translateX(0);
 }
 
-/* гарне оформлення селекторів у фільтрі */
+/* оформлення селекторів у фільтрі */
 .filter-panel select {
     display: block;
     width: 100%;
@@ -167,7 +167,7 @@ a { text-decoration: none; color: #004a99; }
     padding: 0;
 }
 
-/* На широких екранах панель вужча, щоб не займати багато місця */
+/* на широких екранах панель вужча (25%) */
 @media (min-width: 992px) {
     .filter-panel {
         width: 25%;
@@ -276,115 +276,14 @@ a { text-decoration: none; color: #004a99; }
     display: flex;
 }
 
-/* --- 8. МЕДІА‑ЗАПИТИ --- */
-/* На екранах до 991px ховаємо основне меню і показуємо гамбургер */
+/* --- 8. МЕДІА‑ЗАПИТИ ДЛЯ НАВІГАЦІЇ --- */
+/* На екранах до 991px — ховаємо основне меню, показуємо гамбургер */
 @media (max-width: 991px) {
     .navbar-menu { display: none; }
     .hamburger { display: flex; }
 }
-/* На екранах від 992px і ширше – навпаки */
+/* На екранах від 992px і ширше — показуємо меню, ховаємо гамбургер */
 @media (min-width: 992px) {
     .navbar-menu { display: flex; }
     .hamburger { display: none; }
-}
-
-/* --- Слайд‑фільтр, який виїжджає праворуч --- */
-.filter-toggle-btn {
-    background-color: #004a99;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 15px;     /* відсунемо від шапки */
-    margin-bottom: 10px;
-}
-
-/* затемнюючий оверлей */
-.filter-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-    z-index: 999;
-}
-.filter-overlay.is-active {
-    display: block;
-}
-
-/* бічна панель фільтрів */
-.filter-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 80%;
-    max-width: 300px;
-    height: 100%;
-    background-color: #fff;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
-    transform: translateX(100%);   /* сховати за межами */
-    transition: transform 0.3s ease-in-out;
-    z-index: 1000;
-    overflow-y: auto;
-    padding: 20px;
-    border-radius: 8px 0 0 8px;
-}
-
-/* коли активна — заїжджає в кадр */
-.filter-panel.is-active {
-    transform: translateX(0);
-}
-
-/* гарне оформлення селекторів у фільтрі */
-.filter-panel select {
-    display: block;
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    font-size: 0.95em;
-    -moz-appearance: none; /* прибирання стандартних стрілок у Firefox */
-    -webkit-appearance: none; /* Chrome/Safari */
-    appearance: none;
-}
-.filter-panel label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #004a99;
-}
-.filter-panel .filter-submit-btn,
-.filter-panel .filter-reset-btn {
-    margin-top: 10px;
-}
-
-/* робимо кнопку “Скинути” схожою на посилання */
-.filter-reset-btn {
-    background: none;
-    border: none;
-    color: #004a99;
-    text-decoration: underline;
-    padding: 0;
-}
-
-/* на ширших екранах панель фільтрів може бути статичною (опційно) */
-@media (min-width: 992px) {
-    .filter-panel {
-        position: static;
-        transform: none;
-        width: auto;
-        max-width: none;
-        height: auto;
-        box-shadow: none;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    .filter-overlay {
-        display: none !important;
-    }
 }

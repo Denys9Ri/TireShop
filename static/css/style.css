@@ -89,7 +89,7 @@ a { text-decoration: none; color: #004a99; }
     padding-bottom: 10px;
 }
 
-/* --- 4. ФІЛЬТР --- */
+/* --- Слайд‑фільтр, який виїжджає зліва --- */
 .filter-toggle-btn {
     background-color: #004a99;
     color: #fff;
@@ -97,54 +97,82 @@ a { text-decoration: none; color: #004a99; }
     padding: 10px 15px;
     border-radius: 4px;
     cursor: pointer;
+    margin-top: 15px;
     margin-bottom: 10px;
 }
-.filter-panel {
+
+/* затемнюючий оверлей */
+.filter-overlay {
     display: none;
-    background-color: #e9f4ff;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 999;
 }
-.filter-panel.is-active {
+.filter-overlay.is-active {
     display: block;
 }
-.filter-form {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
+
+/* бічна панель фільтрів — тепер ліворуч */
+.filter-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80%;
+    max-width: 280px;
+    height: 100%;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);       /* ховаємо за лівим краєм */
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 0 8px 8px 0;
 }
-.filter-form label {
+.filter-panel.is-active {
+    transform: translateX(0);           /* виїжджає у видиму зону */
+}
+
+/* гарне оформлення селекторів у фільтрі */
+.filter-panel select {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    font-size: 0.95em;
+    appearance: none;
+}
+.filter-panel label {
+    display: block;
+    margin-bottom: 5px;
     font-weight: 600;
     color: #004a99;
-    margin-right: 6px;
 }
-.filter-form select {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    padding: 6px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-.filter-form button,
-.filter-form a {
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-.filter-submit-btn {
-    background-color: #004a99;
-    color: #fff;
-    border: none;
+.filter-panel .filter-submit-btn,
+.filter-panel .filter-reset-btn {
+    margin-top: 10px;
 }
 .filter-reset-btn {
-    background-color: transparent;
-    color: #004a99;
+    background: none;
     border: none;
+    color: #004a99;
     text-decoration: underline;
-    padding: 8px 12px;
+    padding: 0;
+}
+
+/* На широких екранах панель вужча, щоб не займати багато місця */
+@media (min-width: 992px) {
+    .filter-panel {
+        width: 25%;
+        max-width: 350px;
+    }
 }
 
 /* --- 5. КАРТКИ ТОВАРІВ --- */

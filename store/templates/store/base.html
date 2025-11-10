@@ -16,7 +16,9 @@
     <!-- блок правої навігації для десктопу -->
     <div class="navbar-menu">
         <a href="{% url 'store:cart_detail' %}" class="navbar-item">
-            <img src="..." alt="Кошик" class="cart-icon"> Кошик ({{ cart|length }})
+            <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
+                 alt="Кошик" class="cart-icon">
+            Кошик ({{ cart|length }})
         </a>
         <span class="cart-total navbar-item">{{ cart.get_total_price }} грн.</span>
         {% if user.is_authenticated %}
@@ -38,46 +40,42 @@
     </button>
 </header>
 
+<!-- єдиний блок мобільного меню -->
 <div class="mobile-menu" id="mobile-menu">
-    <!-- ваші посилання для мобільної навігації тут -->
+    <a href="{% url 'store:cart_detail' %}">
+        <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
+             alt="Кошик" class="cart-icon">
+        Кошик ({{ cart|length }}) – {{ cart.get_total_price }} грн.
+    </a>
+    {% if user.is_authenticated %}
+        <a href="{% url 'users:profile' %}">Мій Кабінет</a>
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-button-mobile">Вийти</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}">Увійти</a>
+        <a href="{% url 'users:register' %}">Реєстрація</a>
+    {% endif %}
 </div>
 
-    <!-- Мобільне меню, яке показується при натисканні на гамбургер -->
-    <div class="mobile-menu" id="mobile-menu">
-        <a href="{% url 'store:cart_detail' %}">
-            <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi" alt="Кошик" class="cart-icon">
-            Кошик ({{ cart|length }}) - {{ cart.get_total_price }} грн.
-        </a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'users:profile' %}">Мій Кабінет</a>
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="logout-button-mobile">Вийти</button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}">Увійти</a>
-            <a href="{% url 'users:register' %}">Реєстрація</a>
-        {% endif %}
-    </div>
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
 
-    <main class="container">
-        {% block content %}
-        {% endblock %}
-    </main>
+<footer class="footer">
+    <p>&copy; 2025 TireShop.ua. Всі права захищено.</p>
+</footer>
 
-    <footer class="footer">
-        <p>&copy; 2025 TireShop.ua. Всі права захищено.</p>
-    </footer>
-
-    <!-- Скрипт для гамбургер-меню -->
-    <script>
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-        hamburgerButton.addEventListener('click', function() {
-            mobileMenu.classList.toggle('is-active');
-            hamburgerButton.classList.toggle('is-active');
-        });
-    </script>
+<!-- Скрипт для гамбургер-меню -->
+<script>
+    const hamburgerButton = document.getElementById('hamburger-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    hamburgerButton.addEventListener('click', function() {
+        mobileMenu.classList.toggle('is-active');
+        hamburgerButton.classList.toggle('is-active');
+    });
+</script>
 
 </body>
 </html>

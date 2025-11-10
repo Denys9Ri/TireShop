@@ -19,6 +19,7 @@ a { text-decoration: none; color: #004a99; }
     padding: 15px 30px;
     flex-shrink: 0;
 }
+
 /* Базовий вигляд шапки */
 .navbar {
     display: flex;
@@ -45,6 +46,14 @@ a { text-decoration: none; color: #004a99; }
     display: flex;
     align-items: center;
 }
+/* Іконка кошика */
+.cart-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
 /* Приховуємо меню на мобільних */
 @media (max-width: 991px) {
     .navbar-menu {
@@ -54,6 +63,7 @@ a { text-decoration: none; color: #004a99; }
         display: flex;
     }
 }
+
 /* Відображаємо меню на десктопах, ховаємо гамбургер */
 @media (min-width: 992px) {
     .navbar-menu {
@@ -62,13 +72,6 @@ a { text-decoration: none; color: #004a99; }
     .hamburger {
         display: none;
     }
-}
-/* Додаємо розміри іконці кошика */
-.cart-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 5px;
-    vertical-align: middle;
 }
 
 /* --- 3. БЛОК КОНТЕНТУ --- */
@@ -257,29 +260,4 @@ a { text-decoration: none; color: #004a99; }
 }
 .mobile-menu.is-active {
     display: flex;
-}
-
-/* --- 8. МЕДІА-ЗАПИТИ ДЛЯ АДАПТИВНОСТІ --- */
-@media (min-width: 992px) {
-    .nav-links-desktop {
-        display: block;
-    }
-    .hamburger {
-        display: none;
-    }
-}
-@media (max-width: 991px) {
-    .nav-links-desktop {
-        display: none;
-    }
-    .hamburger {
-        display: flex;
-    }
-}
-/* --- Виправлення розміру іконки кошика --- */
-.cart-icon {
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    margin-right: 5px;
 }

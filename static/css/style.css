@@ -19,10 +19,8 @@ a { text-decoration: none; color: #004a99; }
     padding: 15px 30px;
     flex-shrink: 0;
 }
-/* ОНОВЛЕНІ стилі для шапки */
+/* Базовий вигляд шапки */
 .navbar {
-    width: 100%;
-    max-width: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -30,26 +28,47 @@ a { text-decoration: none; color: #004a99; }
     color: #fff;
     padding: 10px 20px;
 }
-.navbar-brand {
-    flex: 0 1 auto;
-}
 .navbar-brand a {
     color: #fff;
     font-size: 1.5em;
     font-weight: bold;
 }
-.nav-links-desktop {
-    flex: 0 1 auto;
+.navbar-menu {
     display: flex;
     align-items: center;
     gap: 20px;
 }
-.nav-links-desktop a,
-.nav-links-desktop .logout-button,
-.nav-links-desktop .logout-form-desktop button {
+.navbar-item {
     color: #fff;
     font-weight: 500;
     font-size: 1em;
+    display: flex;
+    align-items: center;
+}
+/* Приховуємо меню на мобільних */
+@media (max-width: 991px) {
+    .navbar-menu {
+        display: none;
+    }
+    .hamburger {
+        display: flex;
+    }
+}
+/* Відображаємо меню на десктопах, ховаємо гамбургер */
+@media (min-width: 992px) {
+    .navbar-menu {
+        display: flex;
+    }
+    .hamburger {
+        display: none;
+    }
+}
+/* Додаємо розміри іконці кошика */
+.cart-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    vertical-align: middle;
 }
 
 /* --- 3. БЛОК КОНТЕНТУ --- */

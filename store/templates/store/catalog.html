@@ -6,14 +6,10 @@
 {% block content %}
 <div class="catalog-wrapper">
 
-    <button class="filter-toggle-button" id="filter-toggle">
-        &#9776; Фільтри
-    </button>
-
-    <aside class="filter-sidebar" id="filter-sidebar">
+    <!-- Горизонтальна панель фільтрів -->
+    <div class="filter-container">
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
-            
-            <h4>Бренд</h4>
+            <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
                 {% for brand in all_brands %}
@@ -23,7 +19,7 @@
                 {% endfor %}
             </select>
 
-            <h4>Сезон</h4>
+            <label>Сезон:</label>
             <select name="season">
                 <option value="">Будь-який</option>
                 {% for value, display in all_seasons %}
@@ -33,7 +29,7 @@
                 {% endfor %}
             </select>
 
-            <h4>Ширина</h4>
+            <label>Ширина:</label>
             <select name="width">
                 <option value="">Всі</option>
                 {% for width in all_widths %}
@@ -43,7 +39,7 @@
                 {% endfor %}
             </select>
 
-            <h4>Профіль</h4>
+            <label>Профіль:</label>
             <select name="profile">
                 <option value="">Всі</option>
                 {% for profile in all_profiles %}
@@ -53,7 +49,7 @@
                 {% endfor %}
             </select>
 
-            <h4>Діаметр</h4>
+            <label>Діаметр:</label>
             <select name="diameter">
                 <option value="">Всі</option>
                 {% for diameter in all_diameters %}
@@ -63,10 +59,10 @@
                 {% endfor %}
             </select>
 
-            <button type="submit" class="filter-submit-btn">Застосувати</button>
+            <button type="submit" class="filter-submit-btn">Фільтрувати</button>
             <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
         </form>
-    </aside>
+    </div>
 
     <div class="catalog-content">
         <h1 class="page-title">Каталог Товарів</h1>
@@ -74,13 +70,11 @@
         <div class="product-grid">
             {% for product in page_obj %}
                 <div class="product-card">
-                    
                     {% if product.photo_url %}
                         <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
                     {% else %}
                         <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
                     {% endif %}
-                    
                     <h3 class="product-name">
                         {{ product.brand.name }} {{ product.name }}
                     </h3>
@@ -88,7 +82,6 @@
                         {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
                     </p>
                     <p class="product-price">{{ product.cost_price|floatformat:2 }} грн</p>
-                    
                     <form action="{% url 'store:cart_add' product.id %}" method="post">
                         {% csrf_token %}
                         <button type="submit" class="add-to-cart-btn">В кошик</button>
@@ -107,11 +100,9 @@
                 {% else %}
                     <span class="disabled">Попередня</span>
                 {% endif %}
-
                 <span class="current">
                     Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}
                 </span>
-
                 {% if page_obj.has_next %}
                     <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
                 {% else %}
@@ -120,21 +111,6 @@
             </div>
         </nav>
         {% endif %}
-        </div>
+    </div>
 </div>
-
-<script>
-    const filterButton = document.getElementById('filter-toggle');
-    const filterSidebar = document.getElementById('filter-sidebar');
-    const pageContent = document.querySelector('.catalog-content');
-
-    if (filterButton) {
-        filterButton.addEventListener('click', function() {
-            filterSidebar.classList.toggle('is-active');
-            // Можна додати оверлей
-            // document.body.classList.toggle('overlay-active'); 
-        });
-    }
-</script>
-
 {% endblock %}

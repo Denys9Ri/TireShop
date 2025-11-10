@@ -71,10 +71,14 @@
             {% for product in page_obj %}
                 <div class="product-card">
                     {% if product.photo_url %}
-                        <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
-                    {% else %}
-                        <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
-                    {% endif %}
+    {% if product.photo_url.url %}
+        <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
+    {% else %}
+        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image">
+    {% endif %}
+{% else %}
+    <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
+{% endif %}
                     <h3 class="product-name">
                         {{ product.brand.name }} {{ product.name }}
                     </h3>

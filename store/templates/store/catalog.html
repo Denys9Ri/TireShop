@@ -9,9 +9,14 @@
     <!-- Кнопка для відкриття/закриття фільтрів -->
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
 
-    <!-- Панель фільтрів (прихована за замовчуванням) -->
+    <!-- Оверлей для затінення контенту -->
+    <div id="filter-overlay" class="filter-overlay"></div>
+
+    <!-- Бічна панель фільтрів -->
     <div id="filter-panel" class="filter-panel">
+        <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
+
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -64,7 +69,6 @@
             {% for product in page_obj %}
                 <div class="product-card">
                     {% if product.photo_url %}
-                        {# Якщо у photo_url є атрибут .url (ImageField), використовуємо його, інакше – рядок URL #}
                         {% if product.photo_url.url %}
                             <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
                         {% else %}
@@ -112,12 +116,21 @@
     </div>
 </div>
 
-<!-- Скрипт для відкриття/закриття панелі фільтрів -->
+<!-- Скрипт для висування фільтра -->
 <script>
   const filterBtn = document.getElementById('filter-toggle');
   const filterPanel = document.getElementById('filter-panel');
+  const filterOverlay = document.getElementById('filter-overlay');
+
   filterBtn.addEventListener('click', function() {
     filterPanel.classList.toggle('is-active');
+    filterOverlay.classList.toggle('is-active');
+  });
+
+  // Закривати фільтр, коли натиснути на оверлей
+  filterOverlay.addEventListener('click', function() {
+    filterPanel.classList.remove('is-active');
+    filterOverlay.classList.remove('is-active');
   });
 </script>
 {% endblock %}

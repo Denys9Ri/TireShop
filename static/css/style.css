@@ -22,15 +22,14 @@ a { text-decoration: none; color: #004a99; }
 /* ОНОВЛЕНІ стилі для шапки */
 .navbar {
     width: 100%;
-    max-width: none;            /* скасувати обмеження 1200px */
+    max-width: none;
     display: flex;
-    justify-content: space-between; /* бренд ліворуч, меню/гамбургер праворуч */
+    justify-content: space-between;
     align-items: center;
     background-color: #004a99;
     color: #fff;
     padding: 10px 20px;
 }
-/* логотип займає ліву частину */
 .navbar-brand {
     flex: 0 1 auto;
 }
@@ -39,7 +38,6 @@ a { text-decoration: none; color: #004a99; }
     font-size: 1.5em;
     font-weight: bold;
 }
-/* навігаційні елементи (кошик, кабінет) справа */
 .nav-links-desktop {
     flex: 0 1 auto;
     display: flex;
@@ -70,12 +68,25 @@ a { text-decoration: none; color: #004a99; }
     padding-bottom: 10px;
 }
 
-/* --- 4. ГОРИЗОНТАЛЬНИЙ ФІЛЬТР --- */
-.filter-container {
+/* --- 4. ФІЛЬТР --- */
+.filter-toggle-btn {
+    background-color: #004a99;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+.filter-panel {
+    display: none;
     background-color: #e9f4ff;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
+}
+.filter-panel.is-active {
+    display: block;
 }
 .filter-form {
     display: flex;

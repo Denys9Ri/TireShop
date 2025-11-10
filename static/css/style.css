@@ -18,30 +18,35 @@ a {
     color: #004a99; /* Головний синій колір */
 }
 
-/* --- 2. СИНІЙ ХЕДЕР І ФУТЕР (Строгість) --- */
-.main-header, .main-footer {
+/* --- 2. СИНІЙ ХЕДЕР І ФУТЕР --- */
+.main-header,
+.main-footer {
     background-color: #004a99; /* Насичений синій */
     color: white;
     padding: 15px 30px;
     flex-shrink: 0;
 }
 
+/* Навігаційна панель */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
+    background-color: #004a99; /* Синій фон шапки */
+    color: #fff;
+    padding: 10px 20px;
 }
-
-.logo {
+.navbar .navbar-brand a {
+    color: #fff;
     font-size: 1.5em;
     font-weight: bold;
-    color: white;
 }
-
-.nav-links a, .nav-links button {
-    color: white;
+.nav-links-desktop a,
+.nav-links-desktop .logout-button,
+.nav-links-desktop .logout-form-desktop button {
+    color: #fff;
     margin-left: 20px;
     font-weight: 500;
     font-size: 1em;
@@ -79,7 +84,6 @@ a {
     padding: 15px;
     transition: box-shadow 0.2s;
 }
-
 .product-card:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Ефект при наведенні */
 }
@@ -111,13 +115,14 @@ a {
     padding: 10px 15px;
     border-radius: 5px;
     font-weight: bold;
+    border: none;
+    cursor: pointer;
 }
 .add-to-cart-btn:hover {
     background-color: #003b7a; /* Темніший синій */
 }
 
-
-/* --- 5. ВАШІ СТИЛІ ДЛЯ ПАГІНАЦІЇ (Вони ідеально сюди пасують) --- */
+/* --- 5. ПАГІНАЦІЯ --- */
 .pagination {
     margin: 40px auto;
     text-align: center;
@@ -147,4 +152,94 @@ a {
     color: #333;
     padding: 8px 12px;
 }
+
+/* --- 6. ГАМБУРГЕР-МЕНЮ ТА МОБІЛЬНЕ МЕНЮ --- */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+.hamburger-line {
+    width: 25px;
+    height: 3px;
+    background-color: #fff;
+    margin: 4px 0;
+}
+.mobile-menu {
+    display: none;
+    flex-direction: column;
+    background-color: #004a99;
+    padding: 10px 20px;
+}
+.mobile-menu a {
+    color: #fff;
+    margin: 10px 0;
+}
+.mobile-menu form button {
+    color: #004a99;
+    background: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+.mobile-menu.is-active {
+    display: flex;
+}
+
+/* --- 7. БІЧНИЙ ФІЛЬТР --- */
+.filter-sidebar {
+    display: none;
+    width: 250px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+.filter-sidebar.is-active {
+    display: block;
+}
+.filter-toggle-button {
+    background: none;
+    border: 1px solid #004a99;
+    color: #004a99;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+/* --- 8. МЕДІА-ЗАПИТИ ДЛЯ АДАПТИВНОСТІ --- */
+@media (min-width: 992px) {
+    .filter-sidebar {
+        display: block;
+    }
+    .filter-toggle-button {
+        display: none;
+    }
+    .catalog-wrapper {
+        display: flex;
+    }
+    .catalog-content {
+        flex-grow: 1;
+        margin-left: 20px;
+    }
+    .nav-links-desktop {
+        display: block;
+    }
+    .hamburger {
+        display: none;
+    }
+}
+@media (max-width: 991px) {
+    .nav-links-desktop {
+        display: none;
+    }
+    .hamburger {
+        display: flex;
+    }
+    .filter-sidebar {
+        /* залишається прихованою до натискання кнопки "Фільтри" */
+    }
 }

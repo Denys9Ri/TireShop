@@ -6,16 +6,17 @@
 {% block content %}
 <div class="catalog-wrapper">
 
-    <!-- Горизонтальна панель фільтрів -->
-    <div class="filter-container">
+    <!-- Кнопка для відкриття/закриття фільтрів -->
+    <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
+
+    <!-- Панель фільтрів (прихована за замовчуванням) -->
+    <div id="filter-panel" class="filter-panel">
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
                 {% for brand in all_brands %}
-                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>
-                        {{ brand.name }}
-                    </option>
+                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
 
@@ -23,9 +24,7 @@
             <select name="season">
                 <option value="">Будь-який</option>
                 {% for value, display in all_seasons %}
-                    <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>
-                        {{ display }}
-                    </option>
+                    <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
 
@@ -33,9 +32,7 @@
             <select name="width">
                 <option value="">Всі</option>
                 {% for width in all_widths %}
-                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>
-                        {{ width }}
-                    </option>
+                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
                 {% endfor %}
             </select>
 
@@ -43,9 +40,7 @@
             <select name="profile">
                 <option value="">Всі</option>
                 {% for profile in all_profiles %}
-                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>
-                        {{ profile }}
-                    </option>
+                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
                 {% endfor %}
             </select>
 
@@ -53,9 +48,7 @@
             <select name="diameter">
                 <option value="">Всі</option>
                 {% for diameter in all_diameters %}
-                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>
-                        R{{ diameter }}
-                    </option>
+                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
                 {% endfor %}
             </select>
 
@@ -71,14 +64,15 @@
             {% for product in page_obj %}
                 <div class="product-card">
                     {% if product.photo_url %}
-    {% if product.photo_url.url %}
-        <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
-    {% else %}
-        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image">
-    {% endif %}
-{% else %}
-    <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
-{% endif %}
+                        {# Якщо у photo_url є атрибут .url (ImageField), використовуємо його, інакше – рядок URL #}
+                        {% if product.photo_url.url %}
+                            <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                            <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image">
+                        {% endif %}
+                    {% else %}
+                        <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
+                    {% endif %}
                     <h3 class="product-name">
                         {{ product.brand.name }} {{ product.name }}
                     </h3>
@@ -117,4 +111,13 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Скрипт для відкриття/закриття панелі фільтрів -->
+<script>
+  const filterBtn = document.getElementById('filter-toggle');
+  const filterPanel = document.getElementById('filter-panel');
+  filterBtn.addEventListener('click', function() {
+    filterPanel.classList.toggle('is-active');
+  });
+</script>
 {% endblock %}

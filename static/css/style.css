@@ -8,33 +8,24 @@ body {
     background-color: #f0f4f8; /* Дуже світло-синій фон (майже білий) */
     color: #333; /* Строгий темний текст */
 }
+h1, h2, h3 { font-weight: 600; }
+a { text-decoration: none; color: #004a99; }
 
-h1, h2, h3 {
-    font-weight: 600; /* Не жирний, але й не тонкий */
-}
-
-a {
-    text-decoration: none;
-    color: #004a99; /* Головний синій колір */
-}
-
-/* --- 2. СИНІЙ ХЕДЕР І ФУТЕР --- */
+/* --- 2. СИНЯ ШАПКА І ФУТЕР --- */
 .main-header,
 .main-footer {
-    background-color: #004a99; /* Насичений синій */
+    background-color: #004a99;
     color: white;
     padding: 15px 30px;
     flex-shrink: 0;
 }
-
-/* Навігаційна панель */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
-    background-color: #004a99; /* Синій фон шапки */
+    background-color: #004a99;
     color: #fff;
     padding: 10px 20px;
 }
@@ -52,62 +43,101 @@ a {
     font-size: 1em;
 }
 
-/* --- 3. БІЛИЙ БЛОК КОНТЕНТУ --- */
+/* --- 3. БЛОК КОНТЕНТУ --- */
 .content {
-    flex-grow: 1; /* Займає весь доступний простір */
+    flex-grow: 1;
     max-width: 1200px;
-    margin: 20px auto; /* Центрування з відступами */
+    margin: 20px auto;
     padding: 20px;
-    background-color: #ffffff; /* Чисто білий фон */
-    border-radius: 8px; /* Легке заокруглення */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Легка тінь */
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
 .page-title {
     color: #004a99;
     border-bottom: 2px solid #f0f4f8;
     padding-bottom: 10px;
 }
 
-/* --- 4. КАРТКИ ТОВАРІВ (Мінімалізм) --- */
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Адаптивна сітка */
-    gap: 20px;
+/* --- 4. ГОРИЗОНТАЛЬНИЙ ФІЛЬТР --- */
+.filter-container {
+    background-color: #e9f4ff; /* Легкий блакитний фон */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.filter-form label {
+    font-weight: 600;
+    color: #004a99;
+    margin-right: 6px;
+}
+.filter-form select {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.filter-form button,
+.filter-form a {
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.filter-submit-btn {
+    background-color: #004a99;
+    color: #fff;
+    border: none;
+}
+.filter-reset-btn {
+    background-color: transparent;
+    color: #004a99;
+    border: none;
+    text-decoration: underline;
+    padding: 8px 12px;
 }
 
+/* --- 5. КАРТКИ ТОВАРІВ --- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
 .product-card {
     background: #fff;
-    border: 1px solid #ddd; /* Строга рамка */
+    border: 1px solid #ddd;
     border-radius: 8px;
     text-align: center;
     padding: 15px;
     transition: box-shadow 0.2s;
 }
 .product-card:hover {
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Ефект при наведенні */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-
 .product-image {
     width: 100%;
     height: 180px;
-    object-fit: contain; /* Щоб шини не розтягувало */
+    object-fit: contain;
     margin-bottom: 10px;
 }
-
 .product-name {
     font-size: 1.1em;
     font-weight: 600;
     margin: 10px 0;
 }
-
 .product-price {
     font-size: 1.2em;
     font-weight: bold;
     color: #333;
     margin-bottom: 15px;
 }
-
 .add-to-cart-btn {
     display: block;
     background-color: #004a99;
@@ -116,13 +146,12 @@ a {
     border-radius: 5px;
     font-weight: bold;
     border: none;
-    cursor: pointer;
 }
 .add-to-cart-btn:hover {
-    background-color: #003b7a; /* Темніший синій */
+    background-color: #003b7a;
 }
 
-/* --- 5. ПАГІНАЦІЯ --- */
+/* --- 6. ПАГІНАЦІЯ --- */
 .pagination {
     margin: 40px auto;
     text-align: center;
@@ -135,12 +164,12 @@ a {
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #fff;
-    color: #004a99; /* Синій */
+    color: #004a99;
     text-decoration: none;
     font-weight: bold;
 }
 .pagination .step-links a:hover {
-    background-color: #f0f4f8; /* Світло-синій фон */
+    background-color: #f0f4f8;
 }
 .pagination .step-links .disabled {
     color: #aaa;
@@ -153,7 +182,7 @@ a {
     padding: 8px 12px;
 }
 
-/* --- 6. ГАМБУРГЕР-МЕНЮ ТА МОБІЛЬНЕ МЕНЮ --- */
+/* --- 7. МОБІЛЬНА НАВІГАЦІЯ --- */
 .hamburger {
     display: none;
     flex-direction: column;
@@ -189,42 +218,8 @@ a {
     display: flex;
 }
 
-/* --- 7. БІЧНИЙ ФІЛЬТР --- */
-.filter-sidebar {
-    display: none;
-    width: 250px;
-    background-color: #ffffff;
-    padding: 20px;
-    border-right: 1px solid #ddd;
-}
-.filter-sidebar.is-active {
-    display: block;
-}
-.filter-toggle-button {
-    background: none;
-    border: 1px solid #004a99;
-    color: #004a99;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
 /* --- 8. МЕДІА-ЗАПИТИ ДЛЯ АДАПТИВНОСТІ --- */
 @media (min-width: 992px) {
-    .filter-sidebar {
-        display: block;
-    }
-    .filter-toggle-button {
-        display: none;
-    }
-    .catalog-wrapper {
-        display: flex;
-    }
-    .catalog-content {
-        flex-grow: 1;
-        margin-left: 20px;
-    }
     .nav-links-desktop {
         display: block;
     }
@@ -238,8 +233,5 @@ a {
     }
     .hamburger {
         display: flex;
-    }
-    .filter-sidebar {
-        /* залишається прихованою до натискання кнопки "Фільтри" */
     }
 }

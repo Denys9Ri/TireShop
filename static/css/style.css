@@ -503,11 +503,23 @@ a { text-decoration: none; color: #004a99; }
     align-items: center;
     gap: 10px;
     margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .product-card__cart-form .add-to-cart-btn,
 .product-detail__cart-form .add-to-cart-btn {
     white-space: nowrap;
+}
+
+.product-card__cart-form .quantity-stepper {
+    flex: 1 1 140px;
+    justify-content: center;
+}
+
+.product-card__cart-form .add-to-cart-btn {
+    flex: 1 1 140px;
+    text-align: center;
 }
 
 .zoomable-image {
@@ -734,7 +746,7 @@ a { text-decoration: none; color: #004a99; }
 }
 
 .quantity-stepper input[name="quantity"] {
-    width: 64px;
+    width: 56px;
     text-align: center;
     border: none;
     background: transparent;

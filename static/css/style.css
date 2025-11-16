@@ -33,42 +33,33 @@ a { text-decoration: none; color: #004a99; }
     align-items: center;
 }
 .logo {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 10px;
-    color: #fff;
-    font-weight: 800;
-    font-size: 1.4rem;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    font-style: italic;
+    color: white;
     text-decoration: none;
-    line-height: 1;
 }
+
 .logo-text {
-    transform: skewX(-10deg);
+    font-weight: 700;
+    font-size: 1.75em;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    color: white;
+    display: inline-block;
+    transition: 0.3s ease;
 }
-.logo-icon {
-    display: inline-flex;
-    align-items: center;
+
+.logo:hover .logo-text {
+    animation: wiggle 0.45s ease-in-out;
 }
-.logo-icon svg {
-    width: 32px;
-    height: 32px;
-    transform: skewX(-8deg);
-    fill: none;
-    stroke: #ffffff;
-    stroke-width: 2.4px;
-}
-@media (max-width: 640px) {
-    .logo {
-        font-size: 1.15rem;
-        gap: 8px;
-    }
-    .logo-icon svg {
-        width: 26px;
-        height: 26px;
-    }
+
+@keyframes wiggle {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-3px) rotate(-1deg); }
+    50%  { transform: translateX(3px) rotate(1deg); }
+    75%  { transform: translateX(-2px) rotate(-1deg); }
+    100% { transform: translateX(0); }
 }
 .navbar-menu {
     display: flex;

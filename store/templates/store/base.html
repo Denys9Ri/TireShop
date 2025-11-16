@@ -4,17 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TireShop.ua - Головна{% endblock %}</title>
+    <title>{% block title %}ShinaMania.ua - Головна{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
 <header class="navbar">
     <div class="navbar-brand">
-        <a href="{% url 'catalog' %}">TireShop.ua</a>
+        <a href="{% url 'catalog' %}" class="logo-link">
+            <img src="{% static 'img/shinamania-logo.svg' %}" alt="ShinaMania.ua" class="logo-image">
+        </a>
     </div>
     <!-- Правий блок навігації для десктопу -->
     <div class="navbar-menu">
+        <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
+        <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка і оплата</a>
         <a href="{% url 'store:cart_detail' %}" class="navbar-item">
             <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
                  alt="Кошик" class="cart-icon">
@@ -42,6 +46,8 @@
 
 <!-- Єдиний блок мобільного меню -->
 <div class="mobile-menu" id="mobile-menu">
+    <a href="{% url 'contacts' %}">Контакти</a>
+    <a href="{% url 'delivery_payment' %}">Доставка і оплата</a>
     <a href="{% url 'store:cart_detail' %}">
         <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
              alt="Кошик" class="cart-icon">
@@ -64,7 +70,26 @@
 </main>
 
 <footer class="footer">
-    <p>&copy; 2025 TireShop.ua. Всі права захищено.</p>
+    <div class="footer-content">
+        <div class="footer-brand">
+            <p class="footer-title">ShinaMania.ua</p>
+            <p class="footer-subtitle">Шини та сервіс, якому довіряють</p>
+        </div>
+        <div class="footer-contacts">
+            <div class="footer-contact-item">
+                <span class="footer-label">Телефон / Viber:</span>
+                <a href="tel:+380666881491" class="footer-link">+38 (066) 688-14-91</a>
+            </div>
+            <div class="footer-contact-item">
+                <span class="footer-label">Пошта:</span>
+                <a href="mailto:shinahub@gmail.com" class="footer-link">shinahub@gmail.com</a>
+            </div>
+            <div class="footer-contact-item">
+                <span class="footer-label">Графік роботи:</span>
+                <span>Пн.–Пт. 8:00–21:00 · Сб. 9:00–16:00 · Неділя — вихідний</span>
+            </div>
+        </div>
+    </div>
 </footer>
 
 <!-- Скрипт для гамбургер-меню -->

@@ -75,6 +75,14 @@ def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})
 
+
+def contacts_view(request):
+    return render(request, 'store/contacts.html')
+
+
+def delivery_payment_view(request):
+    return render(request, 'store/delivery_payment.html')
+
 # -----------------------------------------------------------------
 # ↓↓↓↓ ВЕСЬ ІНШИЙ КОД (КОШИК, ОФОРМЛЕННЯ, АКВЕДУК) БЕЗ ЗМІН ↓↓↓↓
 # -----------------------------------------------------------------

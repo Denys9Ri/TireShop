@@ -26,7 +26,7 @@ class Product(models.Model):
 
     @property
     def price(self):
-        markup = decimal.Decimal('1.30')
+        markup = decimal.Decimal('1.25')
         display_price = self.cost_price * markup
         return display_price.quantize(decimal.Decimal('0.01'))
 

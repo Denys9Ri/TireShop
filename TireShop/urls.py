@@ -3,21 +3,25 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-# Нам потрібно імпортувати вид (view) каталогу з нашого додатку 'store'
+# Нам потрібно імпортувати види (views) з нашого додатку 'store'
 # Ми створимо цей view пізніше, але прописати шлях маємо вже зараз
-from store.views import catalog_view
+from store.views import catalog_view, contacts_view, delivery_payment_view
 
 urlpatterns = [
     # 1. Адмін-панель (вона вже вбудована в Django)
     path('admin/', admin.site.urls),
-    
+
     # 2. ГОЛОВНА СТОРІНКА (/)
     # Як ви і просили, вона одразу веде на 'catalog_view'
     path('', catalog_view, name='catalog'),
-    
+
+    # Сторінки з інформацією
+    path('contacts/', contacts_view, name='contacts'),
+    path('delivery-and-payment/', delivery_payment_view, name='delivery_payment'),
+
     # 3. Всі інші посилання магазину (кошик, замовлення і т.д.)
     # Ми "включаємо" всі посилання з файлу store/urls.py
-    path('store/', include('store.urls')), 
+    path('store/', include('store.urls')),
     
     # 4. Кабінет клієнта (профіль, мої замовлення)
     # Ми "включаємо" всі посилання з файлу users/urls.py

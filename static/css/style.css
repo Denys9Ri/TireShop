@@ -40,6 +40,15 @@ a { text-decoration: none; color: #004a99; }
     text-decoration: none;
 }
 
+.logo-icon {
+    width: 42px;
+    height: 42px;
+    display: block;
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e5f0ff 50%, #c7dbf6 100%);
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
 .logo-text {
     font-weight: 700;
     font-size: 1.75em;

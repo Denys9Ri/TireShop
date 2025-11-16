@@ -86,8 +86,9 @@
                         {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
                     </p>
                     <p class="product-price">{{ product.cost_price|floatformat:2 }} грн</p>
-                    <form action="{% url 'store:cart_add' product.id %}" method="post">
+                    <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form">
                         {% csrf_token %}
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" aria-label="Кількість">
                         <button type="submit" class="add-to-cart-btn">В кошик</button>
                     </form>
                 </div>

@@ -10,12 +10,12 @@
         <div class="product-detail__image">
             {% if product.photo_url %}
                 {% if product.photo_url.url %}
-                    <img src="{{ product.photo_url.url }}" alt="{{ product.name }}">
+                    <img src="{{ product.photo_url.url }}" alt="{{ product.name }}" class="zoomable-image" data-fullsrc="{{ product.photo_url.url }}">
                 {% else %}
-                    <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                    <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="zoomable-image" data-fullsrc="{{ product.photo_url }}">
                 {% endif %}
             {% else %}
-                <img src="{% static 'images/no-image.png' %}" alt="Немає фото">
+                <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="zoomable-image" data-fullsrc="{% static 'images/no-image.png' %}">
             {% endif %}
         </div>
         <div class="product-detail__info">
@@ -25,6 +25,10 @@
             <div class="product-detail__stock">Наявність: {{ product.stock_quantity }} шт.</div>
             <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-detail__cart-form">
                 {% csrf_token %}
+                <label class="quantity-field">
+                    <span>Кількість</span>
+                    <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                </label>
                 <button type="submit" class="add-to-cart-btn">Додати в кошик</button>
             </form>
         </div>
@@ -43,12 +47,60 @@
         <h2>Додаткові фото</h2>
         <div class="product-detail__gallery">
             {% for image in gallery %}
-                <img src="{{ image.image_url }}" alt="{{ product.name }} фото {{ forloop.counter }}">
+                <img src="{{ image.image_url }}" alt="{{ product.name }} фото {{ forloop.counter }}" class="zoomable-image" data-fullsrc="{{ image.image_url }}">
             {% empty %}
             {% endfor %}
         </div>
     </div>
     {% endif %}
     {% endwith %}
+
+    <div class="image-modal" id="imageModal" aria-hidden="true">
+        <div class="image-modal__backdrop" data-close-modal></div>
+        <div class="image-modal__content" role="dialog" aria-modal="true" aria-label="Збільшене фото">
+            <button type="button" class="image-modal__close" data-close-modal>&times;</button>
+            <img src="" alt="Збільшене фото" id="imageModalImg">
+        </div>
+    </div>
 </div>
+
+<script>
+    (function() {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('imageModalImg');
+        const zoomableImages = document.querySelectorAll('.zoomable-image');
+
+        function openModal(src, alt) {
+            modalImg.src = src;
+            modalImg.alt = alt || 'Збільшене фото';
+            modal.setAttribute('aria-hidden', 'false');
+            modal.classList.add('is-active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('is-active');
+            modal.setAttribute('aria-hidden', 'true');
+            modalImg.src = '';
+        }
+
+        zoomableImages.forEach((img) => {
+            img.addEventListener('click', () => {
+                const fullSrc = img.dataset.fullsrc || img.src;
+                openModal(fullSrc, img.alt);
+            });
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target.dataset.closeModal !== undefined || event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('is-active')) {
+                closeModal();
+            }
+        });
+    })();
+</script>
 {% endblock %}

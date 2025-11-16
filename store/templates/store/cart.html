@@ -3,128 +3,101 @@
 {% block title %}ShinaMania.ua - Ваш Кошик{% endblock %}
 
 {% block content %}
-    <h2>Ваш Кошик</h2>
+<div class="cart-page">
+    <div class="cart-page__header">
+        <h2>Ваш Кошик</h2>
+        <p class="cart-page__subtitle">Перевірте замовлення перед оформленням</p>
+    </div>
 
     {% if cart|length == 0 %}
-        <p>Ваш кошик порожній. Час повертатися до <a href="{% url 'catalog' %}">каталогу</a>!</p>
-    {% else %}
-        <table class="cart-table">
-            <thead>
-                <tr>
-                    <th>Товар</th>
-                    <th>Ціна за 1 шт.</th>
-                    <th>Кількість</th>
-                    <th>Загальна вартість</th>
-                    <th>Видалити</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cart %}
-                    <tr>
-                        <td class="cart-product-info">
-                            {% if item.product.photo_url %}
-                                <img src="{{ item.product.photo_url }}" alt="{{ item.product.name }}" height="60">
-                            {% endif %}
-                            <div>
-                                <strong>{{ item.product.brand.name }} {{ item.product.name }}</strong>
-                                <small>{{ item.product.width }}/{{ item.product.profile }} R{{ item.product.diameter }}</small>
-                            </div>
-                        </td>
-                        
-                        <td class="price">{{ item.price }} грн.</td>
-                        
-                        <td>
-                            <form action="{% url 'store:cart_update_quantity' item.product.id %}" method="post" class="cart-quantity-form">
-                                {% csrf_token %}
-                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99">
-                                <button type="submit">🔄</button> </form>
-                        </td>
-                        
-                        <td class="price">{{ item.total_price }} грн.</td>
-                        
-                        <td>
-                            <a href="{% url 'store:cart_remove' item.product.id %}" class="cart-remove-link">❌</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="cart-summary">
-            <h3>Загальна вартість: 
-                <span class="price">{{ cart.get_total_price }} грн.</span>
-            </h3>
-            
-            <a href="{% url 'catalog' %}" class="btn-secondary">Продовжити покупки</a>
-            
-            <a href="{% url 'store:checkout' %}" class="btn-checkout">Перейти до оформлення</a>
+        <div class="cart-empty glass-card">
+            <p>Ваш кошик порожній. Час повертатися до <a href="{% url 'catalog' %}">каталогу</a>!</p>
         </div>
-        
+    {% else %}
+        <div class="cart-layout">
+            <div class="cart-items">
+                {% for item in cart %}
+                    <div class="cart-item-card glass-card">
+                        <div class="cart-item__image">
+                            {% if item.product.photo_url %}
+                                <img src="{{ item.product.photo_url }}" alt="{{ item.product.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="cart-item__body">
+                            <div class="cart-item__top">
+                                <div>
+                                    <div class="cart-item__title">{{ item.product.brand.name }} {{ item.product.name }}</div>
+                                    <div class="cart-item__meta">{{ item.product.width }}/{{ item.product.profile }} R{{ item.product.diameter }}</div>
+                                </div>
+                                <a href="{% url 'store:cart_remove' item.product.id %}" class="cart-remove-btn" aria-label="Видалити товар">✕</a>
+                            </div>
+                            <div class="cart-item__middle">
+                                <div class="cart-item__price">{{ item.price }} грн/шт.</div>
+                                <form action="{% url 'store:cart_update_quantity' item.product.id %}" method="post" class="cart-quantity-form" data-product-id="{{ item.product.id }}">
+                                    {% csrf_token %}
+                                    <div class="quantity-stepper">
+                                        <button type="button" class="quantity-btn" data-direction="decrease" aria-label="Зменшити кількість">−</button>
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" aria-label="Кількість" />
+                                        <button type="button" class="quantity-btn" data-direction="increase" aria-label="Збільшити кількість">+</button>
+                                    </div>
+                                    <div class="cart-item__subtotal">{{ item.total_price }} грн.</div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <aside class="cart-summary glass-card">
+                <div class="cart-summary__line">
+                    <span>Загальна сума</span>
+                    <span class="cart-summary__total">{{ cart.get_total_price }} грн.</span>
+                </div>
+                <div class="cart-summary__actions">
+                    <a href="{% url 'catalog' %}" class="btn-secondary">Продовжити покупки</a>
+                    <a href="{% url 'store:checkout' %}" class="btn-checkout">Перейти до оформлення</a>
+                </div>
+            </aside>
+        </div>
     {% endif %}
+</div>
 
-    <style>
-        .cart-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .cart-table th, .cart-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
-        }
-        .cart-table th {
-            background-color: #f4f4f4;
-        }
-        .cart-product-info {
-            display: flex;
-            align-items: center;
-            text-align: left;
-        }
-        .cart-product-info img {
-            margin-right: 15px;
-        }
-        .cart-quantity-form {
-            display: flex;
-            justify-content: center;
-        }
-        .cart-quantity-form input {
-            width: 50px;
-            text-align: center;
-        }
-        .cart-remove-link {
-            color: red;
-            text-decoration: none;
-            font-size: 1.2em;
-        }
-        .cart-summary {
-            text-align: right;
-        }
-        .cart-summary .price {
-            color: #000;
-            font-size: 1.5em;
-        }
-        .btn-secondary {
-            display: inline-block;
-            padding: 12px 20px;
-            background-color: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        .btn-checkout {
-            /* Використовуємо ту ж зелену кнопку, що й 'btn-buy' */
-            display: inline-block;
-            background-color: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-    </style>
+<script>
+    (function() {
+        const quantityForms = document.querySelectorAll('.cart-quantity-form');
+
+        quantityForms.forEach((form) => {
+            const input = form.querySelector('input[name="quantity"]');
+            const buttons = form.querySelectorAll('.quantity-btn');
+
+            buttons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const direction = btn.dataset.direction;
+                    const currentValue = parseInt(input.value, 10) || 1;
+                    const min = parseInt(input.getAttribute('min'), 10) || 1;
+                    const max = parseInt(input.getAttribute('max'), 10) || 99;
+
+                    let nextValue = currentValue;
+                    if (direction === 'increase' && currentValue < max) {
+                        nextValue = currentValue + 1;
+                    }
+                    if (direction === 'decrease' && currentValue > min) {
+                        nextValue = currentValue - 1;
+                    }
+
+                    input.value = nextValue;
+                    form.submit();
+                });
+            });
+
+            input.addEventListener('change', () => {
+                const min = parseInt(input.getAttribute('min'), 10) || 1;
+                const max = parseInt(input.getAttribute('max'), 10) || 99;
+                let value = parseInt(input.value, 10) || min;
+                value = Math.min(Math.max(value, min), max);
+                input.value = value;
+                form.submit();
+            });
+        });
+    })();
+</script>
 {% endblock %}

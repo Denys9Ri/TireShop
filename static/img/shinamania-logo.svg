@@ -1,28 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">ShinaMania.ua Logo</title>
-  <desc id="desc">Blue background with white italic ShinaMania text and a tire symbol</desc>
+  <title id="title">SHINAMANIA UA logo</title>
+  <desc id="desc">Blue square with italic SHINAMANIA text and a stylized tire on the right with small UA lettering.</desc>
   <defs>
-    <linearGradient id="tireShine" x1="0" x2="1" y1="0" y2="0">
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fbff" />
+      <stop offset="50%" stop-color="#d9e5f5" />
+      <stop offset="100%" stop-color="#f8fbff" />
+    </linearGradient>
+    <linearGradient id="tireShine" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
-      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.7" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="#004a99" rx="32" />
-  <g transform="translate(48 280) skewX(-10)">
-    <text x="0" y="0" fill="#ffffff" font-family="'Montserrat', 'Segoe UI', Arial, sans-serif" font-size="110" font-weight="800" font-style="italic" letter-spacing="1.5" dominant-baseline="middle">
+  <rect width="512" height="512" rx="36" fill="#0e5a9c" />
+  <g transform="translate(52 276) skewX(-12)">
+    <text x="0" y="0" fill="#ffffff" font-family="'Montserrat','Segoe UI',Arial,sans-serif" font-size="110" font-weight="800" font-style="italic" letter-spacing="1.6" dominant-baseline="middle">
       SHINAMANIA
     </text>
   </g>
-  <g transform="translate(360 260)">
-    <circle cx="64" cy="0" r="64" fill="none" stroke="#ffffff" stroke-width="14" />
-    <circle cx="64" cy="0" r="44" fill="url(#tireShine)" stroke="#004a99" stroke-width="8" />
-    <g stroke="#004a99" stroke-width="6" stroke-linecap="round" opacity="0.7">
-      <line x1="32" y1="-48" x2="96" y2="48" />
-      <line x1="24" y1="-24" x2="104" y2="24" />
-      <line x1="24" y1="24" x2="104" y2="-24" />
-      <line x1="32" y1="48" x2="96" y2="-48" />
+  <g transform="translate(356 244) rotate(-8)">
+    <circle cx="76" cy="16" r="74" fill="#ffffff" />
+    <circle cx="76" cy="16" r="56" fill="url(#rim)" stroke="#0e5a9c" stroke-width="8" />
+    <circle cx="76" cy="16" r="38" fill="#0e5a9c" opacity="0.9" />
+    <g stroke="#0e5a9c" stroke-width="8" stroke-linecap="round">
+      <path d="M18 -24 l92 80" />
+      <path d="M16 6 l96 50" />
+      <path d="M24 36 l92 22" />
+      <path d="M32 64 l84 -4" />
+      <path d="M30 -54 l88 110" />
     </g>
-    <text x="64" y="78" fill="#ffffff" font-family="'Montserrat', 'Segoe UI', Arial, sans-serif" font-size="44" font-weight="800" font-style="italic" text-anchor="middle">UA</text>
+    <g stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.65">
+      <path d="M28 -60 l94 118" />
+      <path d="M26 -26 l96 76" />
+      <path d="M32 6 l92 44" />
+      <path d="M36 34 l88 18" />
+      <path d="M42 60 l82 0" />
+    </g>
+    <text x="80" y="112" fill="#ffffff" font-family="'Montserrat','Segoe UI',Arial,sans-serif" font-size="46" font-weight="800" font-style="italic" text-anchor="middle">UA</text>
   </g>
 </svg>

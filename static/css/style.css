@@ -515,19 +515,20 @@ a { text-decoration: none; color: #004a99; }
 .product-card__cart-form .quantity-stepper {
     flex: 0 1 auto;
     justify-content: center;
-    padding: 4px 6px;
-    gap: 6px;
+    padding: 2px 4px;
+    gap: 4px;
+    border-radius: 14px;
 }
 
 .product-card__cart-form .quantity-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
 }
 
 .product-card__cart-form .quantity-stepper input[name="quantity"] {
-    width: 48px;
-    font-size: 15px;
+    width: 44px;
+    font-size: 14px;
 }
 
 .product-card__cart-form .add-to-cart-btn {

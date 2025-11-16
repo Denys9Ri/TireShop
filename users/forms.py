@@ -22,6 +22,12 @@ class UserUpdateForm(forms.ModelForm):
             'last_name': 'Прізвище',
             'email': 'Пошта',
         }
+        widgets = {
+            'username': forms.TextInput(attrs={'placeholder': 'shina_master'}),
+            'first_name': forms.TextInput(attrs={'placeholder': "Ім'я"}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Прізвище'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'you@example.com'}),
+        }
 
 
 class ProfileUpdateForm(forms.ModelForm):
@@ -33,4 +39,10 @@ class ProfileUpdateForm(forms.ModelForm):
             'phone_secondary': 'Додатковий телефон',
             'city': 'Місто / Село',
             'nova_poshta_branch': 'Відділення або поштомат НП',
+        }
+        widgets = {
+            'phone_primary': forms.TextInput(attrs={'placeholder': '+38 (0xx) xxx-xx-xx'}),
+            'phone_secondary': forms.TextInput(attrs={'placeholder': '+38 (0xx) xxx-xx-xx'}),
+            'city': forms.TextInput(attrs={'placeholder': 'Київ'}),
+            'nova_poshta_branch': forms.TextInput(attrs={'placeholder': 'Відділення №12'}),
         }

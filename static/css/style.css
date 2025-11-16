@@ -951,7 +951,7 @@ a { text-decoration: none; color: #004a99; }
 .form-group input[type="tel"],
 .form-group input[type="email"] {
     width: 100%;
-    max-width: 100%;
+    max-width: 360px;
     padding: 10px 11px;
     border: 1px solid #d4e1f5;
     border-radius: 12px;
@@ -968,7 +968,7 @@ a { text-decoration: none; color: #004a99; }
 .form-group--full input[type="text"],
 .form-group--full input[type="tel"],
 .form-group--full input[type="email"] {
-    max-width: 520px;
+    max-width: 420px;
 }
 
 .checkout-note {

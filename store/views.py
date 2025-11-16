@@ -192,10 +192,39 @@ import re
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 SEASON_MAPPING = {
-    'зима': 'winter',
-    'лето': 'summer',
-    'всесез': 'all-season',
+    'winter': (
+        'зим',
+        'зима',
+        'зимн',
+        'зимова',
+        'winter',
+    ),
+    'summer': (
+        'лет',
+        'лето',
+        'літ',
+        'літо',
+        'summer',
+    ),
+    'all-season': (
+        'всесез',
+        'всесезон',
+        'all-season',
+    ),
 }
+
+
+def normalize_season(season_raw: str) -> str:
+    season_str = (season_raw or '').strip().lower()
+
+    for normalized, prefixes in SEASON_MAPPING.items():
+        for prefix in prefixes:
+            if season_str.startswith(prefix):
+                return normalized
+
+    return 'all-season'
+
+
 def parse_int_from_string(s):
     cleaned_s = re.sub(r'[^\d]', '', str(s))
     if cleaned_s:
@@ -284,7 +313,7 @@ def sync_google_sheet_view(request):
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
             
-            season_val = SEASON_MAPPING.get(season_str, 'all-season')
+            season_val = normalize_season(season_str)
             
             try:
                 price_val = float(str(price_str).replace(' ', '').replace(',', '.'))

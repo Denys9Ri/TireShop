@@ -93,9 +93,14 @@ def cart_detail_view(request):
 
 @require_POST
 def cart_add_view(request, product_id):
-    cart = Cart(request) 
-    product = get_object_or_404(Product, id=product_id) 
-    cart.add(product=product, quantity=1, update_quantity=False)
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+    except (TypeError, ValueError):
+        quantity = 1
+    quantity = max(1, quantity)
+    cart.add(product=product, quantity=quantity, update_quantity=False)
     return redirect(request.META.get('HTTP_REFERER', 'catalog'))
 
 @require_POST

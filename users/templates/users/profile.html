@@ -9,6 +9,14 @@
         <p class="cart-page__subtitle">Вітаємо, <strong>{% firstof request.user.first_name request.user.username %}</strong>! Тут зберігається історія ваших покупок.</p>
     </div>
 
+    {% if messages %}
+        <div class="alert-stack">
+            {% for message in messages %}
+                <div class="alert{% if message.tags %} alert--{{ message.tags }}{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="profile-grid">
         <div class="glass-card profile-card">
             <h3>Контактні дані</h3>
@@ -19,9 +27,28 @@
                     <span>{% firstof request.user.username "—" %}</span>
                 </div>
                 <div class="profile-info__line">
+                    <span class="profile-info__label">Ім'я та прізвище:</span>
+                    <span>{% firstof request.user.first_name "Не вказано" %} {% firstof request.user.last_name "" %}</span>
+                </div>
+                <div class="profile-info__line">
                     <span class="profile-info__label">Email:</span>
                     <span>{% firstof request.user.email "Не вказано" %}</span>
                 </div>
+                <div class="profile-info__line">
+                    <span class="profile-info__label">Телефон:</span>
+                    <span>{% firstof profile.phone_primary "Не вказано" %}</span>
+                </div>
+                <div class="profile-info__line">
+                    <span class="profile-info__label">Додатковий телефон:</span>
+                    <span>{% firstof profile.phone_secondary "Не вказано" %}</span>
+                </div>
+                <div class="profile-info__line">
+                    <span class="profile-info__label">Місто / відділення НП:</span>
+                    <span>{% if profile.city %}{{ profile.city }}{% else %}Не вказано{% endif %}{% if profile.nova_poshta_branch %}, {{ profile.nova_poshta_branch }}{% endif %}</span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <a class="btn-secondary" href="{% url 'users:profile_edit' %}">Змінити дані</a>
             </div>
         </div>
 

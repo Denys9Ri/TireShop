@@ -20,7 +20,7 @@
                                onchange="toggleShippingFields()">
                         <span class="shipping-option__body">
                             <span class="shipping-option__title">Самовивіз (м. Київ)</span>
-                            <span class="shipping-option__hint">Заберіть шини у зручний час зі складу</span>
+                            <span class="shipping-option__hint">Заберіть шини зі складу</span>
                         </span>
                     </label>
                     <label class="shipping-option">
@@ -40,27 +40,27 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="full_name">Прізвище та ім'я</label>
-                        <input type="text" id="full_name" name="full_name" placeholder="Іван Іваненко">
+                        <input type="text" id="full_name" name="full_name" placeholder="Іван Іваненко" value="{{ prefill.full_name|default_if_none:'' }}">
                     </div>
 
                     <div class="form-group">
                         <label for="phone">Номер телефону</label>
-                        <input type="tel" id="phone" name="phone" placeholder="+38 (0xx) xxx-xx-xx">
+                        <input type="tel" id="phone" name="phone" placeholder="+38 (0xx) xxx-xx-xx" value="{{ prefill.phone|default_if_none:'' }}">
                     </div>
 
                     <div class="form-group">
                         <label for="email">Email (для ТТН)</label>
-                        <input type="email" id="email" name="email" placeholder="you@example.com">
+                        <input type="email" id="email" name="email" placeholder="you@example.com" value="{{ prefill.email|default_if_none:'' }}">
                     </div>
 
                     <div class="form-group">
                         <label for="city">Місто / Село</label>
-                        <input type="text" id="city" name="city" placeholder="Київ">
+                        <input type="text" id="city" name="city" placeholder="Київ" value="{{ prefill.city|default_if_none:'' }}">
                     </div>
 
                     <div class="form-group form-group--full">
                         <label for="nova_poshta_branch">Номер відділення або поштомат</label>
-                        <input type="text" id="nova_poshta_branch" name="nova_poshta_branch" placeholder="Відділення №12">
+                        <input type="text" id="nova_poshta_branch" name="nova_poshta_branch" placeholder="Відділення №12" value="{{ prefill.nova_poshta_branch|default_if_none:'' }}">
                     </div>
                 </div>
             </fieldset>
@@ -68,16 +68,16 @@
             <fieldset id="pickupFields" class="checkout-section">
                 <legend>2. Інформація про самовивіз</legend>
                 <p class="checkout-note">Наш менеджер уточнить час видачі на складі в Києві. Вкажіть, як вам зручно отримати замовлення.</p>
-                <p class="pickup-address">Адреса — Київ, вул. Володимира Качали, 3. Забрати завтра.</p>
+                <p class="pickup-address">Адреса — Київ, вул. Володимира Качали, буд. 3. <span class="pickup-availability">Забрати завтра.</span></p>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="pickup_name">Ім'я та прізвище</label>
-                        <input type="text" id="pickup_name" name="pickup_name" placeholder="Іван Іваненко">
+                        <input type="text" id="pickup_name" name="pickup_name" placeholder="Іван Іваненко" value="{{ prefill.pickup_name|default_if_none:'' }}">
                     </div>
                     <div class="form-group">
                         <label for="pickup_phone">Номер телефону</label>
-                        <input type="tel" id="pickup_phone" name="pickup_phone" placeholder="+38 (0xx) xxx-xx-xx">
+                        <input type="tel" id="pickup_phone" name="pickup_phone" placeholder="+38 (0xx) xxx-xx-xx" value="{{ prefill.pickup_phone|default_if_none:'' }}">
                     </div>
                 </div>
             </fieldset>

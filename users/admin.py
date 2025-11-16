@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import UserProfile
 
-# Реєструємо моделі тут (якби вони у нас були)
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone_primary', 'city', 'nova_poshta_branch')

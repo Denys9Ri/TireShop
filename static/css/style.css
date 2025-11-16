@@ -362,6 +362,12 @@ a { text-decoration: none; color: #004a99; }
     color: #333;
     margin-bottom: 15px;
 }
+
+.product-stock {
+    margin: 8px 0 12px;
+    font-weight: 600;
+    color: #0f6ddf;
+}
 .add-to-cart-btn {
     display: block;
     background-color: #004a99;
@@ -488,15 +494,8 @@ a { text-decoration: none; color: #004a99; }
     color: #004a99;
 }
 
-.quantity-field input,
-.product-card__cart-form input {
-    width: 110px;
-    padding: 10px 12px;
-    border: 1px solid #d4e1f5;
-    border-radius: 10px;
-    background: #f7fbff;
-    font-weight: 600;
-    color: #004a99;
+.quantity-field .quantity-stepper {
+    align-self: flex-start;
 }
 
 .product-card__cart-form {
@@ -734,7 +733,7 @@ a { text-decoration: none; color: #004a99; }
     box-shadow: 0 4px 10px rgba(0, 74, 153, 0.15);
 }
 
-.cart-quantity-form input[name="quantity"] {
+.quantity-stepper input[name="quantity"] {
     width: 64px;
     text-align: center;
     border: none;

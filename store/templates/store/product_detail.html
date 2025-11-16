@@ -27,7 +27,11 @@
                 {% csrf_token %}
                 <label class="quantity-field">
                     <span>Кількість</span>
-                    <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                    <div class="quantity-stepper">
+                        <button type="button" class="quantity-btn" data-direction="decrease" aria-label="Зменшити кількість">−</button>
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" aria-label="Кількість">
+                        <button type="button" class="quantity-btn" data-direction="increase" aria-label="Збільшити кількість">+</button>
+                    </div>
                 </label>
                 <button type="submit" class="add-to-cart-btn">Додати в кошик</button>
             </form>
@@ -101,6 +105,40 @@
                 closeModal();
             }
         });
+
+        // Степер кількості для сторінки товару
+        const quantityStepper = document.querySelector('.product-detail__cart-form .quantity-stepper');
+        if (quantityStepper) {
+            const input = quantityStepper.querySelector('input[name="quantity"]');
+            const buttons = quantityStepper.querySelectorAll('.quantity-btn');
+
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const direction = button.dataset.direction;
+                    const min = parseInt(input.getAttribute('min'), 10) || 1;
+                    const max = parseInt(input.getAttribute('max'), 10) || 99;
+                    const current = parseInt(input.value, 10) || min;
+                    let next = current;
+
+                    if (direction === 'increase' && current < max) {
+                        next = current + 1;
+                    }
+                    if (direction === 'decrease' && current > min) {
+                        next = current - 1;
+                    }
+
+                    input.value = next;
+                });
+            });
+
+            input.addEventListener('change', () => {
+                const min = parseInt(input.getAttribute('min'), 10) || 1;
+                const max = parseInt(input.getAttribute('max'), 10) || 99;
+                let value = parseInt(input.value, 10) || min;
+                value = Math.min(Math.max(value, min), max);
+                input.value = value;
+            });
+        }
     })();
 </script>
 {% endblock %}

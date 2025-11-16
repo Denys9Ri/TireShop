@@ -52,9 +52,9 @@ def catalog_view(request):
     # --- 5. ОНОВЛЕНИЙ КОНТЕКСТ ---
     context = {
         # Ми передаємо 'page_obj' замість 'products'
-        'page_obj': page_obj, 
+        'page_obj': page_obj,
         # Передаємо рядок з фільтрами для кнопок пагінації
-        'filter_query_string': filter_query_string, 
+        'filter_query_string': filter_query_string,
         
         # Вся ваша стара логіка для фільтрів залишається
         'all_brands': brands,
@@ -69,6 +69,11 @@ def catalog_view(request):
         'selected_season': selected_season,
     }
     return render(request, 'store/catalog.html', context)
+
+
+def product_detail_view(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    return render(request, 'store/product_detail.html', {'product': product})
 
 # -----------------------------------------------------------------
 # ↓↓↓↓ ВЕСЬ ІНШИЙ КОД (КОШИК, ОФОРМЛЕННЯ, АКВЕДУК) БЕЗ ЗМІН ↓↓↓↓

@@ -4,6 +4,7 @@ from . import views
 app_name = 'store'
 
 urlpatterns = [
+    path('product/<int:product_id>/', views.product_detail_view, name='product_detail'),
     # (Всі ваші старі URL-адреси кошика...)
     path('cart/', views.cart_detail_view, name='cart_detail'),
     path('add/<int:product_id>/', views.cart_add_view, name='cart_add'),

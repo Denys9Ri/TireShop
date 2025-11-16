@@ -26,17 +26,17 @@ class ProductImageInline(admin.TabularInline):
 # Ми повернули 'admin.ModelAdmin'
 class ProductAdmin(admin.ModelAdmin):
     # Ми ВИДАЛИЛИ 'resource_class'
-    list_display = ('name', 'brand', 'stock_quantity', 'cost_price', 'price', 'photo_url') 
-    list_filter = ('seasonality', 'brand') 
+    list_display = ('name', 'brand', 'stock_quantity', 'cost_price', 'price', 'photo_url')
+    list_filter = ('seasonality', 'brand')
     search_fields = ('name', 'brand__name')
     list_editable = ('stock_quantity', 'cost_price', 'photo_url')
-    list_per_page = 50 
-    
+    list_per_page = 50
+
     fieldsets = (
-        (None, {'fields': ('name', 'brand', 'seasonality')}),
+        (None, {'fields': ('name', 'brand', 'seasonality', 'description')}),
         ('Розмір', {'fields': ('width', 'profile', 'diameter')}),
         ('Ціна та Наявність', {'fields': ('cost_price', 'stock_quantity')}),
-        ('Головне Фото (Обкладинка)', { 
+        ('Головне Фото (Обкладинка)', {
             'fields': ('photo_url',)
         }),
     )

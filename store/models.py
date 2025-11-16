@@ -16,6 +16,7 @@ class Product(models.Model):
     profile = models.IntegerField(default=0, verbose_name="Профіль (напр. 55)")
     diameter = models.IntegerField(default=0, verbose_name="Діаметр (напр. 16)")
     seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season')
+    description = models.TextField(blank=True, verbose_name="Опис")
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ціна з прайсу (закупка)")
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     

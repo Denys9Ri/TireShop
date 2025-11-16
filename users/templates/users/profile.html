@@ -3,50 +3,61 @@
 {% block title %}ShinaMania.ua - Мій Кабінет{% endblock %}
 
 {% block content %}
-    <h2>Мій Кабінет</h2>
-    
-    <p>Вітаємо, <strong>{% firstof request.user.first_name request.user.username %}</strong>!</p>
-    <p>Тут ви можете відслідковувати історію та статус ваших замовлень.</p>
+<div class="profile-page">
+    <div class="cart-page__header">
+        <h2>Мій Кабінет</h2>
+        <p class="cart-page__subtitle">Вітаємо, <strong>{% firstof request.user.first_name request.user.username %}</strong>! Тут зберігається історія ваших покупок.</p>
+    </div>
 
-    <hr>
+    <div class="profile-grid">
+        <div class="glass-card profile-card">
+            <h3>Контактні дані</h3>
+            <p class="profile-text">Використовуйте цю інформацію при оформленні замовлення, щоб ми швидше підтвердили доставку.</p>
+            <div class="profile-info">
+                <div class="profile-info__line">
+                    <span class="profile-info__label">Логін:</span>
+                    <span>{% firstof request.user.username "—" %}</span>
+                </div>
+                <div class="profile-info__line">
+                    <span class="profile-info__label">Email:</span>
+                    <span>{% firstof request.user.email "Не вказано" %}</span>
+                </div>
+            </div>
+        </div>
 
-    <h3>Ваші замовлення</h3>
-
-    {% if orders %}
-        <table class="cart-table"> <thead>
-                <tr>
-                    <th>Номер замовлення</th>
-                    <th>Дата</th>
-                    <th>Статус</th>
-                    <th>Тип доставки</th>
-                    <th>Склад замовлення</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                    <tr>
-                        <td><strong># {{ order.id }}</strong></td>
-                        <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                        
-                        <td>{{ order.get_status_display }}</td>
-                        <td>{{ order.get_shipping_type_display }}</td>
-                        
-                        <td>
-                            <ul style="text-align: left; padding-left: 15px; margin: 0;">
+        <div class="glass-card profile-card">
+            <h3>Ваші замовлення</h3>
+            {% if orders %}
+                <div class="order-list">
+                    {% for order in orders %}
+                        <div class="order-card">
+                            <div class="order-card__top">
+                                <div>
+                                    <div class="order-card__id">Замовлення #{{ order.id }}</div>
+                                    <div class="order-card__date">{{ order.created_at|date:"d.m.Y H:i" }}</div>
+                                </div>
+                                <span class="order-card__status">{{ order.get_status_display }}</span>
+                            </div>
+                            <div class="order-card__line">
+                                <span class="order-card__label">Тип доставки:</span>
+                                <span>{{ order.get_shipping_type_display }}</span>
+                            </div>
+                            <div class="order-card__items">
                                 {% for item in order.items.all %}
-                                    <li>
-                                        {{ item.product.brand.name }} {{ item.product.name }}
-                                        ({{ item.quantity }} шт.)
-                                    </li>
+                                    <div class="order-card__item">
+                                        <span class="order-card__item-name">{{ item.product.brand.name }} {{ item.product.name }}</span>
+                                        <span class="order-card__item-qty">{{ item.quantity }} шт.</span>
+                                    </div>
                                 {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Ви ще не зробили жодного замовлення.</p>
-    {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="profile-text">Ви ще не зробили жодного замовлення.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-    {% endblock %}
+{% endblock %}

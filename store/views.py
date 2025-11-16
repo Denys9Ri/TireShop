@@ -126,11 +126,12 @@ def checkout_view(request):
         return redirect('catalog')
     if request.method == 'POST':
         shipping_type = request.POST.get('shipping_type')
-        full_name = request.POST.get('full_name')
-        phone = request.POST.get('phone')
-        email = request.POST.get('email')
-        city = request.POST.get('city')
-        nova_poshta_branch = request.POST.get('nova_poshta_branch')
+        is_pickup = shipping_type == 'pickup'
+        full_name = request.POST.get('pickup_name') if is_pickup else request.POST.get('full_name')
+        phone = request.POST.get('pickup_phone') if is_pickup else request.POST.get('phone')
+        email = None if is_pickup else request.POST.get('email')
+        city = request.POST.get('pickup_address') if is_pickup else request.POST.get('city')
+        nova_poshta_branch = None if is_pickup else request.POST.get('nova_poshta_branch')
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,
             shipping_type=shipping_type,

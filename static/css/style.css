@@ -926,8 +926,9 @@ a { text-decoration: none; color: #004a99; }
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
     gap: 12px;
+    justify-content: flex-start;
 }
 
 .form-group {
@@ -940,6 +941,7 @@ a { text-decoration: none; color: #004a99; }
 .form-group input[type="tel"],
 .form-group input[type="email"] {
     width: 100%;
+    max-width: 340px;
     padding: 11px 12px;
     border: 1px solid #d4e1f5;
     border-radius: 12px;
@@ -953,6 +955,12 @@ a { text-decoration: none; color: #004a99; }
     grid-column: 1 / -1;
 }
 
+.form-group--full input[type="text"],
+.form-group--full input[type="tel"],
+.form-group--full input[type="email"] {
+    max-width: 520px;
+}
+
 .checkout-note {
     color: #5f738c;
     margin: 6px 0 0;
@@ -962,16 +970,31 @@ a { text-decoration: none; color: #004a99; }
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    justify-content: flex-start;
 }
 
 .checkout-actions .btn-secondary {
-    flex: 1 1 200px;
+    flex: 0 0 auto;
+    min-width: 180px;
+    max-width: 230px;
     justify-content: center;
 }
 
 .checkout-actions .btn-checkout {
-    flex: 1 1 220px;
+    flex: 0 0 auto;
+    min-width: 190px;
+    max-width: 240px;
     justify-content: center;
+}
+
+.pickup-address {
+    margin: 6px 0 10px;
+    padding: 10px 12px;
+    border: 1px dashed #c8d7f2;
+    border-radius: 10px;
+    background: rgba(230, 238, 255, 0.55);
+    color: #0f1b2d;
+    font-weight: 600;
 }
 
 .checkout-summary {

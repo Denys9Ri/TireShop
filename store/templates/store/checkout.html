@@ -68,6 +68,7 @@
             <fieldset id="pickupFields" class="checkout-section">
                 <legend>2. Інформація про самовивіз</legend>
                 <p class="checkout-note">Наш менеджер уточнить час видачі на складі в Києві. Вкажіть, як вам зручно отримати замовлення.</p>
+                <p class="pickup-address">Адреса — Київ, вул. Володимира Качали, 3. Забрати завтра.</p>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -77,10 +78,6 @@
                     <div class="form-group">
                         <label for="pickup_phone">Номер телефону</label>
                         <input type="tel" id="pickup_phone" name="pickup_phone" placeholder="+38 (0xx) xxx-xx-xx">
-                    </div>
-                    <div class="form-group form-group--full">
-                        <label for="pickup_address">Адреса самовивозу</label>
-                        <input type="text" id="pickup_address" name="pickup_address" placeholder="Наприклад: Київ, вул. Прикладна, 12">
                     </div>
                 </div>
             </fieldset>
@@ -114,8 +111,7 @@
         const npInputs = npFields.querySelectorAll('input');
         const pickupInputs = [
             document.getElementById('pickup_name'),
-            document.getElementById('pickup_phone'),
-            document.getElementById('pickup_address')
+            document.getElementById('pickup_phone')
         ];
 
         if (isNovaPoshta) {

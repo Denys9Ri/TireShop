@@ -14,42 +14,42 @@
         <div class="form-grid profile-form-grid">
             <div class="form-group">
                 <label for="{{ user_form.username.id_for_label }}">{{ user_form.username.label }}</label>
-                {{ user_form.username.as_widget(attrs={'placeholder': 'shina_master'}) }}
+                {{ user_form.username }}
                 {% if user_form.username.errors %}<div class="field-error">{{ user_form.username.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ user_form.first_name.id_for_label }}">{{ user_form.first_name.label }}</label>
-                {{ user_form.first_name.as_widget(attrs={'placeholder': "Ім'я"}) }}
+                {{ user_form.first_name }}
                 {% if user_form.first_name.errors %}<div class="field-error">{{ user_form.first_name.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ user_form.last_name.id_for_label }}">{{ user_form.last_name.label }}</label>
-                {{ user_form.last_name.as_widget(attrs={'placeholder': 'Прізвище'}) }}
+                {{ user_form.last_name }}
                 {% if user_form.last_name.errors %}<div class="field-error">{{ user_form.last_name.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ user_form.email.id_for_label }}">{{ user_form.email.label }}</label>
-                {{ user_form.email.as_widget(attrs={'placeholder': 'you@example.com'}) }}
+                {{ user_form.email }}
                 {% if user_form.email.errors %}<div class="field-error">{{ user_form.email.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ profile_form.phone_primary.id_for_label }}">{{ profile_form.phone_primary.label }}</label>
-                {{ profile_form.phone_primary.as_widget(attrs={'placeholder': '+38 (0xx) xxx-xx-xx'}) }}
+                {{ profile_form.phone_primary }}
                 {% if profile_form.phone_primary.errors %}<div class="field-error">{{ profile_form.phone_primary.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ profile_form.phone_secondary.id_for_label }}">{{ profile_form.phone_secondary.label }}</label>
-                {{ profile_form.phone_secondary.as_widget(attrs={'placeholder': '+38 (0xx) xxx-xx-xx'}) }}
+                {{ profile_form.phone_secondary }}
                 {% if profile_form.phone_secondary.errors %}<div class="field-error">{{ profile_form.phone_secondary.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ profile_form.city.id_for_label }}">{{ profile_form.city.label }}</label>
-                {{ profile_form.city.as_widget(attrs={'placeholder': 'Київ'}) }}
+                {{ profile_form.city }}
                 {% if profile_form.city.errors %}<div class="field-error">{{ profile_form.city.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ profile_form.nova_poshta_branch.id_for_label }}">{{ profile_form.nova_poshta_branch.label }}</label>
-                {{ profile_form.nova_poshta_branch.as_widget(attrs={'placeholder': 'Відділення №12'}) }}
+                {{ profile_form.nova_poshta_branch }}
                 {% if profile_form.nova_poshta_branch.errors %}<div class="field-error">{{ profile_form.nova_poshta_branch.errors|striptags }}</div>{% endif %}
             </div>
         </div>

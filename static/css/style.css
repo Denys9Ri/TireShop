@@ -513,7 +513,7 @@ a { text-decoration: none; color: #004a99; }
 }
 
 .product-card__cart-form .quantity-stepper {
-    flex: 1 1 140px;
+    flex: 0 0 auto;
     justify-content: center;
 }
 

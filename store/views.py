@@ -4,6 +4,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
+from users.models import UserProfile
 
 # --- (Код для кошика і т.д. - без змін) ---
 
@@ -124,6 +125,21 @@ def checkout_view(request):
     cart = Cart(request)
     if len(cart) == 0:
         return redirect('catalog')
+
+    profile = None
+    prefill = {}
+    if request.user.is_authenticated:
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        prefill = {
+            'full_name': f"{request.user.last_name} {request.user.first_name}".strip(),
+            'email': request.user.email,
+            'phone': profile.phone_primary,
+            'city': profile.city,
+            'nova_poshta_branch': profile.nova_poshta_branch,
+            'pickup_name': f"{request.user.first_name} {request.user.last_name}".strip(),
+            'pickup_phone': profile.phone_primary,
+        }
+
     if request.method == 'POST':
         shipping_type = request.POST.get('shipping_type')
         is_pickup = shipping_type == 'pickup'
@@ -147,13 +163,24 @@ def checkout_view(request):
                 order=order,
                 product=item['product'],
                 quantity=item['quantity'],
-                price_at_purchase=item['price'] 
+                price_at_purchase=item['price']
             )
         cart.clear()
+
+        if request.user.is_authenticated and profile:
+            if phone:
+                profile.phone_primary = phone
+            if not is_pickup:
+                if city:
+                    profile.city = city
+                if nova_poshta_branch:
+                    profile.nova_poshta_branch = nova_poshta_branch
+            profile.save()
+
         if request.user.is_authenticated:
             return redirect('users:profile')
-        return redirect('catalog') 
-    return render(request, 'store/checkout.html', {})
+        return redirect('catalog')
+    return render(request, 'store/checkout.html', {'prefill': prefill})
 
 # --- (Імпорти для "Акведука") ---
 import gspread

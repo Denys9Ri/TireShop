@@ -21,7 +21,7 @@
         <div class="product-detail__info">
             <h1>{{ product.brand.name|default_if_none:'' }} {{ product.name }}</h1>
             <p class="product-detail__specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})</p>
-            <p class="product-detail__price">{{ product.cost_price|floatformat:2 }} грн</p>
+            <p class="product-detail__price">{{ product.price|floatformat:2 }} грн</p>
             <div class="product-detail__stock">Наявність: {{ product.stock_quantity }} шт.</div>
             <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-detail__cart-form">
                 {% csrf_token %}

@@ -23,8 +23,15 @@ class ProductResource(resources.ModelResource):
     
     season_mapping = {
         'зима': 'winter',
+        'зим': 'winter',
+        'winter': 'winter',
+        'літо': 'summer',
         'лето': 'summer',
+        'літ': 'summer',
+        'summer': 'summer',
         'всесез': 'all-season',
+        'всесезон': 'all-season',
+        'all-season': 'all-season',
     }
 
     class Meta:
@@ -55,17 +62,24 @@ class ProductResource(resources.ModelResource):
         
     # "Магія" для обробки стовпців
     def before_import_row(self, row, **kwargs):
-        size_str = row.get('Типоразмер', '')
+        size_str = ''
+        for size_key in ('Типоразмер', 'Типорозмір', 'Типоразмер '):
+            size_str = row.get(size_key, '')
+            if size_str:
+                row['Типоразмер'] = size_str
+                break
         if size_str:
             match = SIZE_REGEX.search(size_str)
             if match:
                 row['width'] = match.group(1)
                 row['profile'] = match.group(2)
                 row['diameter'] = match.group(3)
-        
+
         season_str = row.get('Сезон', '').strip().lower()
-        if season_str in self.season_mapping:
-            row['Сезон'] = self.season_mapping[season_str]
+        for key, value in self.season_mapping.items():
+            if season_str.startswith(key):
+                row['Сезон'] = value
+                break
             
         quantity_str = row.get('Кол-во', '0').strip()
         if quantity_str == '>12':

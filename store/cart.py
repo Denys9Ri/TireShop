@@ -21,7 +21,7 @@ class Cart:
         product_id = str(product.id)
         
         if product_id not in self.cart:
-            # Використовуємо .price, яке вже має вашу націнку 30%
+            # Використовуємо .price, яке вже має вашу націнку 25%
             self.cart[product_id] = {'quantity': 0,
                                      'price': str(product.price)}
 

@@ -130,7 +130,7 @@ def checkout_view(request):
         full_name = request.POST.get('pickup_name') if is_pickup else request.POST.get('full_name')
         phone = request.POST.get('pickup_phone') if is_pickup else request.POST.get('phone')
         email = None if is_pickup else request.POST.get('email')
-        city = request.POST.get('pickup_address') if is_pickup else request.POST.get('city')
+        city = "Київ, вул. Володимира Качали, 3" if is_pickup else request.POST.get('city')
         nova_poshta_branch = None if is_pickup else request.POST.get('nova_poshta_branch')
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,

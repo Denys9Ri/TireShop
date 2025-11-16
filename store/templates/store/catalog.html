@@ -78,7 +78,9 @@
                         <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
                     {% endif %}
                     <h3 class="product-name">
-                        {{ product.brand.name }} {{ product.name }}
+                        <a href="{% url 'store:product_detail' product.id %}">
+                            {{ product.brand.name }} {{ product.name }}
+                        </a>
                     </h3>
                     <p class="product-specs">
                         {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})

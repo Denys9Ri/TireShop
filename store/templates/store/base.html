@@ -27,7 +27,6 @@
                  alt="Кошик" class="cart-icon">
             Кошик ({{ cart|length }})
         </a>
-        <span class="cart-total navbar-item">{{ cart.get_total_price }} грн.</span>
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}" class="navbar-item">Мій Кабінет</a>
             <form action="{% url 'logout' %}" method="post" class="navbar-item">
@@ -54,7 +53,7 @@
     <a href="{% url 'store:cart_detail' %}">
         <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
              alt="Кошик" class="cart-icon">
-        Кошик ({{ cart|length }}) – {{ cart.get_total_price }} грн.
+        Кошик ({{ cart|length }})
     </a>
     {% if user.is_authenticated %}
         <a href="{% url 'users:profile' %}">Мій Кабінет</a>
@@ -93,6 +92,7 @@
             </div>
         </div>
     </div>
+    <p class="footer-legal">Copyright ©2025 ShinaMania. All rights reserved</p>
 </footer>
 
 <!-- Скрипт для гамбургер-меню -->

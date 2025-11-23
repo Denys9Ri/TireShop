@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Завантаження Прайсу (Excel)</h1>
+<p>Ціни автоматично збільшаться на 30%.</p>
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Завантажити" style="background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+</form>
+{% endblock %}

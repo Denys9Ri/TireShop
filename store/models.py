@@ -35,6 +35,24 @@ class Product(models.Model):
             return f"{self.brand.name} {self.name} ({self.width}/{self.profile} R{self.diameter})"
         return f"{self.name} ({self.width}/{self.profile} R{self.diameter})"
 
+# ... (початок файлу без змін)
+
+class Product(models.Model):
+    # ... (старі поля: brand, name, width, profile, diameter, seasonality...)
+    
+    # --- НОВІ ХАРАКТЕРИСТИКИ ---
+    country = models.CharField(max_length=50, blank=True, null=True, verbose_name="Країна виробник")
+    year = models.IntegerField(default=2024, verbose_name="Рік виробництва")
+    load_index = models.CharField(max_length=50, blank=True, null=True, verbose_name="Індекс навантаження")
+    speed_index = models.CharField(max_length=50, blank=True, null=True, verbose_name="Індекс швидкості")
+    stud_type = models.CharField(max_length=50, default="Не шип", verbose_name="Шипи")
+    vehicle_type = models.CharField(max_length=50, default="Легковий", verbose_name="Тип авто")
+    
+    # ... (решта полів: description, cost_price, stock_quantity...)
+
+    # ... (методи price, __str__ залишаються без змін)
+
+
 # --- (Код для Order та OrderItem залишається без змін) ---
 class Order(models.Model):
     # ... (весь ваш код Order)

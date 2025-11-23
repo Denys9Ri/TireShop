@@ -6,20 +6,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
 
-# --- ВИПРАВЛЕНИЙ БЛОК ---
-# Перевіряємо, чи ми на сервері Render
+# --- ЛОГІКА DEBUG ---
+# Якщо ми на Render:
 if 'RENDER' in os.environ:
-    # Ми на сервері: вимикаємо DEBUG, щоб економити пам'ять
-    DEBUG = False
-    # Дозволяємо хост, який видав Render
+    # ТИМЧАСОВО ставимо True, щоб ви побачили текст помилки 500.
+    # Коли все полагодимо - повернемо на False для економії пам'яті.
+    DEBUG = True 
     ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME', '*')]
 else:
-    # Ми вдома на комп'ютері: вмикаємо DEBUG для зручності
     DEBUG = True
     ALLOWED_HOSTS = ['*']
-# --- КІНЕЦЬ БЛОКУ ---
 
-# --- ДОДАТКИ (Apps) ---
+# --- ДОДАТКИ ---
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -89,8 +87,9 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# --- ОЦЕЙ РЯДОК ВИПРАВЛЕНО ---
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# --- ЗМІНЕНО НА БІЛЬШ СТАБІЛЬНУ ВЕРСІЮ ---
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -100,6 +99,4 @@ CART_SESSION_ID = 'cart'
 LOGIN_REDIRECT_URL = 'users:profile' 
 LOGOUT_REDIRECT_URL = 'catalog'
 
-# --- НОВЕ: Шлях до нашого "Секретного Файлу" ---
-# Render автоматично помістить файл за цією адресою
 GSPREAD_CREDENTIALS_PATH = '/etc/secrets/credentials.json'

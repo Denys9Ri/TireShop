@@ -1,0 +1,10 @@
+{% extends 'admin/change_list.html' %}
+{% block object-tools %}
+    <div>
+        <a href="import-excel/" class="addlink" style="background: #28a745; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">
+            📥 Завантажити Excel Прайс
+        </a>
+    </div>
+    <br>
+    {{ block.super }}
+{% endblock %}

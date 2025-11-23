@@ -5,8 +5,10 @@
 <div class="container py-5">
     <div class="row">
         <div class="col-md-6 mb-4">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
+            {% if product.photo %}
+                <img src="{{ product.photo.url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
+            {% elif product.photo_url %}
+                <img src="{{ product.photo_url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
             {% else %}
                 <img src="{% static 'images/no-image.png' %}" class="img-fluid rounded shadow-sm" alt="No image">
             {% endif %}

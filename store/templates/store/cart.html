@@ -19,7 +19,9 @@
                 {% for item in cart %}
                     <div class="cart-item-card glass-card">
                         <div class="cart-item__image">
-                            {% if item.product.photo_url %}
+                            {% if item.product.photo %}
+                                <img src="{{ item.product.photo.url }}" alt="{{ item.product.name }}">
+                            {% elif item.product.photo_url %}
                                 <img src="{{ item.product.photo_url }}" alt="{{ item.product.name }}">
                             {% endif %}
                         </div>

@@ -1,26 +1,24 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-# --- ДОДАНО НОВІ ІМПОРТИ ДЛЯ СОРТУВАННЯ ---
 from django.db.models import Case, When, Value, IntegerField
+# Імпорт транзакцій для економії пам'яті
+from django.db import transaction 
 
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
 from users.models import UserProfile
 
-# --- 1. ОНОВЛЕНА ФУНКЦІЯ КАТАЛОГУ ---
+# --- 1. КАТАЛОГ (З правильним сортуванням) ---
 def catalog_view(request):
-    # Отримуємо дані для фільтрів (сайдбар)
+    # Оптимізація: values_list легший за objects.all()
     brands = Brand.objects.all().order_by('name')
     widths = Product.objects.values_list('width', flat=True).distinct().order_by('width')
     profiles = Product.objects.values_list('profile', flat=True).distinct().order_by('profile')
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
-    # --- МАГІЯ СОРТУВАННЯ ---
-    # Ми створюємо віртуальне поле 'status_order'.
-    # Якщо кількість > 0, то status_order = 0 (Нагору).
-    # Якщо кількість = 0, то status_order = 1 (Вниз).
+    # Створюємо віртуальний порядок: Є в наявності (0) -> Немає (1)
     products = Product.objects.annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)), 
@@ -29,7 +27,7 @@ def catalog_view(request):
         )
     )
 
-    # --- ФІЛЬТРАЦІЯ ---
+    # Фільтрація
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -47,18 +45,15 @@ def catalog_view(request):
     if selected_season:
         products = products.filter(seasonality=selected_season)
     
-    # --- ФІНАЛЬНЕ СОРТУВАННЯ ---
-    # 1. Спочатку за наявністю (status_order)
-    # 2. Потім за брендом (A-Z)
-    # 3. Потім за назвою моделі
+    # Сортування: Спочатку наявність, потім Бренд, потім Назва
     products = products.order_by('status_order', 'brand__name', 'name')
     
-    # --- ПАГІНАЦІЯ ---
+    # Пагінація (12 товарів на сторінку)
     paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number) 
 
-    # --- ЗБЕРЕЖЕННЯ ФІЛЬТРІВ ПРИ ПАГІНАЦІЇ ---
+    # Збереження фільтрів при переході по сторінках
     query_params = request.GET.copy()
     if 'page' in query_params:
         del query_params['page']
@@ -94,7 +89,7 @@ def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
 
 # -----------------------------------------------------------------
-# КОШИК І ОФОРМЛЕННЯ (БЕЗ ЗМІН)
+# КОШИК (Без змін)
 # -----------------------------------------------------------------
 
 def cart_detail_view(request):
@@ -192,7 +187,7 @@ def checkout_view(request):
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
 # -----------------------------------------------------------------
-# АКВЕДУК (GOOGLE SHEETS)
+# АКВЕДУК (GOOGLE SHEETS) - ОПТИМІЗОВАНИЙ
 # -----------------------------------------------------------------
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -225,7 +220,8 @@ def parse_int_from_string(s):
             return 0
     return 0
 
-@staff_member_required 
+@staff_member_required
+@transaction.atomic # <--- ЦЕ "МАГІЯ", ЯКА ЕКОНОМИТЬ ПАМ'ЯТЬ
 def sync_google_sheet_view(request):
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
         
@@ -242,6 +238,7 @@ def sync_google_sheet_view(request):
             messages.error(request, 'Помилка: Не можу знайти аркуш "Sheet1".')
             return redirect('admin:store_product_changelist')
         
+        # Отримуємо дані
         all_data = sheet.get_all_values()
         if not all_data or len(all_data) < 2: 
             messages.error(request, "Помилка: Таблиця порожня.")
@@ -266,6 +263,10 @@ def sync_google_sheet_view(request):
         created_count = 0
         updated_count = 0
 
+        # Попередньо завантажуємо всі бренди в пам'ять, щоб не смикати базу кожен раз
+        # Це дуже прискорює роботу
+        existing_brands = {b.name: b for b in Brand.objects.all()}
+
         for row in data_rows:
             if not any(row): continue
             
@@ -275,7 +276,12 @@ def sync_google_sheet_view(request):
             
             if not brand_name or not model_name or not size_str: continue 
 
-            brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
+            # Оптимізований пошук бренду
+            if brand_name in existing_brands:
+                brand_obj = existing_brands[brand_name]
+            else:
+                brand_obj = Brand.objects.create(name=brand_name)
+                existing_brands[brand_name] = brand_obj
             
             width_val, profile_val, diameter_val = 0, 0, 0
             match = SIZE_REGEX.search(size_str)
@@ -296,7 +302,6 @@ def sync_google_sheet_view(request):
             quantity_str = str(row[col_map['quantity']]).strip()
             quantity_val = parse_int_from_string(quantity_str)
 
-            # Щоб не було дублікатів через розміри
             unique_model_name = model_name
             if not match and size_str:
                  unique_model_name = f"{model_name} [{size_str}]"

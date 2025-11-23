@@ -3,19 +3,26 @@ from django.urls import path
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django import forms
-from django.utils.text import slugify
 import pandas as pd
-from .models import Product
+import re # Бібліотека для пошуку цифр у тексті
+from .models import Product, Brand
 
-# Форма для вибору файлу
+# Форма для файлу
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField()
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    # Що показувати в списку товарів (можете змінити під свої поля)
-    list_display = ['name', 'price', 'get_original_price']
+    # Показуємо корисні колонки в адмінці
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'cost_price', 'price_display']
+    list_filter = ['brand', 'seasonality', 'diameter']
+    search_fields = ['name', 'width']
     change_list_template = "store/admin_changelist.html"
+
+    # Додаткова колонка, щоб бачити ціну продажу (обчислену)
+    def price_display(self, obj):
+        return obj.price
+    price_display.short_description = "Ціна продажу (+30%)"
 
     def get_urls(self):
         urls = super().get_urls()
@@ -28,64 +35,86 @@ class ProductAdmin(admin.ModelAdmin):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
             try:
-                # Читаємо Excel
                 df = pd.read_excel(excel_file)
-                
-                # Замінюємо пусті значення (NaN) на порожні рядки, щоб не було помилок
-                df = df.fillna('')
+                df = df.fillna('') # Забираємо пусті значення
                 
                 count = 0
                 for index, row in df.iterrows():
-                    # 1. Зчитуємо дані з ваших колонок
-                    brand = str(row['Бренд']).strip()
-                    model = str(row['Модель']).strip()
-                    size = str(row['Типоразмер']).strip()
-                    season = str(row['Сезон']).strip()
-                    price_raw = row['Цена']
-                    # quantity = row['Кол-во'] # Якщо у вас є поле для кількості в моделі, розкоментуйте
+                    # --- 1. ОБРОБКА БРЕНДУ ---
+                    brand_name = str(row['Бренд']).strip()
+                    # get_or_create повертає (об'єкт, чи_створено)
+                    brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
 
-                    # 2. Формуємо красиву назву товару
-                    # Наприклад: "Michelin Alpin 5 205/55 R16 Зима"
-                    full_name = f"{brand} {model} {size} {season}"
-
-                    # 3. Обробка ціни та НАЦІНКА 30%
-                    try:
-                        base_price = float(price_raw)
-                    except (ValueError, TypeError):
-                        base_price = 0.0
+                    # --- 2. ОБРОБКА РОЗМІРУ (напр. "205/55 R16") ---
+                    size_str = str(row['Типоразмер']).strip()
                     
-                    final_price = base_price * 1.30  # Націнка 30%
+                    # Шукаємо 3 групи цифр. R16 або Z16 або просто 16
+                    # Цей вираз шукає: (число) / (число) (будь-яка літера) (число)
+                    match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_str)
+                    
+                    if match:
+                        width = int(match.group(1))   # 205
+                        profile = int(match.group(2)) # 55
+                        diameter = int(match.group(3))# 16
+                    else:
+                        # Якщо розмір кривий, ставимо нулі, щоб не ламалось
+                        width = 0
+                        profile = 0
+                        diameter = 0
 
-                    # 4. Створення slug (URL-адреси) з назви
-                    # Якщо у вас в моделі slug генерується автоматично, цей рядок можна прибрати
-                    product_slug = slugify(full_name)
+                    # --- 3. ОБРОБКА СЕЗОНУ ---
+                    season_raw = str(row['Сезон']).lower()
+                    season_key = 'all-season' # За замовчуванням
+                    
+                    if 'зим' in season_raw or 'winter' in season_raw:
+                        season_key = 'winter'
+                    elif 'літ' in season_raw or 'лет' in season_raw or 'summer' in season_raw:
+                        season_key = 'summer'
 
-                    # 5. Запис в базу
-                    # update_or_create оновить ціну, якщо товар з такою назвою вже є
+                    # --- 4. ЦІНА (З Excel беремо ціну закупки) ---
+                    try:
+                        raw_cost = float(row['Цена'])
+                    except:
+                        raw_cost = 0.0
+
+                    # --- 5. КІЛЬКІСТЬ ---
+                    try:
+                        qty = int(row['Кол-во'])
+                    except:
+                        qty = 0
+
+                    # --- 6. ЗАПИС У БАЗУ ---
+                    # Ми шукаємо товар за Моделлю, Брендом і Розміром.
+                    # Якщо такий є - оновлюємо ціну і кількість. Якщо немає - створюємо.
+                    
+                    model_name = str(row['Модель']).strip()
+
                     Product.objects.update_or_create(
-                        name=full_name,
+                        name=model_name,
+                        brand=brand_obj,
+                        width=width,
+                        profile=profile,
+                        diameter=diameter,
                         defaults={
-                            'price': final_price,
-                            'description': f"Шини {brand} {model}. Сезон: {season}. Розмір: {size}.",
-                            # 'slug': product_slug, # Розкоментуйте, якщо slug обов'язковий і не створюється сам
-                            # 'image': '', # Фото поки немає
+                            'seasonality': season_key,
+                            'cost_price': raw_cost, # Зберігаємо ціну закупки
+                            'stock_quantity': qty,
+                            'description': f"Шини {brand_name} {model_name}. {size_str}. Сезон: {season_raw}."
                         }
                     )
                     count += 1
                 
-                messages.success(request, f'Успішно опрацьовано {count} товарів з націнкою 30%!')
+                messages.success(request, f'Успішно оброблено {count} товарів!')
 
             except Exception as e:
-                messages.error(request, f'Помилка імпорту: {e}')
-
+                messages.error(request, f'Помилка: {e}')
+                
             return redirect("..")
             
         form = ExcelImportForm()
         return render(request, "store/admin_import.html", {"form": form})
 
-    # Додаткова колонка в адмінці, щоб бачити ціну в прайсі (приблизно)
-    def get_original_price(self, obj):
-        if obj.price:
-            return round(obj.price / 1.30, 2)
-        return 0
-    get_original_price.short_description = 'Ціна в закупці (орієнтовно)'
+# Не забудьте зареєструвати модель Brand, щоб додавати бренди вручну, якщо треба
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ['name']

@@ -3,21 +3,40 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="row">
+    <div class="row product-detail">
         <div class="col-md-6 mb-4">
-            
-            {% if product.photo_url %}
-                <img src="{{ product.photo_url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}" 
-                     onerror="this.onerror=null;this.src='https://placehold.co/600x400?text=Error+Loading+URL';">
-            
-            {% elif product.photo %}
-                <img src="{{ product.photo.url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}"
-                     onerror="this.onerror=null;this.src='https://placehold.co/600x400?text=File+Deleted+by+Server';">
-            
-            {% else %}
-                <img src="https://placehold.co/600x400?text=No+Photo" class="img-fluid rounded shadow-sm" alt="No image">
-            {% endif %}
-            
+            <div class="product-media">
+                {% if product.photo_url %}
+                    {% with image_source=product.photo_url %}
+                        <img src="{{ image_source }}" class="product-image" alt="{{ product.name }}"
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x400?text=Error+Loading+URL';">
+                        <button class="zoom-trigger" type="button" data-zoom-source="{{ image_source }}">
+                            Збільшити фото
+                        </button>
+                    {% endwith %}
+
+                {% elif product.photo %}
+                    {% with image_source=product.photo.url %}
+                        <img src="{{ image_source }}" class="product-image" alt="{{ product.name }}"
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x400?text=File+Deleted+by+Server';">
+                        <button class="zoom-trigger" type="button" data-zoom-source="{{ image_source }}">
+                            Збільшити фото
+                        </button>
+                    {% endwith %}
+
+                {% else %}
+                    <img src="https://placehold.co/600x400?text=No+Photo" class="product-image" alt="No image">
+                {% endif %}
+            </div>
+
+            <div class="image-lightbox" id="product-image-lightbox" aria-hidden="true">
+                <div class="image-lightbox__backdrop"></div>
+                <div class="image-lightbox__dialog" role="dialog" aria-modal="true" aria-label="Детальне фото товару">
+                    <button type="button" class="image-lightbox__close" aria-label="Закрити">×</button>
+                    <img src="" alt="{{ product.name }}" class="image-lightbox__image">
+                </div>
+            </div>
+
         </div>
 
         <div class="col-md-6">
@@ -145,4 +164,53 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const lightbox = document.getElementById('product-image-lightbox');
+        const lightboxImage = lightbox?.querySelector('.image-lightbox__image');
+        const closeButton = lightbox?.querySelector('.image-lightbox__close');
+        const triggers = document.querySelectorAll('[data-zoom-source]');
+
+        if (!lightbox || !lightboxImage) {
+            return;
+        }
+
+        const openLightbox = (source) => {
+            lightboxImage.src = source;
+            lightbox.classList.add('is-visible');
+            lightbox.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('no-scroll');
+        };
+
+        const closeLightbox = () => {
+            lightbox.classList.remove('is-visible');
+            lightbox.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('no-scroll');
+        };
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                const source = trigger.getAttribute('data-zoom-source');
+                if (source) {
+                    openLightbox(source);
+                }
+            });
+        });
+
+        closeButton?.addEventListener('click', closeLightbox);
+
+        lightbox.addEventListener('click', (event) => {
+            if (event.target === lightbox || event.target.classList.contains('image-lightbox__backdrop')) {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && lightbox.classList.contains('is-visible')) {
+                closeLightbox();
+            }
+        });
+    });
+</script>
 {% endblock %}

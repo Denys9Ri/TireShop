@@ -5,11 +5,19 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*'] 
-if not DEBUG and os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
-    ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME')]
+# --- ВИПРАВЛЕНИЙ БЛОК ---
+# Перевіряємо, чи ми на сервері Render
+if 'RENDER' in os.environ:
+    # Ми на сервері: вимикаємо DEBUG, щоб економити пам'ять
+    DEBUG = False
+    # Дозволяємо хост, який видав Render
+    ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME', '*')]
+else:
+    # Ми вдома на комп'ютері: вмикаємо DEBUG для зручності
+    DEBUG = True
+    ALLOWED_HOSTS = ['*']
+# --- КІНЕЦЬ БЛОКУ ---
 
 # --- ДОДАТКИ (Apps) ---
 INSTALLED_APPS = [

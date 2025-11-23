@@ -5,6 +5,7 @@ from django.contrib import messages
 from django import forms
 import openpyxl
 import re
+from django.utils.html import format_html
 from .models import Product, Brand, Order, OrderItem
 
 # --- ЗАМОВЛЕННЯ ---
@@ -31,14 +32,42 @@ class ExcelImportForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'country', 'year', 'price_display', 'stock_quantity']
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'country', 'year', 'price_display', 'stock_quantity', 'photo_url']
     list_filter = ['brand', 'seasonality', 'diameter', 'stud_type'] # Додали фільтр по шипам
     search_fields = ['name', 'width']
     change_list_template = "store/admin_changelist.html"
+    readonly_fields = ["photo_preview"]
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'name', 'brand', 'width', 'profile', 'diameter', 'seasonality',
+                'description'
+            )
+        }),
+        ('Ціни та наявність', {
+            'fields': ('cost_price', 'stock_quantity')
+        }),
+        ('Головне фото', {
+            'fields': ('photo', 'photo_url', 'photo_preview'),
+            'description': 'Додайте пряме посилання на фото, щоб воно одразу відобразилось на сайті.'
+        }),
+        ('Характеристики', {
+            'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')
+        }),
+    )
 
     def price_display(self, obj):
         return obj.price
     price_display.short_description = "Ціна (+30%)"
+
+    def photo_preview(self, obj):
+        if obj.photo_url:
+            return format_html('<img src="{}" style="max-height: 150px; max-width: 150px; border-radius: 6px;"/>', obj.photo_url)
+        if obj.photo:
+            return format_html('<img src="{}" style="max-height: 150px; max-width: 150px; border-radius: 6px;"/>', obj.photo.url)
+        return "—"
+    photo_preview.short_description = "Перегляд фото"
 
     def get_urls(self):
         urls = super().get_urls()
@@ -114,10 +143,14 @@ class ProductAdmin(admin.ModelAdmin):
                     
                     # row[10] - Шипи
                     stud_val = str(row[10]).strip() if len(row) > 10 and row[10] else "Не шип"
-                    
+
                     # row[11] - Тип авто
                     vehicle_val = str(row[11]).strip() if len(row) > 11 and row[11] else "Легковий"
 
+                    # row[12] - Фото (пряма URL-силка)
+                    photo_url_val = None
+                    if len(row) > 12 and row[12]:
+                        photo_url_val = str(row[12]).strip()
 
                     # Формуємо красивий опис (Description)
                     full_desc = (f"Шини {brand_name} {model_name}. Розмір: {size_str}. "
@@ -144,7 +177,12 @@ class ProductAdmin(admin.ModelAdmin):
                             'vehicle_type': vehicle_val,
                         }
                     )
-                    
+
+                    # Зберігаємо фото лише якщо для товару ще немає основного зображення
+                    if photo_url_val and not obj.photo_url:
+                        obj.photo_url = photo_url_val
+                        obj.save(update_fields=["photo_url"])
+
                     if created: created_count += 1
                     else: updated_count += 1
                 

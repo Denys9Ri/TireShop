@@ -1,24 +1,35 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-# <--- 1. ДОДАНО ІМПОРТ ДЛЯ ПАГІНАЦІЇ ---
 from django.core.paginator import Paginator
+# --- ДОДАНО НОВІ ІМПОРТИ ДЛЯ СОРТУВАННЯ ---
+from django.db.models import Case, When, Value, IntegerField
+
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
 from users.models import UserProfile
 
-# --- (Код для кошика і т.д. - без змін) ---
-
-# <--- 2. ОНОВЛЕНО ЛИШЕ ЦЮ ФУНКЦІЮ 'catalog_view' ---
+# --- 1. ОНОВЛЕНА ФУНКЦІЯ КАТАЛОГУ ---
 def catalog_view(request):
-    # --- Ваша існуюча логіка отримання фільтрів (без змін) ---
+    # Отримуємо дані для фільтрів (сайдбар)
     brands = Brand.objects.all().order_by('name')
     widths = Product.objects.values_list('width', flat=True).distinct().order_by('width')
     profiles = Product.objects.values_list('profile', flat=True).distinct().order_by('profile')
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
-    # --- Ваша існуюча логіка фільтрації (без змін) ---
-    products = Product.objects.all().order_by('brand__name', 'name')
+    # --- МАГІЯ СОРТУВАННЯ ---
+    # Ми створюємо віртуальне поле 'status_order'.
+    # Якщо кількість > 0, то status_order = 0 (Нагору).
+    # Якщо кількість = 0, то status_order = 1 (Вниз).
+    products = Product.objects.annotate(
+        status_order=Case(
+            When(stock_quantity__gt=0, then=Value(0)), 
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+    )
+
+    # --- ФІЛЬТРАЦІЯ ---
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -36,28 +47,26 @@ def catalog_view(request):
     if selected_season:
         products = products.filter(seasonality=selected_season)
     
-    # --- 3. НОВА ЛОГІКА ПАГІНАЦІЇ ---
-    # Вона застосовується до вже відфільтрованого списку `products`
-    paginator = Paginator(products, 12) # Наприклад, по 12 товарів на сторінку
+    # --- ФІНАЛЬНЕ СОРТУВАННЯ ---
+    # 1. Спочатку за наявністю (status_order)
+    # 2. Потім за брендом (A-Z)
+    # 3. Потім за назвою моделі
+    products = products.order_by('status_order', 'brand__name', 'name')
+    
+    # --- ПАГІНАЦІЯ ---
+    paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
-    # .get_page() автоматично обробляє помилки (неправильний номер, порожня сторінка)
     page_obj = paginator.get_page(page_number) 
 
-    # --- 4. НОВА ЛОГІКА ЗБЕРЕЖЕННЯ ФІЛЬТРІВ ---
-    # Це потрібно, щоб кнопки "Наступна сторінка" пам'ятали про фільтри
+    # --- ЗБЕРЕЖЕННЯ ФІЛЬТРІВ ПРИ ПАГІНАЦІЇ ---
     query_params = request.GET.copy()
     if 'page' in query_params:
         del query_params['page']
-    filter_query_string = query_params.urlencode() # -> "brand=2&width=205"
+    filter_query_string = query_params.urlencode()
 
-    # --- 5. ОНОВЛЕНИЙ КОНТЕКСТ ---
     context = {
-        # Ми передаємо 'page_obj' замість 'products'
         'page_obj': page_obj,
-        # Передаємо рядок з фільтрами для кнопок пагінації
         'filter_query_string': filter_query_string,
-        
-        # Вся ваша стара логіка для фільтрів залишається
         'all_brands': brands,
         'all_widths': widths,
         'all_profiles': profiles,
@@ -85,7 +94,7 @@ def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
 
 # -----------------------------------------------------------------
-# ↓↓↓↓ ВЕСЬ ІНШИЙ КОД (КОШИК, ОФОРМЛЕННЯ, АКВЕДУК) БЕЗ ЗМІН ↓↓↓↓
+# КОШИК І ОФОРМЛЕННЯ (БЕЗ ЗМІН)
 # -----------------------------------------------------------------
 
 def cart_detail_view(request):
@@ -182,7 +191,9 @@ def checkout_view(request):
         return redirect('catalog')
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
-# --- (Імпорти для "Акведука") ---
+# -----------------------------------------------------------------
+# АКВЕДУК (GOOGLE SHEETS)
+# -----------------------------------------------------------------
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
@@ -192,38 +203,18 @@ import re
 
 SIZE_REGEX = re.compile(r'(\d+)/(\d+)\s*R(\d+)')
 SEASON_MAPPING = {
-    'winter': (
-        'зим',
-        'зима',
-        'зимн',
-        'зимова',
-        'winter',
-    ),
-    'summer': (
-        'лет',
-        'лето',
-        'літ',
-        'літо',
-        'summer',
-    ),
-    'all-season': (
-        'всесез',
-        'всесезон',
-        'all-season',
-    ),
+    'winter': ('зим', 'зима', 'зимн', 'зимова', 'winter'),
+    'summer': ('лет', 'лето', 'літ', 'літо', 'summer'),
+    'all-season': ('всесез', 'всесезон', 'all-season'),
 }
-
 
 def normalize_season(season_raw: str) -> str:
     season_str = (season_raw or '').strip().lower()
-
     for normalized, prefixes in SEASON_MAPPING.items():
         for prefix in prefixes:
             if season_str.startswith(prefix):
                 return normalized
-
     return 'all-season'
-
 
 def parse_int_from_string(s):
     cleaned_s = re.sub(r'[^\d]', '', str(s))
@@ -234,44 +225,31 @@ def parse_int_from_string(s):
             return 0
     return 0
 
-# ---
-# --- "АКВЕДУК" (v8 - "Sheet1")
-# ---
 @staff_member_required 
 def sync_google_sheet_view(request):
-    
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
         
     try:
-        # 1. Автентифікація
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_name(
             settings.GSPREAD_CREDENTIALS_PATH, scope
         )
         client = gspread.authorize(creds)
 
-        # 2. --- ОСЬ ГОЛОВНЕ ВИРІШЕННЯ ---
-        # Ми шукаємо вкладку з назвою "Sheet1"
         try:
             sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
-            messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку) з назвою "Sheet1". Перевірте, що назва правильна і без пробілів.')
+            messages.error(request, 'Помилка: Не можу знайти аркуш "Sheet1".')
             return redirect('admin:store_product_changelist')
         
-        # 3. "Висмоктуємо" ВСІ дані
         all_data = sheet.get_all_values()
-        
         if not all_data or len(all_data) < 2: 
-            messages.error(request, "Помилка: Таблиця порожня або містить лише заголовки.")
+            messages.error(request, "Помилка: Таблиця порожня.")
             return redirect('admin:store_product_changelist')
 
-        # 4. "Очищуємо" заголовки (Рядок 1)
         header_row = [h.strip() for h in all_data[0]]
-        
-        # 5. Беремо решту рядків (з Рядка 2)
         data_rows = all_data[1:]
 
-        # 6. Створюємо "карту"
         try:
             col_map = {
                 'brand': header_row.index('Бренд'),
@@ -282,28 +260,21 @@ def sync_google_sheet_view(request):
                 'quantity': header_row.index('Кол-во'),
             }
         except ValueError as e:
-            messages.error(request, f"Помилка: Не знайдено стовпець у заголовках! {e}. Перевірте Рядок 1.")
+            messages.error(request, f"Помилка колонок: {e}")
             return redirect('admin:store_product_changelist')
 
         created_count = 0
         updated_count = 0
 
-        # 7. "Пробігаємо" по кожному рядку
         for row in data_rows:
-            if not any(row):
-                continue
-                
+            if not any(row): continue
+            
             brand_name = row[col_map['brand']].strip()
             model_name = row[col_map['model']].strip()
             size_str = row[col_map['size']].strip()
-            season_str = row[col_map['season']].strip().lower()
-            price_str = row[col_map['price']]
-            quantity_str = str(row[col_map['quantity']]).strip()
             
-            if not brand_name or not model_name or not size_str:
-                continue 
+            if not brand_name or not model_name or not size_str: continue 
 
-            # 8. "Чистимо" дані
             brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
             
             width_val, profile_val, diameter_val = 0, 0, 0
@@ -313,19 +284,26 @@ def sync_google_sheet_view(request):
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
             
+            season_str = row[col_map['season']].strip().lower()
             season_val = normalize_season(season_str)
             
+            price_str = row[col_map['price']]
             try:
                 price_val = float(str(price_str).replace(' ', '').replace(',', '.'))
             except ValueError:
                 price_val = 0
                 
+            quantity_str = str(row[col_map['quantity']]).strip()
             quantity_val = parse_int_from_string(quantity_str)
 
-            # 9. Знайти або Створити
+            # Щоб не було дублікатів через розміри
+            unique_model_name = model_name
+            if not match and size_str:
+                 unique_model_name = f"{model_name} [{size_str}]"
+
             product, created = Product.objects.update_or_create(
                 brand=brand_obj,
-                name=model_name,
+                name=unique_model_name,
                 width=width_val,
                 profile=profile_val,
                 diameter=diameter_val,
@@ -335,19 +313,12 @@ def sync_google_sheet_view(request):
                     'stock_quantity': quantity_val
                 }
             )
-            
-            if created:
-                created_count += 1
-            else:
-                updated_count += 1
+            if created: created_count += 1
+            else: updated_count += 1
         
-        # 10. Звіт
-        messages.success(request, f"Синхронізація завершена! Створено: {created_count}. Оновлено: {updated_count}.")
+        messages.success(request, f"Синхронізація: +{created_count} нових, ↻{updated_count} оновлено.")
         
-    except gspread.exceptions.WorksheetNotFound:
-        messages.error(request, 'Помилка: Не можу знайти аркуш (вкладку). Перевірте, що вона називається "Sheet1".')
     except Exception as e:
-        messages.error(request, f"Помилка синхронізації: {e}")
+        messages.error(request, f"Помилка: {e}")
 
-    # 11. Повертаємо адміна назад
     return redirect('admin:store_product_changelist')

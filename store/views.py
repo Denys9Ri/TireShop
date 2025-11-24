@@ -2,23 +2,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField
-# Імпорт транзакцій для економії пам'яті
 from django.db import transaction 
 
 from .models import Product, Order, OrderItem, Brand
 from .cart import Cart
 from users.models import UserProfile
 
-# --- 1. КАТАЛОГ (З правильним сортуванням) ---
+# --- 1. КАТАЛОГ ---
 def catalog_view(request):
-    # Оптимізація: values_list легший за objects.all()
     brands = Brand.objects.all().order_by('name')
     widths = Product.objects.values_list('width', flat=True).distinct().order_by('width')
     profiles = Product.objects.values_list('profile', flat=True).distinct().order_by('profile')
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
-    # Створюємо віртуальний порядок: Є в наявності (0) -> Немає (1)
+    # Сортування: Є в наявності (0) -> Немає (1)
     products = Product.objects.annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)), 
@@ -27,36 +25,26 @@ def catalog_view(request):
         )
     )
 
-    # Фільтрація
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
     selected_diameter = request.GET.get('diameter')
     selected_season = request.GET.get('season')
     
-    if selected_brand:
-        products = products.filter(brand__id=selected_brand)
-    if selected_width:
-        products = products.filter(width=selected_width)
-    if selected_profile:
-        products = products.filter(profile=selected_profile)
-    if selected_diameter:
-        products = products.filter(diameter=selected_diameter)
-    if selected_season:
-        products = products.filter(seasonality=selected_season)
+    if selected_brand: products = products.filter(brand__id=selected_brand)
+    if selected_width: products = products.filter(width=selected_width)
+    if selected_profile: products = products.filter(profile=selected_profile)
+    if selected_diameter: products = products.filter(diameter=selected_diameter)
+    if selected_season: products = products.filter(seasonality=selected_season)
     
-    # Сортування: Спочатку наявність, потім Бренд, потім Назва
     products = products.order_by('status_order', 'brand__name', 'name')
     
-    # Пагінація (12 товарів на сторінку)
     paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number) 
 
-    # Збереження фільтрів при переході по сторінках
     query_params = request.GET.copy()
-    if 'page' in query_params:
-        del query_params['page']
+    if 'page' in query_params: del query_params['page']
     filter_query_string = query_params.urlencode()
 
     context = {
@@ -75,23 +63,17 @@ def catalog_view(request):
     }
     return render(request, 'store/catalog.html', context)
 
-
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})
 
-
 def contacts_view(request):
     return render(request, 'store/contacts.html')
-
 
 def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
 
-# -----------------------------------------------------------------
-# КОШИК (Без змін)
-# -----------------------------------------------------------------
-
+# --- КОШИК ---
 def cart_detail_view(request):
     cart = Cart(request)
     return render(request, 'store/cart.html', {'cart': cart})
@@ -100,12 +82,9 @@ def cart_detail_view(request):
 def cart_add_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    try:
-        quantity = int(request.POST.get('quantity', 1))
-    except (TypeError, ValueError):
-        quantity = 1
-    quantity = max(1, quantity)
-    cart.add(product=product, quantity=quantity, update_quantity=False)
+    try: quantity = int(request.POST.get('quantity', 1))
+    except: quantity = 1
+    cart.add(product=product, quantity=max(1, quantity), update_quantity=False)
     return redirect(request.META.get('HTTP_REFERER', 'catalog'))
 
 @require_POST
@@ -113,10 +92,8 @@ def cart_update_quantity_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     quantity = int(request.POST.get('quantity', 1))
-    if quantity > 0:
-        cart.add(product=product, quantity=quantity, update_quantity=True)
-    else:
-        cart.remove(product)
+    if quantity > 0: cart.add(product=product, quantity=quantity, update_quantity=True)
+    else: cart.remove(product)
     return redirect('store:cart_detail') 
 
 def cart_remove_view(request, product_id):
@@ -127,8 +104,7 @@ def cart_remove_view(request, product_id):
 
 def checkout_view(request):
     cart = Cart(request)
-    if len(cart) == 0:
-        return redirect('catalog')
+    if len(cart) == 0: return redirect('catalog')
 
     profile = None
     prefill = {}
@@ -164,30 +140,24 @@ def checkout_view(request):
         )
         for item in cart:
             OrderItem.objects.create(
-                order=order,
-                product=item['product'],
-                quantity=item['quantity'],
-                price_at_purchase=item['price']
+                order=order, product=item['product'],
+                quantity=item['quantity'], price_at_purchase=item['price']
             )
         cart.clear()
 
         if request.user.is_authenticated and profile:
-            if phone:
-                profile.phone_primary = phone
+            if phone: profile.phone_primary = phone
             if not is_pickup:
-                if city:
-                    profile.city = city
-                if nova_poshta_branch:
-                    profile.nova_poshta_branch = nova_poshta_branch
+                if city: profile.city = city
+                if nova_poshta_branch: profile.nova_poshta_branch = nova_poshta_branch
             profile.save()
 
-        if request.user.is_authenticated:
-            return redirect('users:profile')
+        if request.user.is_authenticated: return redirect('users:profile')
         return redirect('catalog')
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
 # -----------------------------------------------------------------
-# АКВЕДУК (GOOGLE SHEETS) - ОПТИМІЗОВАНИЙ
+# АКВЕДУК (GOOGLE SHEETS) - ОНОВЛЕНО
 # -----------------------------------------------------------------
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -214,14 +184,12 @@ def normalize_season(season_raw: str) -> str:
 def parse_int_from_string(s):
     cleaned_s = re.sub(r'[^\d]', '', str(s))
     if cleaned_s:
-        try:
-            return int(cleaned_s)
-        except ValueError:
-            return 0
+        try: return int(cleaned_s)
+        except ValueError: return 0
     return 0
 
 @staff_member_required
-@transaction.atomic # <--- ЦЕ "МАГІЯ", ЯКА ЕКОНОМИТЬ ПАМ'ЯТЬ
+@transaction.atomic
 def sync_google_sheet_view(request):
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
         
@@ -238,7 +206,6 @@ def sync_google_sheet_view(request):
             messages.error(request, 'Помилка: Не можу знайти аркуш "Sheet1".')
             return redirect('admin:store_product_changelist')
         
-        # Отримуємо дані
         all_data = sheet.get_all_values()
         if not all_data or len(all_data) < 2: 
             messages.error(request, "Помилка: Таблиця порожня.")
@@ -263,8 +230,6 @@ def sync_google_sheet_view(request):
         created_count = 0
         updated_count = 0
 
-        # Попередньо завантажуємо всі бренди в пам'ять, щоб не смикати базу кожен раз
-        # Це дуже прискорює роботу
         existing_brands = {b.name: b for b in Brand.objects.all()}
 
         for row in data_rows:
@@ -276,7 +241,6 @@ def sync_google_sheet_view(request):
             
             if not brand_name or not model_name or not size_str: continue 
 
-            # Оптимізований пошук бренду
             if brand_name in existing_brands:
                 brand_obj = existing_brands[brand_name]
             else:
@@ -293,14 +257,24 @@ def sync_google_sheet_view(request):
             season_str = row[col_map['season']].strip().lower()
             season_val = normalize_season(season_str)
             
+            # --- ОНОВЛЕНА, ПОТУЖНА ЛОГІКА ЦІНИ (ЯК В АДМІНЦІ) ---
             price_str = row[col_map['price']]
+            val_str = str(price_str).strip()
+            # 1. Чистимо від зайвого (лишаємо цифри, крапки, коми)
+            val_str = re.sub(r'[^\d,.]', '', val_str)
+            # 2. Кому на крапку
+            val_str = val_str.replace(',', '.')
+            
+            # 3. Фікс для 1.200.00 -> 1200.00
+            if val_str.count('.') > 1:
+                parts = val_str.split('.')
+                val_str = "".join(parts[:-1]) + "." + parts[-1]
+            
             try:
-                # Видаляємо все, крім цифр, крапок та ком: інколи в гугл-таблиці є "грн" чи інші символи
-                normalized_price = re.sub(r'[^0-9,\.-]', '', str(price_str))
-                normalized_price = normalized_price.replace(' ', '').replace('\xa0', '')
-                price_val = float(normalized_price.replace(',', '.')) if normalized_price else 0
+                price_val = float(val_str)
             except ValueError:
                 price_val = 0
+            # ----------------------------------------------------
                 
             quantity_str = str(row[col_map['quantity']]).strip()
             quantity_val = parse_int_from_string(quantity_str)

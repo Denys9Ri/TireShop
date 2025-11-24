@@ -27,7 +27,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        /* За замовчуванням (мобільний) */
         padding: 10px;
         height: 280px; 
     }
@@ -54,7 +53,7 @@
         padding: 5px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         border: 1px solid #cce0ff;
-        flex-shrink: 0; /* Щоб не стискався */
+        flex-shrink: 0;
     }
 
     .qty-btn {
@@ -118,7 +117,7 @@
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
 
-    /* ОПИС (Description) */
+    /* ОПИС */
     .desc-box {
         margin-top: 20px;
         font-size: 0.95rem;
@@ -126,20 +125,20 @@
         line-height: 1.6;
     }
 
-    /* --- АДАПТАЦІЯ ПІД КОМП'ЮТЕР (Великі екрани) --- */
+    /* --- АДАПТАЦІЯ ПІД КОМП'ЮТЕР --- */
     @media (min-width: 992px) {
         .glass-product-card {
-            padding: 3rem; /* Більше відступів */
+            padding: 3rem;
         }
         .product-image-container {
-            height: 450px; /* Велике фото */
+            height: 450px;
             padding: 30px;
         }
-        h1 { font-size: 2.2rem; } /* Більший заголовок */
-        .price-text { font-size: 2.5rem; } /* Більша ціна */
+        h1 { font-size: 2.2rem; }
+        .price-text { font-size: 2.5rem; }
         
         .action-row {
-            max-width: 500px; /* Обмеження ширини кнопок, щоб не були на весь екран */
+            max-width: 500px;
         }
     }
 </style>
@@ -147,7 +146,9 @@
 <div class="container py-4">
     
     <div class="glass-product-card">
-        <div class="row g-4 g-lg-5"> <div class="col-lg-6">
+        <div class="row g-4 g-lg-5">
+            
+            <div class="col-lg-6">
                 <div class="product-image-container" onclick="openLightbox()">
                     {% if product.photo_url %}
                         <img src="{{ product.photo_url }}" class="product-image" id="mainImage" 
@@ -180,7 +181,7 @@
                 </p>
 
                 <h2 class="text-primary fw-bold mb-4 price-text" style="font-size: 2rem;">
-                    {{ product.price|floatform:0 }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
+                    {{ product.price }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
                 </h2>
 
                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-5">
@@ -281,7 +282,7 @@
         const input = document.getElementById('qtyInput');
         let newVal = parseInt(input.value) + change;
         if (newVal < 1) newVal = 1;
-        if (newVal > 20) newVal = 20; // Обмеження
+        if (newVal > 20) newVal = 20; 
         input.value = newVal;
     }
     function openLightbox() {

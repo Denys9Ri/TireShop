@@ -2,71 +2,81 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <h1 class="mb-4 text-center">Доставка і оплата</h1>
+<div class="container py-4">
+    <h1 class="mb-4 fw-bold text-primary">Контакти</h1>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-truck"></i> Способи доставки</h4>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <h5><i class="bi bi-box-seam"></i> Самовивіз (Київ)</h5>
-                            <p class="mb-1">Ви можете забрати шини з нашого складу за попередньою домовленістю.</p>
-                            <p class="fw-bold text-success mb-0">Безкоштовно</p>
-                            <hr>
-                            <p class="mb-1"><strong>Адреса складу:</strong></p>
-                            <p class="fs-5">вулиця Володимира Качали, 3, Київ, 02000</p>
-                            
-                            <div class="ratio ratio-16x9 mt-3 border rounded">
-                                <iframe 
-                                    src="https://maps.google.com/maps?q=вулиця+Володимира+Качали,+3,+Київ&t=&z=16&ie=UTF8&iwloc=&output=embed" 
-                                    style="border:0;" 
-                                    allowfullscreen="" 
-                                    loading="lazy">
-                                </iframe>
-                            </div>
-                        </li>
-                        <li class="list-group-item">
-                            <h5><i class="bi bi-send"></i> Нова Пошта</h5>
-                            <p class="mb-0">Доставка у будь-яке відділення по Україні.</p>
-                            <small class="text-muted">Оплата доставки згідно з тарифами перевізника.</small>
-                        </li>
-                    </ul>
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            
+            <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3" style="color: #333;">З'язок</h4>
+                    
+                    <div class="mb-2">
+                        <span class="fw-bold" style="color: #0d6efd;">Telefon / Viber:</span>
+                        <a href="tel:+380666881491" class="text-decoration-none" style="color: #333; font-weight: 500;">
+                            +38 (066) 688-14-91
+                        </a>
+                    </div>
+                    
+                    <div>
+                        <span class="fw-bold" style="color: #0d6efd;">Пошта:</span>
+                        <a href="mailto:shinahub@gmail.com" class="text-decoration-none" style="color: #333; font-weight: 500;">
+                            shinahub@gmail.com
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0"><i class="bi bi-wallet2"></i> Способи оплати</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 mb-3">
-                            <div class="p-3 border rounded h-100">
-                                <i class="bi bi-cash-stack fs-1 text-success"></i>
-                                <h5 class="mt-2">Готівка</h5>
-                                <p class="small text-muted">При отриманні товару (самовивіз або післяплата)</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="p-3 border rounded h-100">
-                                <i class="bi bi-credit-card fs-1 text-primary"></i>
-                                <h5 class="mt-2">Карта</h5>
-                                <p class="small text-muted">Переказ на карту ПриватБанк / Monobank</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="p-3 border rounded h-100">
-                                <i class="bi bi-bank fs-1 text-secondary"></i>
-                                <h5 class="mt-2">Безготівка</h5>
-                                <p class="small text-muted">Для юридичних осіб (без ПДВ)</p>
-                            </div>
-                        </div>
+            <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3" style="color: #333;">Графік роботи</h4>
+                    
+                    <div class="mb-2">
+                        <span class="fw-bold" style="color: #0d6efd;">Пн.–Пт.:</span>
+                        <span style="color: #333;">8:00 – 21:00</span>
                     </div>
+                    
+                    <div class="mb-2">
+                        <span class="fw-bold" style="color: #0d6efd;">Сб.:</span>
+                        <span style="color: #333;">9:00 – 16:00</span>
+                    </div>
+                    
+                    <div>
+                        <span class="fw-bold" style="color: #0d6efd;">Неділя:</span>
+                        <span style="color: #333;">вихідний</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3" style="color: #333;">Адреса самовивозу</h4>
+                    
+                    <p class="mb-1" style="font-size: 1.1rem; color: #333;">
+                        3, вулиця Володимира Качали, 3,<br>
+                        Київ, 02000
+                    </p>
+                    <p class="text-muted mb-4">
+                        Гаражний кооператив «Палуба»
+                    </p>
+
+                    <a href="https://www.google.com/maps/search/?api=1&query=вулиця+Володимира+Качали+3+Київ" 
+                       target="_blank" 
+                       class="btn btn-primary fw-bold px-4 py-2"
+                       style="border-radius: 8px;">
+                       Відкрити на карті
+                    </a>
+                    
+                    <div class="ratio ratio-16x9 mt-4 border rounded overflow-hidden">
+                        <iframe 
+                            src="https://www.google.com/maps?q=вулиця+Володимира+Качали+3+Київ&output=embed" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy">
+                        </iframe>
+                    </div>
+
                 </div>
             </div>
 
@@ -74,3 +84,4 @@
     </div>
 </div>
 {% endblock %}
+

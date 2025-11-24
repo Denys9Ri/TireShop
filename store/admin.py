@@ -175,12 +175,35 @@ class ProductAdmin(admin.ModelAdmin):
                         season_key = 'summer'
 
                     # 4. Ціна та Кількість
-                    try:
-                        price_cell = row[col_price] if col_price is not None and len(row) > col_price else 0
-                        val_str = str(price_cell).replace(',', '.').replace(' ', '').replace('\xa0', '').replace('грн', '')
-                        raw_cost = float(val_str)
-                    except Exception:
-                        raw_cost = 0.0
+                    # --- ЦІНА (БРОНЕБІЙНА ВЕРСІЯ) ---
+                    raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
+
+                    # Якщо Excel вже віддав число (float або int) - просто беремо його
+                    if isinstance(raw_val, (int, float)):
+                        raw_cost = float(raw_val)
+                    else:
+                        # Якщо це текст, починаємо чистку
+                        val_str = str(raw_val) if raw_val is not None else ""
+
+                        # 1. Викидаємо все, крім цифр, крапок і ком
+                        # (прибираємо 'грн', пробіли, букви тощо)
+                        val_str = re.sub(r'[^\d,.]', '', val_str)
+
+                        # 2. Замінюємо кому на крапку
+                        val_str = val_str.replace(',', '.')
+
+                        # 3. Виправляємо проблему "1.200.00" (коли крапок забагато)
+                        # Якщо крапок більше ніж одна, лишаємо тільки останню
+                        if val_str.count('.') > 1:
+                            # Розбиваємо по крапках, склеюємо все крім останньої частини,
+                            # і додаємо останню частину через крапку
+                            parts = val_str.split('.')
+                            val_str = "".join(parts[:-1]) + "." + parts[-1]
+
+                        try:
+                            raw_cost = float(val_str)
+                        except ValueError:
+                            raw_cost = 0.0
 
                     qty_cell = row[col_qty] if col_qty is not None and len(row) > col_qty else 0
                     try:

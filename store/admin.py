@@ -32,8 +32,8 @@ class ExcelImportForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'country', 'year', 'price_display', 'stock_quantity', 'photo_url']
-    list_filter = ['brand', 'seasonality', 'diameter', 'stud_type'] # Додали фільтр по шипам
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'country', 'year', 'price_display', 'stock_quantity', 'photo_preview']
+    list_filter = ['brand', 'seasonality', 'diameter', 'stud_type']
     search_fields = ['name', 'width']
     change_list_template = "store/admin_changelist.html"
     readonly_fields = ["photo_preview"]
@@ -50,7 +50,7 @@ class ProductAdmin(admin.ModelAdmin):
         }),
         ('Головне фото', {
             'fields': ('photo', 'photo_url', 'photo_preview'),
-            'description': 'Додайте пряме посилання на фото, щоб воно одразу відобразилось на сайті.'
+            'description': 'Додайте пряме посилання на фото (photo_url), щоб воно одразу відобразилось на сайті, або завантажте файл.'
         }),
         ('Характеристики', {
             'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')
@@ -63,11 +63,11 @@ class ProductAdmin(admin.ModelAdmin):
 
     def photo_preview(self, obj):
         if obj.photo_url:
-            return format_html('<img src="{}" style="max-height: 150px; max-width: 150px; border-radius: 6px;"/>', obj.photo_url)
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px; border-radius: 4px;"/>', obj.photo_url)
         if obj.photo:
-            return format_html('<img src="{}" style="max-height: 150px; max-width: 150px; border-radius: 6px;"/>', obj.photo.url)
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px; border-radius: 4px;"/>', obj.photo.url)
         return "—"
-    photo_preview.short_description = "Перегляд фото"
+    photo_preview.short_description = "Фото"
 
     def get_urls(self):
         urls = super().get_urls()
@@ -114,7 +114,7 @@ class ProductAdmin(admin.ModelAdmin):
                 col_vehicle = find_column(["тип авто", "авто", "vehicle"])
                 col_photo = find_column(["фото", "photo", "image"])
 
-                # Фолбеки для старих файлів без заголовків
+                # Фолбеки (якщо заголовки не знайдено, використовуємо стандартні номери колонок)
                 col_brand = 0 if col_brand is None else col_brand
                 col_model = 1 if col_model is None else col_model
                 col_size = 2 if col_size is None else col_size
@@ -123,7 +123,6 @@ class ProductAdmin(admin.ModelAdmin):
                 col_qty = 5 if col_qty is None else col_qty
 
                 for row in rows_iter:
-                    # пропускаємо повністю порожні рядки
                     if not any(row):
                         skipped_count += 1
                         continue
@@ -135,21 +134,20 @@ class ProductAdmin(admin.ModelAdmin):
                     model_raw = row[col_model] if col_model is not None and len(row) > col_model else None
                     model_name = str(model_raw).strip() if model_raw else ""
 
-                    # 2. Розмір
                     if not brand_name and not model_name:
                         skipped_count += 1
                         continue
 
-                    if not brand_name:
-                        brand_name = "Unknown"
-                    if not model_name:
-                        model_name = "Model"
+                    if not brand_name: brand_name = "Unknown"
+                    if not model_name: model_name = "Model"
 
                     brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
 
+                    # 2. Розмір
                     size_raw = row[col_size] if col_size is not None and len(row) > col_size else ""
                     size_str = str(size_raw).strip() if size_raw else ""
                     match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_str)
+                    
                     size_valid = False
                     if match:
                         width = int(match.group(1))
@@ -157,9 +155,7 @@ class ProductAdmin(admin.ModelAdmin):
                         diameter = int(match.group(3))
                         size_valid = True
                     else:
-                        width = 0
-                        profile = 0
-                        diameter = 0
+                        width = 0; profile = 0; diameter = 0
 
                     unique_model_name = model_name
                     if not size_valid and size_str:
@@ -169,88 +165,53 @@ class ProductAdmin(admin.ModelAdmin):
                     season_raw = row[col_season] if col_season is not None and len(row) > col_season else ""
                     season_raw_str = str(season_raw).lower() if season_raw else ""
                     season_key = 'all-season'
-                    if 'зим' in season_raw_str or 'winter' in season_raw_str:
-                        season_key = 'winter'
-                    elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str:
-                        season_key = 'summer'
+                    if 'зим' in season_raw_str or 'winter' in season_raw_str: season_key = 'winter'
+                    elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str: season_key = 'summer'
 
-                    # 4. Ціна та Кількість
-                    # --- ЦІНА (БРОНЕБІЙНА ВЕРСІЯ) ---
+                    # --- 4. ЦІНА (БРОНЕБІЙНА ЛОГІКА) ---
                     raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
 
-                    # Якщо Excel вже віддав число (float або int) - просто беремо його
                     if isinstance(raw_val, (int, float)):
                         raw_cost = float(raw_val)
                     else:
-                        # Якщо це текст, починаємо чистку
                         val_str = str(raw_val) if raw_val is not None else ""
-
-                        # 1. Викидаємо все, крім цифр, крапок і ком
-                        # (прибираємо 'грн', пробіли, букви тощо)
+                        # Чистимо від усього крім цифр, крапок і ком
                         val_str = re.sub(r'[^\d,.]', '', val_str)
-
-                        # 2. Замінюємо кому на крапку
                         val_str = val_str.replace(',', '.')
-
-                        # 3. Виправляємо проблему "1.200.00" (коли крапок забагато)
-                        # Якщо крапок більше ніж одна, лишаємо тільки останню
+                        
+                        # Фікс для 1.200.00 (забагато крапок)
                         if val_str.count('.') > 1:
-                            # Розбиваємо по крапках, склеюємо все крім останньої частини,
-                            # і додаємо останню частину через крапку
                             parts = val_str.split('.')
                             val_str = "".join(parts[:-1]) + "." + parts[-1]
-
+                        
                         try:
                             raw_cost = float(val_str)
                         except ValueError:
                             raw_cost = 0.0
 
+                    # 5. Кількість
                     qty_cell = row[col_qty] if col_qty is not None and len(row) > col_qty else 0
                     try:
                         qty_str = str(qty_cell).strip()
-                        if qty_str == '>12':
-                            qty = 20
-                        elif qty_str.isdigit():
-                            qty = int(qty_str)
-                        else:
-                            qty = int(re.sub(r'[^0-9]', '', qty_str) or 0)
-                    except Exception:
-                        qty = 0
+                        if qty_str == '>12': qty = 20
+                        elif qty_str.isdigit(): qty = int(qty_str)
+                        else: qty = int(re.sub(r'[^0-9]', '', qty_str) or 0)
+                    except: qty = 0
 
-                    # --- 5. Додаткові поля ---
-                    country_val = "-"
-                    if col_country is not None and len(row) > col_country and row[col_country]:
-                        country_val = str(row[col_country]).strip()
-
+                    # 6. Додаткові характеристики
+                    country_val = str(row[col_country]).strip() if col_country is not None and len(row) > col_country and row[col_country] else "-"
+                    
                     try:
-                        if col_year is not None and len(row) > col_year and row[col_year]:
-                            year_val = int(row[col_year])
-                        else:
-                            year_val = 2024
-                    except Exception:
-                        year_val = 2024
+                        year_val = int(row[col_year]) if col_year is not None and len(row) > col_year and row[col_year] else 2024
+                    except: year_val = 2024
 
-                    load_val = "-"
-                    if col_load is not None and len(row) > col_load and row[col_load]:
-                        load_val = str(row[col_load]).strip()
+                    load_val = str(row[col_load]).strip() if col_load is not None and len(row) > col_load and row[col_load] else "-"
+                    speed_val = str(row[col_speed]).strip() if col_speed is not None and len(row) > col_speed and row[col_speed] else "-"
+                    stud_val = str(row[col_stud]).strip() if col_stud is not None and len(row) > col_stud and row[col_stud] else "Не шип"
+                    vehicle_val = str(row[col_vehicle]).strip() if col_vehicle is not None and len(row) > col_vehicle and row[col_vehicle] else "Легковий"
+                    
+                    photo_url_val = str(row[col_photo]).strip() if col_photo is not None and len(row) > col_photo and row[col_photo] else None
 
-                    speed_val = "-"
-                    if col_speed is not None and len(row) > col_speed and row[col_speed]:
-                        speed_val = str(row[col_speed]).strip()
-
-                    stud_val = "Не шип"
-                    if col_stud is not None and len(row) > col_stud and row[col_stud]:
-                        stud_val = str(row[col_stud]).strip()
-
-                    vehicle_val = "Легковий"
-                    if col_vehicle is not None and len(row) > col_vehicle and row[col_vehicle]:
-                        vehicle_val = str(row[col_vehicle]).strip()
-
-                    photo_url_val = None
-                    if col_photo is not None and len(row) > col_photo and row[col_photo]:
-                        photo_url_val = str(row[col_photo]).strip()
-
-                    # Формуємо красивий опис (Description)
                     full_desc = (f"Шини {brand_name} {model_name}. Розмір: {size_str}. "
                                  f"Сезон: {season_raw_str}. Виробництво: {country_val} {year_val}.")
 
@@ -275,15 +236,12 @@ class ProductAdmin(admin.ModelAdmin):
                         }
                     )
 
-                    # Зберігаємо фото лише якщо для товару ще немає основного зображення
                     if photo_url_val and not obj.photo_url:
                         obj.photo_url = photo_url_val
                         obj.save(update_fields=["photo_url"])
 
-                    if created:
-                        created_count += 1
-                    else:
-                        updated_count += 1
+                    if created: created_count += 1
+                    else: updated_count += 1
 
                 messages.success(request, f"ОБРОБЛЕНО. ✅ Нових: {created_count}. 🔄 Оновлено: {updated_count}. Пропущено: {skipped_count}.")
             except Exception as e:

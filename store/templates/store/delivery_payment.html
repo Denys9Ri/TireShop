@@ -1,44 +1,76 @@
 {% extends 'store/base.html' %}
-{% block title %}Доставка і оплата - ShinaMania.ua{% endblock %}
+{% load static %}
 
 {% block content %}
-<section class="content-section">
-    <h1 class="page-title">Доставка і оплата</h1>
-    <div class="info-grid">
-        <div class="info-card">
-            <h2>Як ми доставляємо</h2>
-            <p>Доставка товару по містах України здійснюється транспортними компаніями.</p>
-            <ul class="bullet-list">
-                <li>Нова Пошта</li>
-                <li>Делівері</li>
-            </ul>
-            <p>Доставка оплачується за тарифами транспортної компанії під час отримання. Актуальні тарифи можна переглянути на сайті перевізника.</p>
-        </div>
-        <div class="info-card">
-            <h2>Передоплата та накладений платіж</h2>
-            <p>Через тимчасові труднощі, відправка замовлень транспортною компанією Делівері можлива тільки по повній передоплаті.</p>
-            <p>При відправці зі зворотною доставкою на деякі позиції може знадобитися передоплата. Менеджер повідомляє про необхідність та суму під час оформлення.</p>
-        </div>
-        <div class="info-card">
-            <h2>Терміни</h2>
-            <p>В середньому доставка займає 1–3 дні. Під час замовлення менеджери узгоджують точні терміни.</p>
-            <p class="info-muted">У разі накладеного платежу перевізник стягує додаткову комісію за повернення коштів.</p>
-            <p class="info-muted">Доставка в АР Крим тимчасово не здійснюється.</p>
-        </div>
-    </div>
-</section>
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4 text-center">Доставка і оплата</h1>
 
-<section class="content-section">
-    <h2 class="page-title">Самовивіз</h2>
-    <div class="pickup-wrapper">
-        <div class="pickup-details">
-            <p class="info-line"><span class="info-label">Адреса:</span> 5B, вулиця Володимира Качали, 5Б, Київ, 02000</p>
-            <p class="info-muted">Гаражний кооператив «Палуба»</p>
-            <a class="button-link" href="https://maps.app.goo.gl/FbHS7D9Hntv5V8H27" target="_blank" rel="noopener">Маршрут у Google Maps</a>
-        </div>
-        <div class="map-embed">
-            <iframe src="https://www.google.com/maps?q=5B,+%D0%B2%D1%83%D0%BB%D0%B8%D1%86%D1%8F+%D0%92%D0%BE%D0%BB%D0%BE%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D0%B0+%D0%9A%D0%B0%D1%87%D0%B0%D0%BB%D0%B8,+5%D0%91,+%D0%9A%D0%B8%D1%97%D0%B2,+02000&z=18&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-truck"></i> Способи доставки</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <h5><i class="bi bi-box-seam"></i> Самовивіз (Київ)</h5>
+                            <p class="mb-1">Ви можете забрати шини з нашого складу за попередньою домовленістю.</p>
+                            <p class="fw-bold text-success mb-0">Безкоштовно</p>
+                            <hr>
+                            <p class="mb-1"><strong>Адреса складу:</strong></p>
+                            <p class="fs-5">вулиця Володимира Качали, 5Б, Київ, 02000</p>
+                            
+                            <div class="ratio ratio-16x9 mt-3 border rounded">
+                                <iframe 
+                                    src="https://maps.google.com/maps?q=вулиця+Володимира+Качали,+5Б,+Київ&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+                                    style="border:0;" 
+                                    allowfullscreen="" 
+                                    loading="lazy">
+                                </iframe>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <h5><i class="bi bi-send"></i> Нова Пошта</h5>
+                            <p class="mb-0">Доставка у будь-яке відділення по Україні.</p>
+                            <small class="text-muted">Оплата доставки згідно з тарифами перевізника.</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-wallet2"></i> Способи оплати</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded h-100">
+                                <i class="bi bi-cash-stack fs-1 text-success"></i>
+                                <h5 class="mt-2">Готівка</h5>
+                                <p class="small text-muted">При отриманні товару (самовивіз або післяплата)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded h-100">
+                                <i class="bi bi-credit-card fs-1 text-primary"></i>
+                                <h5 class="mt-2">Карта</h5>
+                                <p class="small text-muted">Переказ на карту ПриватБанк / Monobank</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 border rounded h-100">
+                                <i class="bi bi-bank fs-1 text-secondary"></i>
+                                <h5 class="mt-2">Безготівка</h5>
+                                <p class="small text-muted">Для юридичних осіб (без ПДВ)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-</section>
+</div>
 {% endblock %}

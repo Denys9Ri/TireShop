@@ -5,50 +5,75 @@
 <style>
     /* Стиль "Голубе скло" */
     .glass-card {
-        background: rgba(225, 240, 255, 0.8); /* Напівпрозорий голубий */
-        backdrop-filter: blur(12px); /* Ефект розмиття фону */
+        background: rgba(225, 240, 255, 0.85); /* Трохи менш прозорий для читабельності */
+        backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6); /* Біла тонка рамка */
-        border-radius: 24px; /* Сильно заокруглені кути */
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); /* М'яка тінь */
-        padding: 2rem;
-        height: 100%; /* Щоб блоки були однакової висоти */
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        
+        /* АДАПТИВНІ ВІДСТУПИ */
+        padding: 1.5rem; /* Менше на телефоні */
+        height: 100%;
         transition: transform 0.3s ease;
+        overflow: hidden; /* Обрізає все, що стирчить */
+    }
+
+    /* На комп'ютері повертаємо великі відступи */
+    @media (min-width: 768px) {
+        .glass-card {
+            padding: 2.5rem;
+        }
     }
 
     .glass-card:hover {
-        transform: translateY(-5px); /* Легкий підйом при наведенні */
+        transform: translateY(-5px);
     }
 
     .section-title {
-        color: #0d6efd; /* Яскравий синій заголовок */
+        color: #0d6efd;
         font-weight: 800;
         margin-bottom: 1.5rem;
         text-transform: uppercase;
-        font-size: 1.1rem;
+        font-size: 1rem;
         letter-spacing: 1px;
     }
 
     .info-item {
         margin-bottom: 1.2rem;
         border-bottom: 1px solid rgba(13, 110, 253, 0.1);
-        padding-bottom: 10px;
+        padding-bottom: 12px;
     }
     
     .info-item:last-child {
         border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
 
     .icon-box {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         margin-right: 15px;
+        line-height: 1;
+    }
+    
+    /* Заголовки всередині карток */
+    h5 {
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+    }
+    
+    /* Текст опису */
+    .desc-text {
+        font-size: 0.95rem;
+        color: #444;
     }
 </style>
 
-<div class="container py-5">
-    <h1 class="text-center fw-bold mb-5 text-primary">Доставка та Оплата</h1>
+<div class="container py-4">
+    <h1 class="text-center fw-bold mb-4 text-primary">Доставка та Оплата</h1>
 
-    <div class="row g-4 mb-5">
+    <div class="row g-3 mb-4">
         
         <div class="col-md-6">
             <div class="glass-card">
@@ -58,8 +83,8 @@
                     <div class="d-flex">
                         <span class="icon-box">🏢</span>
                         <div>
-                            <h5 class="fw-bold mb-1">Самовивіз</h5>
-                            <p class="mb-1 text-dark">вулиця Володимира Качали, 3</p>
+                            <h5 class="fw-bold">Самовивіз</h5>
+                            <p class="desc-text mb-1">вулиця Володимира Качали, 3</p>
                             <small class="text-muted d-block">Гаражний кооператив «Палуба»</small>
                             <span class="badge bg-success mt-2 rounded-pill">Безкоштовно</span>
                         </div>
@@ -70,8 +95,8 @@
                     <div class="d-flex">
                         <span class="icon-box">📦</span>
                         <div>
-                            <h5 class="fw-bold mb-1">Нова Пошта</h5>
-                            <p class="mb-0 text-muted">У відділення по Україні</p>
+                            <h5 class="fw-bold">Нова Пошта</h5>
+                            <p class="desc-text mb-0">У відділення по Україні</p>
                             <small class="text-muted">За тарифами перевізника</small>
                         </div>
                     </div>
@@ -87,8 +112,8 @@
                     <div class="d-flex align-items-center">
                         <span class="icon-box">💵</span>
                         <div>
-                            <h5 class="fw-bold mb-0">Готівка</h5>
-                            <p class="mb-0 text-muted small">При отриманні товару</p>
+                            <h5 class="fw-bold">Готівка</h5>
+                            <p class="desc-text mb-0 text-muted">При отриманні товару</p>
                         </div>
                     </div>
                 </div>
@@ -97,8 +122,8 @@
                     <div class="d-flex align-items-center">
                         <span class="icon-box">💳</span>
                         <div>
-                            <h5 class="fw-bold mb-0">На карту</h5>
-                            <p class="mb-0 text-muted small">ПриватБанк / Monobank</p>
+                            <h5 class="fw-bold">На карту</h5>
+                            <p class="desc-text mb-0 text-muted">ПриватБанк / Monobank</p>
                         </div>
                     </div>
                 </div>
@@ -107,8 +132,8 @@
                     <div class="d-flex align-items-center">
                         <span class="icon-box">🚚</span>
                         <div>
-                            <h5 class="fw-bold mb-0">Післяплата</h5>
-                            <p class="mb-0 text-muted small">При отриманні на пошті</p>
+                            <h5 class="fw-bold">Післяплата</h5>
+                            <p class="desc-text mb-0 text-muted">На Новій Пошті</p>
                         </div>
                     </div>
                 </div>
@@ -117,8 +142,8 @@
                     <div class="d-flex align-items-center">
                         <span class="icon-box">📄</span>
                         <div>
-                            <h5 class="fw-bold mb-0">Рахунок</h5>
-                            <p class="mb-0 text-muted small">Безготівковий розрахунок</p>
+                            <h5 class="fw-bold">Рахунок</h5>
+                            <p class="desc-text mb-0 text-muted">Безготівковий розрахунок</p>
                         </div>
                     </div>
                 </div>
@@ -128,8 +153,9 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="glass-card p-2"> <p class="text-center fw-bold text-primary mb-2">Як нас знайти (Карта)</p>
-                <div class="ratio ratio-21x9 rounded-4 overflow-hidden">
+            <div class="glass-card p-3"> 
+                <p class="text-center fw-bold text-primary mb-3">Як нас знайти (Карта)</p>
+                <div class="ratio ratio-16x9 rounded-4 overflow-hidden w-100 shadow-sm">
                     <iframe 
                         src="https://maps.google.com/maps?q=вулиця+Володимира+Качали,+3,+Київ&t=&z=15&ie=UTF8&iwloc=&output=embed" 
                         style="border:0;" 

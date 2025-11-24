@@ -9,10 +9,11 @@
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
         border: 1px solid rgba(255, 255, 255, 0.7);
-        border-radius: 30px;
+        border-radius: 24px;
         box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.15);
         padding: 2rem;
         overflow: hidden;
+        margin-bottom: 40px;
     }
 
     /* 2. ФОТО ТОВАРУ */
@@ -20,27 +21,28 @@
         position: relative;
         background: #fff;
         border-radius: 20px;
-        padding: 20px;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
         text-align: center;
-        cursor: zoom-in; /* Показуємо, що можна збільшити */
-        height: 100%;
+        cursor: zoom-in;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 400px; /* Мінімальна висота для ПК */
+        /* За замовчуванням (мобільний) */
+        padding: 10px;
+        height: 280px; 
     }
 
     .product-image {
         max-width: 100%;
-        max-height: 500px; /* Обмеження висоти, щоб не було гігантським */
+        max-height: 100%;
         width: auto;
-        object-fit: contain; /* Зберігає пропорції шини */
+        height: auto;
+        object-fit: contain;
         transition: transform 0.3s ease;
     }
 
     .product-image:hover {
-        transform: scale(1.02);
+        transform: scale(1.03);
     }
 
     /* 3. КНОПКИ КІЛЬКОСТІ (+ 1 -) */
@@ -48,49 +50,39 @@
         display: inline-flex;
         align-items: center;
         background: #fff;
-        border-radius: 50px; /* Овал */
+        border-radius: 50px;
         padding: 5px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         border: 1px solid #cce0ff;
+        flex-shrink: 0; /* Щоб не стискався */
     }
 
     .qty-btn {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         border: none;
         background: #f0f7ff;
         color: #0d6efd;
         font-weight: bold;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         cursor: pointer;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: background 0.2s;
     }
-
-    .qty-btn:hover {
-        background: #0d6efd;
-        color: white;
-    }
+    
+    .qty-btn:hover { background: #0d6efd; color: white; }
 
     .qty-input {
-        width: 50px;
+        width: 45px;
         text-align: center;
         border: none;
         font-weight: bold;
         font-size: 1.2rem;
         color: #333;
-        outline: none;
         background: transparent;
-    }
-    
-    /* Прибираємо стрілочки в інпуті цифр */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
     }
 
     /* 4. КНОПКА КУПИТИ */
@@ -99,163 +91,137 @@
         border-radius: 50px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
         box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
-        transition: all 0.3s;
-    }
-    
-    .btn-buy-glass:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
-    }
-
-    /* 5. ХАРАКТЕРИСТИКИ (КРАПОЧКИ) */
-    .specs-list {
-        list-style: none;
-        padding: 0;
-        margin-top: 20px;
-    }
-    .specs-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 12px;
-    }
-    .specs-label {
-        color: #666;
-        font-weight: 500;
-    }
-    .specs-dots {
-        flex-grow: 1;
-        border-bottom: 2px dotted #ccc; /* Жирніші крапки */
-        margin: 0 10px;
-        position: relative;
-        top: -4px;
-        opacity: 0.5;
-    }
-    .specs-value {
-        font-weight: 600;
-        color: #333;
-        text-align: right;
-    }
-
-    /* 6. ЛАЙТБОКС (Збільшення фото) */
-    .lightbox {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.9);
-        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .btn-buy-glass:hover { transform: translateY(-2px); }
+
+    .action-row {
+        display: flex;
+        gap: 15px;
         align-items: center;
     }
-    
-    .lightbox img {
-        max-width: 90%;
-        max-height: 90%;
-        border-radius: 10px;
-        box-shadow: 0 0 50px rgba(255,255,255,0.1);
+
+    /* ХАРАКТЕРИСТИКИ */
+    .specs-box {
+        background: rgba(255,255,255,0.6); 
+        border: 1px solid rgba(255,255,255,0.8);
+        border-radius: 16px;
+        padding: 20px;
+    }
+    .specs-list { list-style: none; padding: 0; margin: 0; }
+    .specs-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 1rem; }
+    .specs-label { color: #555; }
+    .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
+    .specs-value { font-weight: 600; color: #222; text-align: right; }
+
+    /* ОПИС (Description) */
+    .desc-box {
+        margin-top: 20px;
+        font-size: 0.95rem;
+        color: #555;
+        line-height: 1.6;
     }
 
-    .lightbox-close {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: white;
-        font-size: 40px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-
-    /* АДАПТИВНІСТЬ */
-    @media (max-width: 768px) {
+    /* --- АДАПТАЦІЯ ПІД КОМП'ЮТЕР (Великі екрани) --- */
+    @media (min-width: 992px) {
         .glass-product-card {
-            padding: 1rem;
+            padding: 3rem; /* Більше відступів */
         }
         .product-image-container {
-            min-height: 300px;
-            margin-bottom: 20px;
+            height: 450px; /* Велике фото */
+            padding: 30px;
         }
+        h1 { font-size: 2.2rem; } /* Більший заголовок */
+        .price-text { font-size: 2.5rem; } /* Більша ціна */
+        
         .action-row {
-            flex-direction: column;
-            gap: 15px;
-        }
-        .quantity-selector {
-            width: 100%;
-            justify-content: space-between;
-            padding: 10px 20px;
-        }
-        .btn-buy-glass {
-            width: 100%;
+            max-width: 500px; /* Обмеження ширини кнопок, щоб не були на весь екран */
         }
     }
 </style>
 
-<div class="container py-5">
+<div class="container py-4">
     
     <div class="glass-product-card">
-        <div class="row g-5">
-            
-            <div class="col-lg-6">
+        <div class="row g-4 g-lg-5"> <div class="col-lg-6">
                 <div class="product-image-container" onclick="openLightbox()">
                     {% if product.photo_url %}
                         <img src="{{ product.photo_url }}" class="product-image" id="mainImage" 
-                             alt="{{ product.name }}" 
-                             onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=Error+Loading+Image';">
+                             alt="{{ product.name }}" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
                     {% elif product.photo %}
-                        <img src="{{ product.photo.url }}" class="product-image" id="mainImage" 
-                             alt="{{ product.name }}">
+                        <img src="{{ product.photo.url }}" class="product-image" id="mainImage" alt="{{ product.name }}">
                     {% else %}
                         <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" id="mainImage" alt="No image">
                     {% endif %}
                     
-                    <div style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem;">
-                        <i class="bi bi-zoom-in"></i> Збільшити
+                    <div style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;">
+                        <i class="bi bi-arrows-fullscreen"></i>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-6 d-flex flex-column justify-content-center">
                 
-                <div class="mb-2">
+                <div class="mb-3">
                     {% if product.stock_quantity > 0 %}
-                        <span class="badge bg-success rounded-pill px-3 py-2">✅ В наявності</span>
+                        <span class="badge bg-success bg-opacity-75 text-white rounded-pill px-3 py-2">✅ В наявності</span>
                     {% else %}
                         <span class="badge bg-secondary rounded-pill px-3 py-2">❌ Немає в наявності</span>
                     {% endif %}
                 </div>
 
-                <h1 class="fw-bold mb-1">{{ product.brand.name }} {{ product.name }}</h1>
-                <p class="text-muted fs-4 mb-4">
+                <h1 class="fw-bold mb-2 lh-sm">{{ product.brand.name }} {{ product.name }}</h1>
+                <p class="text-muted fs-5 mb-4">
                     {{ product.width }} / {{ product.profile }} R{{ product.diameter }}
                 </p>
 
-                <h2 class="text-primary fw-bold mb-4" style="font-size: 2.5rem;">
-                    {{ product.price }} <span style="font-size: 1.2rem; color: #666;">грн/шт</span>
+                <h2 class="text-primary fw-bold mb-4 price-text" style="font-size: 2rem;">
+                    {{ product.price|floatform:0 }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
                 </h2>
 
                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-5">
                     {% csrf_token %}
-                    
-                    <div class="action-row d-flex align-items-center gap-3">
+                    <div class="action-row">
                         <div class="quantity-selector">
                             <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
                             <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="99" class="qty-input" readonly>
                             <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-buy-glass flex-grow-1">
-                            <i class="bi bi-cart-plus me-2"></i> Додати в кошик
+                        <button type="submit" class="btn btn-primary btn-buy-glass">
+                            <i class="bi bi-cart2 me-2"></i> В кошик
                         </button>
                     </div>
                 </form>
 
-                <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.5);">
-                    <h4 class="fw-bold mb-3">Характеристики</h4>
+                <div class="specs-box">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Характеристики</h5>
                     <ul class="specs-list">
+                        <li class="specs-item">
+                            <span class="specs-label">Бренд</span>
+                            <span class="specs-dots"></span>
+                            <span class="specs-value">{{ product.brand.name }}</span>
+                        </li>
+                        <li class="specs-item">
+                            <span class="specs-label">Ширина</span>
+                            <span class="specs-dots"></span>
+                            <span class="specs-value">{{ product.width }}</span>
+                        </li>
+                        <li class="specs-item">
+                            <span class="specs-label">Профіль</span>
+                            <span class="specs-dots"></span>
+                            <span class="specs-value">{{ product.profile }}</span>
+                        </li>
+                        <li class="specs-item">
+                            <span class="specs-label">Діаметр</span>
+                            <span class="specs-dots"></span>
+                            <span class="specs-value">R{{ product.diameter }}</span>
+                        </li>
+                        
                         <li class="specs-item">
                             <span class="specs-label">Сезон</span>
                             <span class="specs-dots"></span>
@@ -266,14 +232,14 @@
                             </span>
                         </li>
                         <li class="specs-item">
-                            <span class="specs-label">Рік / Країна</span>
+                            <span class="specs-label">Країна / Рік</span>
                             <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.year }} / {{ product.country|default:"-" }}</span>
+                            <span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span>
                         </li>
                         <li class="specs-item">
-                            <span class="specs-label">Індекси (нав./швид.)</span>
+                            <span class="specs-label">Індекси</span>
                             <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.load_index|default:"-" }}{{ product.speed_index|default:"-" }}</span>
+                            <span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span>
                         </li>
                         <li class="specs-item">
                             <span class="specs-label">Шипи</span>
@@ -286,6 +252,13 @@
                             <span class="specs-value">{{ product.vehicle_type }}</span>
                         </li>
                     </ul>
+
+                    {% if product.description %}
+                        <div class="desc-box border-top pt-3 mt-3">
+                            <strong>Опис:</strong><br>
+                            {{ product.description }}
+                        </div>
+                    {% endif %}
                 </div>
 
             </div>
@@ -297,24 +270,24 @@
     <span class="lightbox-close">&times;</span>
     <img id="lightbox-img" src="">
 </div>
+<style>
+    .lightbox { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; cursor: zoom-out;}
+    .lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
+    .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+</style>
 
 <script>
-    // Логіка кнопок + та -
     function updateQty(change) {
         const input = document.getElementById('qtyInput');
         let newVal = parseInt(input.value) + change;
         if (newVal < 1) newVal = 1;
-        if (newVal > 99) newVal = 99;
+        if (newVal > 20) newVal = 20; // Обмеження
         input.value = newVal;
     }
-
-    // Логіка збільшення фото
     function openLightbox() {
-        const imgSrc = document.getElementById('mainImage').src;
-        document.getElementById('lightbox-img').src = imgSrc;
-        document.getElementById('lightbox').style.display = 'flex'; // Показуємо (flex для центрування)
+        document.getElementById('lightbox-img').src = document.getElementById('mainImage').src;
+        document.getElementById('lightbox').style.display = 'flex';
     }
-
     function closeLightbox() {
         document.getElementById('lightbox').style.display = 'none';
     }

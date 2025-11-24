@@ -295,7 +295,10 @@ def sync_google_sheet_view(request):
             
             price_str = row[col_map['price']]
             try:
-                price_val = float(str(price_str).replace(' ', '').replace(',', '.'))
+                # Видаляємо все, крім цифр, крапок та ком: інколи в гугл-таблиці є "грн" чи інші символи
+                normalized_price = re.sub(r'[^0-9,\.-]', '', str(price_str))
+                normalized_price = normalized_price.replace(' ', '').replace('\xa0', '')
+                price_val = float(normalized_price.replace(',', '.')) if normalized_price else 0
             except ValueError:
                 price_val = 0
                 

@@ -6,91 +6,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}R16.ua - Шини та Диски{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <style>
-        /* --- СТИЛІ ШАПКИ ТА АНІМАЦІЇ --- */
+        /* --- СТИЛІ ГЛАСМОРФІЗМ ШАПКИ --- */
         
-        /* Основний контейнер шапки */
+        body {
+            background-color: #f0f4f8; /* Трохи світліший фон сторінки для контрасту */
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
         .navbar {
-            background-color: #004a99; /* Синій фон */
-            padding: 10px 20px;
+            /* Напівпрозорий синій колір */
+            background-color: rgba(0, 74, 153, 0.85); 
+            /* Ефект розмиття фону (Скло) */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            
+            padding: 12px 5%; /* Більше повітря з боків */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        /* Контейнер для логотипу (посилання) */
+        /* ЛОГОТИП */
         .logo-link {
             display: block;
-            padding: 5px;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-            text-decoration: none;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        /* Ефект підсвітки при наведенні на зону лого */
-        .logo-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
+        .logo-link:active { transform: scale(0.95); }
 
-        /* САМЕ ЛОГОТИП (Картинка) */
         .logo-img {
-            height: 55px; /* Оптимальний розмір для ПК */
+            height: 60px; /* ЗБІЛЬШИВ РОЗМІР (було 45) */
             width: auto;
             object-fit: contain;
             display: block;
-            /* Робить анімацію збільшення/зменшення плавною */
-            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); /* Тінь для об'єму */
         }
 
-        /* 🔥 АНІМАЦІЯ ПРИ НАТИСКАННІ (Ефект пружини) 🔥 */
-        .logo-link:active .logo-img {
-            transform: scale(0.9); /* Зменшуємо картинку на 10% при кліку */
-        }
-
-        /* Навігація (меню справа) */
+        /* МЕНЮ (Десктоп) */
         .navbar-menu {
             display: flex;
-            gap: 20px;
+            gap: 25px;
             align-items: center;
         }
 
         .navbar-item {
-            color: white;
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             font-weight: 600;
             font-size: 1rem;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background 0.2s;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .navbar-item:hover {
-            background-color: rgba(255,255,255,0.15);
+        /* Ефект підкреслення при наведенні */
+        .navbar-item::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: #ffc107; /* Жовта смужка */
+            transition: width 0.3s;
+        }
+
+        .navbar-item:hover::after { width: 100%; }
+        .navbar-item:hover { color: #fff; }
+
+        /* КНОПКА РЕЄСТРАЦІЇ (Виділена) */
+        .btn-register {
+            background-color: #ffc107;
+            color: #004a99 !important;
+            padding: 8px 20px;
+            border-radius: 50px; /* Овальна кнопка */
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
-        /* Іконка кошика */
-        .cart-icon {
-            width: 24px;
-            height: 24px;
-            filter: brightness(0) invert(1); /* Робить іконку білою */
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4);
+        }
+        .btn-register::after { display: none; } /* Без підкреслення */
+
+        /* ІКОНКА КОШИКА (Bootstrap Icon) */
+        .cart-icon-bi {
+            font-size: 1.3rem;
         }
 
         /* АДАПТАЦІЯ ПІД МОБІЛЬНИЙ */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
+            .navbar { padding: 10px 20px; }
+            
             .logo-img {
-                height: 42px; /* Трохи менше лого на телефоні */
+                height: 48px; /* Оптимально для телефону */
             }
-            /* Ховаємо десктопне меню на телефоні */
-            .navbar-menu {
-                display: none; 
+            
+            .navbar-menu { display: none; }
+            
+            /* Гамбургер */
+            .hamburger {
+                display: block;
+                width: 30px;
+                height: 24px;
+                position: relative;
+                cursor: pointer;
+                background: none;
+                border: none;
+            }
+            
+            .hamburger span {
+                display: block;
+                width: 100%;
+                height: 3px;
+                background: white;
+                margin-bottom: 5px;
+                border-radius: 2px;
+                transition: 0.3s;
             }
         }
     </style>
@@ -106,43 +152,37 @@
 
     <div class="navbar-menu">
         <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
-        <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка і оплата</a>
+        <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка</a>
         
         <a href="{% url 'store:cart_detail' %}" class="navbar-item">
-            <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
-                 alt="Кошик" class="cart-icon">
-            Кошик ({{ cart|length }})
+            <i class="bi bi-cart3 cart-icon-bi"></i> Кошик ({{ cart|length }})
         </a>
         
         {% if user.is_authenticated %}
-            <a href="{% url 'users:profile' %}" class="navbar-item">Мій Кабінет</a>
-            <form action="{% url 'logout' %}" method="post">
+            <a href="{% url 'users:profile' %}" class="navbar-item"><i class="bi bi-person-circle"></i> Кабінет</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer;">Вийти</button>
+                <button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer; font-family:inherit;">Вийти</button>
             </form>
         {% else %}
-            <a href="{% url 'login' %}" class="navbar-item">Увійти</a>
-            <a href="{% url 'users:register' %}" class="navbar-item" style="background-color: #ffc107; color: #333;">Реєстрація</a>
+            <a href="{% url 'login' %}" class="navbar-item">Вхід</a>
+            <a href="{% url 'users:register' %}" class="navbar-item btn-register">Реєстрація</a>
         {% endif %}
     </div>
     
     <button class="hamburger" id="hamburger-button">
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
+        <span></span><span></span><span></span>
     </button>
 </header>
 
 <div class="mobile-menu" id="mobile-menu">
-    <a href="{% url 'contacts' %}">Контакти</a>
-    <a href="{% url 'delivery_payment' %}">Доставка і оплата</a>
+    <a href="{% url 'contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
+    <a href="{% url 'delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
     <a href="{% url 'store:cart_detail' %}">
-        <img src="https://imgproxy.attic.sh/insecure/f:png/h:512/w:512/plain/https://attic.sh/jgl2o8myywo28tic4nohjtmzwhsi"
-             alt="Кошик" class="cart-icon">
-        Кошик ({{ cart|length }})
+        <i class="bi bi-cart3"></i> Кошик ({{ cart|length }})
     </a>
     {% if user.is_authenticated %}
-        <a href="{% url 'users:profile' %}">Мій Кабінет</a>
+        <a href="{% url 'users:profile' %}"><i class="bi bi-person"></i> Мій Кабінет</a>
         <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
             <button type="submit" class="logout-button-mobile">Вийти</button>
@@ -165,16 +205,13 @@
         </div>
         <div class="footer-contacts">
             <div class="footer-contact-item">
-                <span class="footer-label">Телефон / Viber:</span>
-                <a href="tel:+380666881491" class="footer-link">+38 (066) 688-14-91</a>
+                <a href="tel:+380666881491" class="footer-link"><i class="bi bi-phone"></i> +38 (066) 688-14-91</a>
             </div>
             <div class="footer-contact-item">
-                <span class="footer-label">Пошта:</span>
-                <a href="mailto:shinahub@gmail.com" class="footer-link">shinahub@gmail.com</a>
+                <a href="mailto:shinahub@gmail.com" class="footer-link"><i class="bi bi-envelope"></i> shinahub@gmail.com</a>
             </div>
             <div class="footer-contact-item">
-                <span class="footer-label">Графік роботи:</span>
-                <span>Пн.–Пт. 8:00–21:00 · Сб. 9:00–16:00 · Неділя — вихідний</span>
+                <span><i class="bi bi-clock"></i> Пн-Пт: 8:00-21:00</span>
             </div>
         </div>
     </div>

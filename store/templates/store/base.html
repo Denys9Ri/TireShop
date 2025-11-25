@@ -4,18 +4,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ShinaMania.ua - Головна{% endblock %}</title>
+    <title>{% block title %}R16.ua - Шини та Диски{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <style>
+        /* Стиль для логотипу */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Відступ між картинкою і текстом */
+            text-decoration: none;
+        }
+        
+        .logo-img {
+            height: 45px; /* Висота логотипу (налаштуйте під себе) */
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #fff; /* Колір тексту (білий на синьому фоні) */
+            letter-spacing: 1px;
+        }
+        
+        /* Якщо фон шапки білий - змінимо колір тексту на темний */
+        /* .navbar { background: white; } */
+        /* .logo-text { color: #333; } */
+    </style>
 </head>
 <body>
 
 <header class="navbar">
     <div class="navbar-brand">
         <a href="{% url 'catalog' %}" class="logo">
-            <span class="logo-text">ShinaMania.ua</span>
+            <img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img">
+            
+            <span class="logo-text">R16.ua</span>
         </a>
     </div>
-    <!-- Правий блок навігації для десктопу -->
+
     <div class="navbar-menu">
         <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
         <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка і оплата</a>
@@ -35,7 +64,7 @@
             <a href="{% url 'users:register' %}" class="navbar-item">Реєстрація</a>
         {% endif %}
     </div>
-    <!-- Гамбургер для мобільного -->
+    
     <button class="hamburger" id="hamburger-button">
         <span class="hamburger-line"></span>
         <span class="hamburger-line"></span>
@@ -43,7 +72,6 @@
     </button>
 </header>
 
-<!-- Єдиний блок мобільного меню -->
 <div class="mobile-menu" id="mobile-menu">
     <a href="{% url 'contacts' %}">Контакти</a>
     <a href="{% url 'delivery_payment' %}">Доставка і оплата</a>
@@ -71,7 +99,7 @@
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-brand">
-            <p class="footer-title">ShinaMania.ua</p>
+            <p class="footer-title">R16.ua</p>
             <p class="footer-subtitle">Шини та сервіс, якому довіряють</p>
         </div>
         <div class="footer-contacts">
@@ -89,10 +117,9 @@
             </div>
         </div>
     </div>
-    <p class="footer-legal">Copyright ©2025 ShinaMania. All rights reserved</p>
+    <p class="footer-legal">Copyright ©2025 R16. All rights reserved</p>
 </footer>
 
-<!-- Скрипт для гамбургер-меню -->
 <script>
     const hamburgerButton = document.getElementById('hamburger-button');
     const mobileMenu = document.getElementById('mobile-menu');

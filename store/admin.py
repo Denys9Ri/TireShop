@@ -6,7 +6,8 @@ from django import forms
 import openpyxl
 import re
 from django.utils.html import format_html
-from .models import Product, Brand, Order, OrderItem
+# Додано SiteBanner в імпорт
+from .models import Product, Brand, Order, OrderItem, SiteBanner
 
 # --- ЗАМОВЛЕННЯ ---
 class OrderItemInline(admin.TabularInline):
@@ -114,7 +115,6 @@ class ProductAdmin(admin.ModelAdmin):
                 col_vehicle = find_column(["тип авто", "авто", "vehicle"])
                 col_photo = find_column(["фото", "photo", "image"])
 
-                # Фолбеки (якщо заголовки не знайдено, використовуємо стандартні номери колонок)
                 col_brand = 0 if col_brand is None else col_brand
                 col_model = 1 if col_model is None else col_model
                 col_size = 2 if col_size is None else col_size
@@ -127,7 +127,6 @@ class ProductAdmin(admin.ModelAdmin):
                         skipped_count += 1
                         continue
 
-                    # 1. Основні дані
                     brand_raw = row[col_brand] if col_brand is not None and len(row) > col_brand else None
                     brand_name = str(brand_raw).strip() if brand_raw else ""
 
@@ -143,7 +142,6 @@ class ProductAdmin(admin.ModelAdmin):
 
                     brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
 
-                    # 2. Розмір
                     size_raw = row[col_size] if col_size is not None and len(row) > col_size else ""
                     size_str = str(size_raw).strip() if size_raw else ""
                     match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_str)
@@ -161,35 +159,28 @@ class ProductAdmin(admin.ModelAdmin):
                     if not size_valid and size_str:
                         unique_model_name = f"{model_name} [{size_str}]"
 
-                    # 3. Сезон
                     season_raw = row[col_season] if col_season is not None and len(row) > col_season else ""
                     season_raw_str = str(season_raw).lower() if season_raw else ""
                     season_key = 'all-season'
                     if 'зим' in season_raw_str or 'winter' in season_raw_str: season_key = 'winter'
                     elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str: season_key = 'summer'
 
-                    # --- 4. ЦІНА (БРОНЕБІЙНА ЛОГІКА) ---
                     raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
 
                     if isinstance(raw_val, (int, float)):
                         raw_cost = float(raw_val)
                     else:
                         val_str = str(raw_val) if raw_val is not None else ""
-                        # Чистимо від усього крім цифр, крапок і ком
                         val_str = re.sub(r'[^\d,.]', '', val_str)
                         val_str = val_str.replace(',', '.')
-                        
-                        # Фікс для 1.200.00 (забагато крапок)
                         if val_str.count('.') > 1:
                             parts = val_str.split('.')
                             val_str = "".join(parts[:-1]) + "." + parts[-1]
-                        
                         try:
                             raw_cost = float(val_str)
                         except ValueError:
                             raw_cost = 0.0
 
-                    # 5. Кількість
                     qty_cell = row[col_qty] if col_qty is not None and len(row) > col_qty else 0
                     try:
                         qty_str = str(qty_cell).strip()
@@ -198,9 +189,7 @@ class ProductAdmin(admin.ModelAdmin):
                         else: qty = int(re.sub(r'[^0-9]', '', qty_str) or 0)
                     except: qty = 0
 
-                    # 6. Додаткові характеристики
                     country_val = str(row[col_country]).strip() if col_country is not None and len(row) > col_country and row[col_country] else "-"
-                    
                     try:
                         year_val = int(row[col_year]) if col_year is not None and len(row) > col_year and row[col_year] else 2024
                     except: year_val = 2024
@@ -215,7 +204,6 @@ class ProductAdmin(admin.ModelAdmin):
                     full_desc = (f"Шини {brand_name} {model_name}. Розмір: {size_str}. "
                                  f"Сезон: {season_raw_str}. Виробництво: {country_val} {year_val}.")
 
-                    # ЗАПИС
                     obj, created = Product.objects.update_or_create(
                         name=unique_model_name,
                         brand=brand_obj,
@@ -253,3 +241,9 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name']
+
+# --- РЕЄСТРАЦІЯ БАНЕРА В АДМІНЦІ ---
+@admin.register(SiteBanner)
+class SiteBannerAdmin(admin.ModelAdmin):
+    list_display = ['title', 'is_active', 'created_at']
+    list_editable = ['is_active']

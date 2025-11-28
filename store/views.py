@@ -3,6 +3,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField, Q
 from django.db import transaction 
+import re # <--- ВАЖЛИВО: Імпорт для розумного пошуку
 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 from .cart import Cart
@@ -24,15 +25,30 @@ def catalog_view(request):
         )
     )
 
-    # --- ПОШУК (НОВЕ) ---
+    # --- РОЗУМНИЙ ПОШУК ---
     search_query = request.GET.get('query', '').strip()
     if search_query:
-        products = products.filter(
-            Q(name__icontains=search_query) | 
-            Q(brand__name__icontains=search_query) |
-            Q(description__icontains=search_query)
-        )
+        # 1. Спробуємо знайти розмір (наприклад 205/55R16 або 205 55 16)
+        # Цей вираз шукає: число + роздільник + число + роздільник + число
+        size_match = re.search(r'(\d{2,3})[/\s]*(\d{2})[/\sR]*(\d{2})', search_query, re.IGNORECASE)
+        
+        if size_match:
+            # Якщо знайшли розмір - шукаємо чітко по характеристиках
+            w, p, d = size_match.groups()
+            products = products.filter(
+                width=int(w),
+                profile=int(p),
+                diameter=int(d)
+            )
+        else:
+            # Якщо це не розмір, шукаємо по тексту (Бренд, Модель, Опис)
+            products = products.filter(
+                Q(name__icontains=search_query) | 
+                Q(brand__name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
 
+    # Фільтрація
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -47,7 +63,8 @@ def catalog_view(request):
     
     products = products.order_by('status_order', 'brand__name', 'name')
     
-    # --- БАНЕР (НОВЕ) ---
+    # --- БАНЕР ---
+    # Показуємо, якщо немає пошуку і фільтрів (крім page)
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = False
     banner = None

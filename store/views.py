@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField, Q
 from django.db import transaction 
-import re # <--- ВАЖЛИВО: Імпорт для розумного пошуку
+import re # <--- Важливий імпорт для роботи пошуку
 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 from .cart import Cart
@@ -25,30 +25,39 @@ def catalog_view(request):
         )
     )
 
-    # --- РОЗУМНИЙ ПОШУК ---
+    # --- РОЗУМНИЙ ПОШУК (ОНОВЛЕНО) ---
     search_query = request.GET.get('query', '').strip()
     if search_query:
-        # 1. Спробуємо знайти розмір (наприклад 205/55R16 або 205 55 16)
-        # Цей вираз шукає: число + роздільник + число + роздільник + число
-        size_match = re.search(r'(\d{2,3})[/\s]*(\d{2})[/\sR]*(\d{2})', search_query, re.IGNORECASE)
-        
-        if size_match:
-            # Якщо знайшли розмір - шукаємо чітко по характеристиках
-            w, p, d = size_match.groups()
-            products = products.filter(
-                width=int(w),
-                profile=int(p),
-                diameter=int(d)
-            )
+        # 1. Очищаємо запит від роздільників (/, пробіл, R, тире)
+        # Наприклад: "205/55 R16" -> "2055516"
+        clean_query = re.sub(r'[/\sR\-]', '', search_query, flags=re.IGNORECASE)
+
+        # 2. Перевіряємо, чи складається очищений запит з 6 або 7 цифр
+        digits_match = re.fullmatch(r'(\d{6,7})', clean_query)
+
+        if digits_match:
+             digits = digits_match.group(1)
+             # Припускаємо стандартний формат: 3 цифри ширина, 2 профіль, 2 діаметр
+             # Якщо всього 6 цифр (напр. 1856014), то воно теж спрацює коректно.
+             w = digits[:3]
+             p = digits[3:5]
+             d = digits[5:]
+             
+             # Фільтруємо чітко по параметрах
+             products = products.filter(
+                 width=int(w),
+                 profile=int(p),
+                 diameter=int(d)
+             )
         else:
-            # Якщо це не розмір, шукаємо по тексту (Бренд, Модель, Опис)
+            # 3. Якщо це не схоже на розмір, шукаємо по тексту (Бренд, Назва, Опис)
             products = products.filter(
                 Q(name__icontains=search_query) | 
                 Q(brand__name__icontains=search_query) |
                 Q(description__icontains=search_query)
             )
 
-    # Фільтрація
+    # Фільтрація (сайдбар)
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -64,7 +73,7 @@ def catalog_view(request):
     products = products.order_by('status_order', 'brand__name', 'name')
     
     # --- БАНЕР ---
-    # Показуємо, якщо немає пошуку і фільтрів (крім page)
+    # Показуємо, тільки якщо немає активного пошуку і фільтрів (крім пагінації)
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = False
     banner = None
@@ -100,6 +109,7 @@ def catalog_view(request):
     }
     return render(request, 'store/catalog.html', context)
 
+# ... (решта функцій views.py залишаються без змін) ...
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})

@@ -27,7 +27,7 @@ class Product(models.Model):
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (застаріле)")
     photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Головне URL Фото (Обкладинка)")
 
-    # --- НОВІ ХАРАКТЕРИСТИКИ ---
+    # --- ХАРАКТЕРИСТИКИ ---
     country = models.CharField(max_length=50, blank=True, null=True, verbose_name="Країна виробник")
     year = models.IntegerField(default=2024, verbose_name="Рік виробництва")
     load_index = models.CharField(max_length=50, blank=True, null=True, verbose_name="Індекс навантаження")
@@ -54,7 +54,6 @@ class Order(models.Model):
     customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Клієнт")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
-    
     shipping_type = models.CharField(max_length=20, choices=SHIPPING_CHOICES, default='pickup', verbose_name="Тип доставки")
     full_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="ПІБ отримувача")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Телефон")

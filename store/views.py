@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField, Q
 from django.db import transaction 
-import re # <--- Важливий імпорт для роботи пошуку
+import re 
 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 from .cart import Cart
@@ -25,39 +25,25 @@ def catalog_view(request):
         )
     )
 
-    # --- РОЗУМНИЙ ПОШУК (ОНОВЛЕНО) ---
+    # --- РОЗУМНИЙ ПОШУК ---
     search_query = request.GET.get('query', '').strip()
     if search_query:
-        # 1. Очищаємо запит від роздільників (/, пробіл, R, тире)
-        # Наприклад: "205/55 R16" -> "2055516"
         clean_query = re.sub(r'[/\sR\-]', '', search_query, flags=re.IGNORECASE)
-
-        # 2. Перевіряємо, чи складається очищений запит з 6 або 7 цифр
         digits_match = re.fullmatch(r'(\d{6,7})', clean_query)
 
         if digits_match:
              digits = digits_match.group(1)
-             # Припускаємо стандартний формат: 3 цифри ширина, 2 профіль, 2 діаметр
-             # Якщо всього 6 цифр (напр. 1856014), то воно теж спрацює коректно.
              w = digits[:3]
              p = digits[3:5]
              d = digits[5:]
-             
-             # Фільтруємо чітко по параметрах
-             products = products.filter(
-                 width=int(w),
-                 profile=int(p),
-                 diameter=int(d)
-             )
+             products = products.filter(width=int(w), profile=int(p), diameter=int(d))
         else:
-            # 3. Якщо це не схоже на розмір, шукаємо по тексту (Бренд, Назва, Опис)
             products = products.filter(
                 Q(name__icontains=search_query) | 
                 Q(brand__name__icontains=search_query) |
                 Q(description__icontains=search_query)
             )
 
-    # Фільтрація (сайдбар)
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -72,15 +58,15 @@ def catalog_view(request):
     
     products = products.order_by('status_order', 'brand__name', 'name')
     
-    # --- БАНЕР ---
-    # Показуємо, тільки якщо немає активного пошуку і фільтрів (крім пагінації)
+    # --- БАНЕР (ОНОВЛЕНО: Беремо список, а не один) ---
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = False
-    banner = None
+    banners = [] # Тепер це список
     
     if not active_filters:
         show_banner = True
-        banner = SiteBanner.objects.filter(is_active=True).last()
+        # Беремо ВСІ активні банери, нові спочатку
+        banners = SiteBanner.objects.filter(is_active=True).order_by('-created_at')
 
     paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
@@ -105,11 +91,11 @@ def catalog_view(request):
         'selected_season': selected_season,
         'search_query': search_query,
         'show_banner': show_banner,
-        'banner': banner,
+        'banners': banners, # Передаємо список у шаблон
     }
     return render(request, 'store/catalog.html', context)
 
-# ... (решта функцій views.py залишаються без змін) ...
+# ... (решта функцій без змін: product_detail, cart, checkout, sync) ...
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})
@@ -120,7 +106,6 @@ def contacts_view(request):
 def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
 
-# --- КОШИК ---
 def cart_detail_view(request):
     cart = Cart(request)
     return render(request, 'store/cart.html', {'cart': cart})
@@ -203,7 +188,6 @@ def checkout_view(request):
         return redirect('catalog')
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
-# --- АКВЕДУК (GOOGLE SHEETS) ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
@@ -237,28 +221,20 @@ def parse_int_from_string(s):
 @transaction.atomic
 def sync_google_sheet_view(request):
     GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lUuQ5vMPJy8IeiqKwp9dmfB1P3CnAMO-eAXK-V9dJIw/edit?usp=drivesdk'
-        
     try:
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = ServiceAccountCredentials.from_json_keyfile_name(
-            settings.GSPREAD_CREDENTIALS_PATH, scope
-        )
+        creds = ServiceAccountCredentials.from_json_keyfile_name(settings.GSPREAD_CREDENTIALS_PATH, scope)
         client = gspread.authorize(creds)
-
-        try:
-            sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
+        try: sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
             messages.error(request, 'Помилка: Не можу знайти аркуш "Sheet1".')
             return redirect('admin:store_product_changelist')
-        
         all_data = sheet.get_all_values()
         if not all_data or len(all_data) < 2: 
             messages.error(request, "Помилка: Таблиця порожня.")
             return redirect('admin:store_product_changelist')
-
         header_row = [h.strip() for h in all_data[0]]
         data_rows = all_data[1:]
-
         try:
             col_map = {
                 'brand': header_row.index('Бренд'),
@@ -271,37 +247,27 @@ def sync_google_sheet_view(request):
         except ValueError as e:
             messages.error(request, f"Помилка колонок: {e}")
             return redirect('admin:store_product_changelist')
-
         created_count = 0
         updated_count = 0
-
         existing_brands = {b.name: b for b in Brand.objects.all()}
-
         for row in data_rows:
             if not any(row): continue
-            
             brand_name = row[col_map['brand']].strip()
             model_name = row[col_map['model']].strip()
             size_str = row[col_map['size']].strip()
-            
             if not brand_name or not model_name or not size_str: continue 
-
-            if brand_name in existing_brands:
-                brand_obj = existing_brands[brand_name]
+            if brand_name in existing_brands: brand_obj = existing_brands[brand_name]
             else:
                 brand_obj = Brand.objects.create(name=brand_name)
                 existing_brands[brand_name] = brand_obj
-            
             width_val, profile_val, diameter_val = 0, 0, 0
             match = SIZE_REGEX.search(size_str)
             if match:
                 width_val = int(match.group(1))
                 profile_val = int(match.group(2))
                 diameter_val = int(match.group(3))
-            
             season_str = row[col_map['season']].strip().lower()
             season_val = normalize_season(season_str)
-            
             price_str = row[col_map['price']]
             val_str = str(price_str).strip()
             val_str = re.sub(r'[^\d,.]', '', val_str)
@@ -309,36 +275,18 @@ def sync_google_sheet_view(request):
             if val_str.count('.') > 1:
                 parts = val_str.split('.')
                 val_str = "".join(parts[:-1]) + "." + parts[-1]
-            try:
-                price_val = float(val_str)
-            except ValueError:
-                price_val = 0
-                
+            try: price_val = float(val_str)
+            except ValueError: price_val = 0
             quantity_str = str(row[col_map['quantity']]).strip()
             quantity_val = parse_int_from_string(quantity_str)
-
             unique_model_name = model_name
-            if not match and size_str:
-                 unique_model_name = f"{model_name} [{size_str}]"
-
+            if not match and size_str: unique_model_name = f"{model_name} [{size_str}]"
             product, created = Product.objects.update_or_create(
-                brand=brand_obj,
-                name=unique_model_name,
-                width=width_val,
-                profile=profile_val,
-                diameter=diameter_val,
-                defaults={
-                    'seasonality': season_val,
-                    'cost_price': price_val,
-                    'stock_quantity': quantity_val
-                }
+                brand=brand_obj, name=unique_model_name, width=width_val, profile=profile_val, diameter=diameter_val,
+                defaults={'seasonality': season_val, 'cost_price': price_val, 'stock_quantity': quantity_val}
             )
             if created: created_count += 1
             else: updated_count += 1
-        
         messages.success(request, f"Синхронізація: +{created_count} нових, ↻{updated_count} оновлено.")
-        
-    except Exception as e:
-        messages.error(request, f"Помилка: {e}")
-
+    except Exception as e: messages.error(request, f"Помилка: {e}")
     return redirect('admin:store_product_changelist')

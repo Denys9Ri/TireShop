@@ -6,7 +6,7 @@ from django import forms
 import openpyxl
 import re
 from django.utils.html import format_html
-# Додано SiteBanner в імпорт
+# Додано SiteBanner
 from .models import Product, Brand, Order, OrderItem, SiteBanner
 
 # --- ЗАМОВЛЕННЯ ---
@@ -51,7 +51,7 @@ class ProductAdmin(admin.ModelAdmin):
         }),
         ('Головне фото', {
             'fields': ('photo', 'photo_url', 'photo_preview'),
-            'description': 'Додайте пряме посилання на фото (photo_url), щоб воно одразу відобразилось на сайті, або завантажте файл.'
+            'description': 'Додайте пряме посилання на фото (photo_url), щоб воно одразу відобразилось на сайті.'
         }),
         ('Характеристики', {
             'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')
@@ -127,6 +127,7 @@ class ProductAdmin(admin.ModelAdmin):
                         skipped_count += 1
                         continue
 
+                    # 1. Основні дані
                     brand_raw = row[col_brand] if col_brand is not None and len(row) > col_brand else None
                     brand_name = str(brand_raw).strip() if brand_raw else ""
 
@@ -142,6 +143,7 @@ class ProductAdmin(admin.ModelAdmin):
 
                     brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
 
+                    # 2. Розмір
                     size_raw = row[col_size] if col_size is not None and len(row) > col_size else ""
                     size_str = str(size_raw).strip() if size_raw else ""
                     match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_str)
@@ -159,12 +161,14 @@ class ProductAdmin(admin.ModelAdmin):
                     if not size_valid and size_str:
                         unique_model_name = f"{model_name} [{size_str}]"
 
+                    # 3. Сезон
                     season_raw = row[col_season] if col_season is not None and len(row) > col_season else ""
                     season_raw_str = str(season_raw).lower() if season_raw else ""
                     season_key = 'all-season'
                     if 'зим' in season_raw_str or 'winter' in season_raw_str: season_key = 'winter'
                     elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str: season_key = 'summer'
 
+                    # 4. Ціна
                     raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
 
                     if isinstance(raw_val, (int, float)):
@@ -181,6 +185,7 @@ class ProductAdmin(admin.ModelAdmin):
                         except ValueError:
                             raw_cost = 0.0
 
+                    # 5. Кількість
                     qty_cell = row[col_qty] if col_qty is not None and len(row) > col_qty else 0
                     try:
                         qty_str = str(qty_cell).strip()
@@ -189,6 +194,7 @@ class ProductAdmin(admin.ModelAdmin):
                         else: qty = int(re.sub(r'[^0-9]', '', qty_str) or 0)
                     except: qty = 0
 
+                    # 6. Додаткові поля
                     country_val = str(row[col_country]).strip() if col_country is not None and len(row) > col_country and row[col_country] else "-"
                     try:
                         year_val = int(row[col_year]) if col_year is not None and len(row) > col_year and row[col_year] else 2024
@@ -242,7 +248,7 @@ class ProductAdmin(admin.ModelAdmin):
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name']
 
-# --- РЕЄСТРАЦІЯ БАНЕРА В АДМІНЦІ ---
+# --- БАНЕР В АДМІНЦІ ---
 @admin.register(SiteBanner)
 class SiteBannerAdmin(admin.ModelAdmin):
     list_display = ['title', 'is_active', 'created_at']

@@ -1,11 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-# Додав Q для пошуку
 from django.db.models import Case, When, Value, IntegerField, Q
 from django.db import transaction 
 
-# Додав SiteBanner в імпорт
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 from .cart import Cart
 from users.models import UserProfile
@@ -18,7 +16,6 @@ def catalog_view(request):
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
-    # Сортування: Є в наявності (0) -> Немає (1)
     products = Product.objects.annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)), 
@@ -36,7 +33,6 @@ def catalog_view(request):
             Q(description__icontains=search_query)
         )
 
-    # Фільтрація
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -52,7 +48,6 @@ def catalog_view(request):
     products = products.order_by('status_order', 'brand__name', 'name')
     
     # --- БАНЕР (НОВЕ) ---
-    # Показуємо тільки якщо немає пошуку і фільтрів (крім page)
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = False
     banner = None
@@ -82,7 +77,6 @@ def catalog_view(request):
         'selected_profile': int(selected_profile) if selected_profile else None,
         'selected_diameter': int(selected_diameter) if selected_diameter else None,
         'selected_season': selected_season,
-        # Нові змінні
         'search_query': search_query,
         'show_banner': show_banner,
         'banner': banner,

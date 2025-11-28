@@ -12,7 +12,6 @@ class Brand(models.Model):
 class Product(models.Model):
     SEASON_CHOICES = [('winter', 'Зимові'), ('summer', 'Літні'), ('all-season', 'Всесезонні')]
     
-    # --- СТАРІ ОСНОВНІ ПОЛЯ (ПОВЕРНУЛИ ЇХ НА МІСЦЕ) ---
     name = models.CharField(max_length=255, verbose_name="Назва шини (модель)")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Бренд")
     
@@ -28,7 +27,7 @@ class Product(models.Model):
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (застаріле)")
     photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Головне URL Фото (Обкладинка)")
 
-    # --- НОВІ ХАРАКТЕРИСТИКИ (ДЛЯ КРАСИВОЇ ТАБЛИЦІ) ---
+    # --- НОВІ ХАРАКТЕРИСТИКИ ---
     country = models.CharField(max_length=50, blank=True, null=True, verbose_name="Країна виробник")
     year = models.IntegerField(default=2024, verbose_name="Рік виробництва")
     load_index = models.CharField(max_length=50, blank=True, null=True, verbose_name="Індекс навантаження")
@@ -36,10 +35,8 @@ class Product(models.Model):
     stud_type = models.CharField(max_length=50, default="Не шип", verbose_name="Шипи")
     vehicle_type = models.CharField(max_length=50, default="Легковий", verbose_name="Тип авто")
 
-    # --- ОБЧИСЛЕННЯ ЦІНИ ---
     @property
     def price(self):
-        # Націнка 30%
         markup = decimal.Decimal('1.30')
         display_price = self.cost_price * markup
         return display_price.quantize(decimal.Decimal('0.01'))
@@ -74,7 +71,6 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(default=1, verbose_name="Кількість")
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна (на момент покупки)")
     
-    # Цей метод допомагає в адмінці показувати суму
     def get_cost(self):
         return self.price_at_purchase * self.quantity
 
@@ -88,3 +84,15 @@ class ProductImage(models.Model):
     
     def __str__(self):
         return f"Фото для {self.product.name}"
+
+# --- 5. РЕКЛАМНИЙ БАНЕР (НОВЕ) ---
+class SiteBanner(models.Model):
+    title = models.CharField(max_length=100, verbose_name="Назва (для себе)")
+    image = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name="Фото файлом")
+    image_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Посилання на фото (для Render)")
+    link = models.URLField(blank=True, null=True, verbose_name="Посилання при кліку (куди веде)")
+    is_active = models.BooleanField(default=True, verbose_name="Активний")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

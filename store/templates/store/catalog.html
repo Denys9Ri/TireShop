@@ -73,21 +73,55 @@
             </form>
         </div>
 
-        {% if show_banner and banner %}
-            <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: transparent;">
-                {% if banner.link %}
-                    <a href="{{ banner.link }}" style="display: block;">
-                {% endif %}
+        {% if show_banner and banners %}
+            <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-height: 400px; background-color: #fff;">
                 
-                {% if banner.image_url %}
-                    <img src="{{ banner.image_url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}" onerror="this.style.display='none'">
-                {% elif banner.image %}
-                    <img src="{{ banner.image.url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}">
-                {% endif %}
+                <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" style="height: 100%;">
+                    
+                    {% if banners|length > 1 %}
+                    <div class="carousel-indicators">
+                        {% for banner in banners %}
+                            <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                                    class="{% if forloop.first %}active{% endif %}" aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-                {% if banner.link %}
-                    </a>
-                {% endif %}
+                    <div class="carousel-inner" style="height: 100%;">
+                        {% for banner in banners %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 100%;">
+                                {% if banner.link %}
+                                    <a href="{{ banner.link }}" style="display: block; height: 100%;">
+                                {% else %}
+                                    <div style="height: 100%;">
+                                {% endif %}
+                                    
+                                    {% if banner.image_url %}
+                                        <img src="{{ banner.image_url }}" style="width: 100%; height: 100%; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}" onerror="this.style.display='none'">
+                                    {% elif banner.image %}
+                                        <img src="{{ banner.image.url }}" style="width: 100%; height: 100%; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}">
+                                    {% endif %}
+
+                                {% if banner.link %}
+                                    </a>
+                                {% else %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if banners|length > 1 %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true" style="filter: invert(1);"></span>
+                            <span class="visually-hidden">Попередня</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true" style="filter: invert(1);"></span>
+                            <span class="visually-hidden">Наступна</span>
+                        </button>
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
 

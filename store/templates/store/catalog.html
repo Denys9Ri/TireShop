@@ -6,13 +6,10 @@
 {% block content %}
 <div class="catalog-wrapper">
 
-    <!-- Кнопка для відкриття/закриття фільтрів -->
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
 
-    <!-- Оверлей для затінення контенту -->
     <div id="filter-overlay" class="filter-overlay"></div>
 
-    <!-- Бічна панель фільтрів -->
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
@@ -63,17 +60,54 @@
     </div>
 
     <div class="catalog-content">
-        <h1 class="page-title">Каталог Товарів</h1>
+        
+        <div class="search-bar-container" style="margin-bottom: 30px;">
+            <form action="{% url 'catalog' %}" method="get" style="display: flex; gap: 10px;">
+                <input type="text" name="query" 
+                       style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" 
+                       placeholder="Введіть назву, розмір або бренд..." 
+                       value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 30px; font-weight: bold; text-transform: uppercase;">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+
+        {% if show_banner and banner %}
+            <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                {% if banner.link %}
+                    <a href="{{ banner.link }}">
+                {% endif %}
+                
+                {% if banner.image_url %}
+                    <img src="{{ banner.image_url }}" style="width: 100%; height: auto; display: block;" alt="{{ banner.title }}" onerror="this.style.display='none'">
+                {% elif banner.image %}
+                    <img src="{{ banner.image.url }}" style="width: 100%; height: auto; display: block;" alt="{{ banner.title }}">
+                {% endif %}
+
+                {% if banner.link %}
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <h1 class="page-title">
+            {% if search_query %}
+                Результати пошуку: "{{ search_query }}"
+            {% else %}
+                Каталог Товарів
+            {% endif %}
+        </h1>
 
         <div class="product-grid">
             {% for product in page_obj %}
                 <div class="product-card">
-                    {% if product.photo %}
+                    {% if product.photo_url %}
+                        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+                    {% elif product.photo %}
                         <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
-                    {% elif product.photo_url %}
-                        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image">
                     {% else %}
-                        <img src="{% static 'images/no-image.png' %}" alt="Немає фото" class="product-image">
+                        <img src="https://placehold.co/600x600?text=No+Photo" alt="Немає фото" class="product-image">
                     {% endif %}
                     <h3 class="product-name">
                         <a href="{% url 'store:product_detail' product.id %}">
@@ -83,7 +117,7 @@
                     <p class="product-specs">
                         {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
                     </p>
-                    <p class="product-price">{{ product.price|floatformat:2 }} грн</p>
+                    <p class="product-price">{{ product.price }} грн</p>
                     <p class="product-stock">Наявність: {{ product.stock_quantity }} шт.</p>
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form">
                         {% csrf_token %}
@@ -122,7 +156,6 @@
     </div>
 </div>
 
-<!-- Скрипт для висування фільтра -->
 <script>
   const filterBtn = document.getElementById('filter-toggle');
   const filterPanel = document.getElementById('filter-panel');
@@ -133,13 +166,11 @@
     filterOverlay.classList.toggle('is-active');
   });
 
-  // Закривати фільтр, коли натиснути на оверлей
   filterOverlay.addEventListener('click', function() {
     filterPanel.classList.remove('is-active');
     filterOverlay.classList.remove('is-active');
   });
 
-  // Степер кількості для карток товарів
   document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
     const input = stepper.querySelector('input[name="quantity"]');
     const buttons = stepper.querySelectorAll('.quantity-btn');

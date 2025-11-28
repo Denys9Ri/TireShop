@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.db.models import Case, When, Value, IntegerField
+# Додав Q для пошуку
+from django.db.models import Case, When, Value, IntegerField, Q
 from django.db import transaction 
 
-from .models import Product, Order, OrderItem, Brand
+# Додав SiteBanner в імпорт
+from .models import Product, Order, OrderItem, Brand, SiteBanner
 from .cart import Cart
 from users.models import UserProfile
 
@@ -25,6 +27,16 @@ def catalog_view(request):
         )
     )
 
+    # --- ПОШУК (НОВЕ) ---
+    search_query = request.GET.get('query', '').strip()
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | 
+            Q(brand__name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Фільтрація
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -39,6 +51,16 @@ def catalog_view(request):
     
     products = products.order_by('status_order', 'brand__name', 'name')
     
+    # --- БАНЕР (НОВЕ) ---
+    # Показуємо тільки якщо немає пошуку і фільтрів (крім page)
+    active_filters = [k for k in request.GET if k != 'page']
+    show_banner = False
+    banner = None
+    
+    if not active_filters:
+        show_banner = True
+        banner = SiteBanner.objects.filter(is_active=True).last()
+
     paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number) 
@@ -60,6 +82,10 @@ def catalog_view(request):
         'selected_profile': int(selected_profile) if selected_profile else None,
         'selected_diameter': int(selected_diameter) if selected_diameter else None,
         'selected_season': selected_season,
+        # Нові змінні
+        'search_query': search_query,
+        'show_banner': show_banner,
+        'banner': banner,
     }
     return render(request, 'store/catalog.html', context)
 
@@ -156,9 +182,7 @@ def checkout_view(request):
         return redirect('catalog')
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
-# -----------------------------------------------------------------
-# АКВЕДУК (GOOGLE SHEETS) - ОНОВЛЕНО
-# -----------------------------------------------------------------
+# --- АКВЕДУК (GOOGLE SHEETS) ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from django.conf import settings
@@ -257,24 +281,17 @@ def sync_google_sheet_view(request):
             season_str = row[col_map['season']].strip().lower()
             season_val = normalize_season(season_str)
             
-            # --- ОНОВЛЕНА, ПОТУЖНА ЛОГІКА ЦІНИ (ЯК В АДМІНЦІ) ---
             price_str = row[col_map['price']]
             val_str = str(price_str).strip()
-            # 1. Чистимо від зайвого (лишаємо цифри, крапки, коми)
             val_str = re.sub(r'[^\d,.]', '', val_str)
-            # 2. Кому на крапку
             val_str = val_str.replace(',', '.')
-            
-            # 3. Фікс для 1.200.00 -> 1200.00
             if val_str.count('.') > 1:
                 parts = val_str.split('.')
                 val_str = "".join(parts[:-1]) + "." + parts[-1]
-            
             try:
                 price_val = float(val_str)
             except ValueError:
                 price_val = 0
-            # ----------------------------------------------------
                 
             quantity_str = str(row[col_map['quantity']]).strip()
             quantity_val = parse_int_from_string(quantity_str)

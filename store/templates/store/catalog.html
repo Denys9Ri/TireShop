@@ -5,48 +5,39 @@
 
 {% block content %}
 <style>
-    /* --- СТИЛІ ДЛЯ КАРУСЕЛІ (ВИПРАВЛЕНІ) --- */
+    /* --- СТИЛІ ДЛЯ КАРУСЕЛІ (ВИПРАВЛЕНІ ПІД ПК) --- */
     
-    /* Обгортка банера */
     .banner-wrapper {
         margin-bottom: 40px;
         border-radius: 20px;
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        background-color: #fff; /* Білий фон для "contain" */
         position: relative;
+        background-color: transparent; /* Прибираємо білий фон */
     }
 
-    /* На ПК фіксуємо висоту, щоб не стрибало */
-    .carousel-inner {
-        height: 400px; 
-    }
-    
     .carousel-item {
-        height: 100%;
-        background-color: #fff;
+        transition: transform 0.6s ease-in-out;
     }
 
-    /* Картинка */
     .banner-img {
         width: 100%;
-        height: 100%;
-        object-fit: contain; /* Показувати повністю, не обрізати */
-        object-position: center;
+        height: auto; /* Висота залежить від ширини */
+        display: block;
+        object-fit: cover; /* Заповнювати простір */
     }
 
-    /* --- ГАРНІ КНОПКИ (СТРІЛОЧКИ) --- */
+    /* --- ГАРНІ КНОПКИ --- */
     .carousel-control-prev, 
     .carousel-control-next {
-        width: 60px; /* Ширина зони кліку */
-        opacity: 1; /* Завжди видно */
+        width: 5%;
+        opacity: 1;
     }
 
-    /* Сам кружечок зі стрілкою */
     .nav-circle {
         width: 40px;
         height: 40px;
-        background-color: rgba(0, 74, 153, 0.8); /* Синій напівпрозорий */
+        background-color: rgba(0, 74, 153, 0.8);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -57,7 +48,7 @@
 
     .carousel-control-prev:hover .nav-circle,
     .carousel-control-next:hover .nav-circle {
-        background-color: #004a99; /* Темніший при наведенні */
+        background-color: #004a99;
         transform: scale(1.1);
     }
 
@@ -67,28 +58,38 @@
         font-weight: bold;
     }
 
-    /* Індикатори (крапочки знизу) */
     .carousel-indicators [data-bs-target] {
         background-color: #004a99;
         height: 4px;
         border-radius: 2px;
     }
 
-    /* --- АДАПТАЦІЯ ПІД ТЕЛЕФОН --- */
-    @media (max-width: 768px) {
-        /* На телефоні висота автоматична (гумова) */
-        .carousel-inner {
-            height: auto;
-            min-height: 200px; /* Мінімальна висота */
+    /* --- АДАПТАЦІЯ (Тут магія для вашої проблеми) --- */
+    
+    /* НА ТЕЛЕФОНІ (маленький екран) */
+    @media (max-width: 991px) {
+        .banner-wrapper {
+            width: 100%; /* На всю ширину */
+        }
+        .banner-img {
+            min-height: 200px; /* Мінімальна висота, щоб не зникав */
+            object-fit: cover; /* На телефоні краще cover, щоб не було мілким */
+        }
+        .nav-circle { width: 32px; height: 32px; }
+    }
+
+    /* НА КОМП'ЮТЕРІ (Великий екран) */
+    @media (min-width: 992px) {
+        .banner-wrapper {
+            /* ОБМЕЖУЄМО ШИРИНУ, щоб не було білих полів */
+            max-width: 960px; 
+            margin-left: auto;
+            margin-right: auto;
         }
         
-        /* Кнопки менші на телефоні */
-        .nav-circle {
-            width: 32px;
-            height: 32px;
-        }
-        .nav-icon {
-            font-size: 1rem;
+        .carousel-inner {
+            /* Висота автоматична - підлаштується під картинку */
+            height: auto; 
         }
     }
 </style>
@@ -172,9 +173,9 @@
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                 {% if banner.link %}
-                                    <a href="{{ banner.link }}" style="display: block; height: 100%;">
+                                    <a href="{{ banner.link }}" style="display: block;">
                                 {% else %}
-                                    <div style="height: 100%;">
+                                    <div>
                                 {% endif %}
                                     
                                     {% if banner.image_url %}

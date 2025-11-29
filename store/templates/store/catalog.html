@@ -4,16 +4,103 @@
 {% block title %}Каталог - R16{% endblock %}
 
 {% block content %}
+<style>
+    /* --- СТИЛІ ДЛЯ КАРУСЕЛІ (ВИПРАВЛЕНІ) --- */
+    
+    /* Обгортка банера */
+    .banner-wrapper {
+        margin-bottom: 40px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        background-color: #fff; /* Білий фон для "contain" */
+        position: relative;
+    }
+
+    /* На ПК фіксуємо висоту, щоб не стрибало */
+    .carousel-inner {
+        height: 400px; 
+    }
+    
+    .carousel-item {
+        height: 100%;
+        background-color: #fff;
+    }
+
+    /* Картинка */
+    .banner-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Показувати повністю, не обрізати */
+        object-position: center;
+    }
+
+    /* --- ГАРНІ КНОПКИ (СТРІЛОЧКИ) --- */
+    .carousel-control-prev, 
+    .carousel-control-next {
+        width: 60px; /* Ширина зони кліку */
+        opacity: 1; /* Завжди видно */
+    }
+
+    /* Сам кружечок зі стрілкою */
+    .nav-circle {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(0, 74, 153, 0.8); /* Синій напівпрозорий */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s, transform 0.2s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .carousel-control-prev:hover .nav-circle,
+    .carousel-control-next:hover .nav-circle {
+        background-color: #004a99; /* Темніший при наведенні */
+        transform: scale(1.1);
+    }
+
+    .nav-icon {
+        font-size: 1.2rem;
+        color: white;
+        font-weight: bold;
+    }
+
+    /* Індикатори (крапочки знизу) */
+    .carousel-indicators [data-bs-target] {
+        background-color: #004a99;
+        height: 4px;
+        border-radius: 2px;
+    }
+
+    /* --- АДАПТАЦІЯ ПІД ТЕЛЕФОН --- */
+    @media (max-width: 768px) {
+        /* На телефоні висота автоматична (гумова) */
+        .carousel-inner {
+            height: auto;
+            min-height: 200px; /* Мінімальна висота */
+        }
+        
+        /* Кнопки менші на телефоні */
+        .nav-circle {
+            width: 32px;
+            height: 32px;
+        }
+        .nav-icon {
+            font-size: 1rem;
+        }
+    }
+</style>
+
 <div class="catalog-wrapper">
 
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
-
     <div id="filter-overlay" class="filter-overlay"></div>
 
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
-
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -21,7 +108,6 @@
                     <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
-
             <label>Сезон:</label>
             <select name="season">
                 <option value="">Будь-який</option>
@@ -29,7 +115,6 @@
                     <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
-
             <label>Ширина:</label>
             <select name="width">
                 <option value="">Всі</option>
@@ -37,7 +122,6 @@
                     <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
                 {% endfor %}
             </select>
-
             <label>Профіль:</label>
             <select name="profile">
                 <option value="">Всі</option>
@@ -45,7 +129,6 @@
                     <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
                 {% endfor %}
             </select>
-
             <label>Діаметр:</label>
             <select name="diameter">
                 <option value="">Всі</option>
@@ -53,7 +136,6 @@
                     <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
                 {% endfor %}
             </select>
-
             <button type="submit" class="filter-submit-btn">Фільтрувати</button>
             <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
         </form>
@@ -74,9 +156,8 @@
         </div>
 
         {% if show_banner and banners %}
-            <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: #fff;">
-                
-                <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="banner-wrapper">
+                <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
                     
                     {% if banners|length > 1 %}
                     <div class="carousel-indicators">
@@ -89,17 +170,17 @@
 
                     <div class="carousel-inner">
                         {% for banner in banners %}
-                            <div class="carousel-item {% if forloop.first %}active{% endif %} text-center">
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                 {% if banner.link %}
-                                    <a href="{{ banner.link }}" style="display: block; width: 100%;">
+                                    <a href="{{ banner.link }}" style="display: block; height: 100%;">
                                 {% else %}
-                                    <div style="width: 100%;">
+                                    <div style="height: 100%;">
                                 {% endif %}
                                     
                                     {% if banner.image_url %}
-                                        <img src="{{ banner.image_url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}" onerror="this.style.display='none'">
+                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" onerror="this.style.display='none'">
                                     {% elif banner.image %}
-                                        <img src="{{ banner.image.url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}">
+                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% endif %}
 
                                 {% if banner.link %}
@@ -113,11 +194,15 @@
 
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true" style="filter: invert(1); background-color: rgba(255,255,255,0.5); border-radius: 50%;"></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-left nav-icon"></i>
+                            </span>
                             <span class="visually-hidden">Попередня</span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true" style="filter: invert(1); background-color: rgba(255,255,255,0.5); border-radius: 50%;"></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-right nav-icon"></i>
+                            </span>
                             <span class="visually-hidden">Наступна</span>
                         </button>
                     {% endif %}

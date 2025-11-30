@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="max-width: 600px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h1 style="margin-top: 0;">📸 Масове завантаження фото</h1>
+    
+    <div style="background: #e7f5ff; padding: 15px; border-left: 4px solid #007bff; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold;">Інструкція:</p>
+        <p style="margin: 5px 0 0;">Завантажте Excel файл, який ви підготували (де ви вставили посилання).</p>
+        <ul style="margin-bottom: 0;">
+            <li>Система знайде товари за Брендом і Назвою.</li>
+            <li>Всім розмірам цієї моделі буде встановлено однакове фото.</li>
+        </ul>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            {{ form.as_p }}
+        </div>
+
+        <input type="submit" value="🚀 Запустити оновлення фото" 
+               style="background: #28a745; color: white; padding: 12px 20px; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; font-weight: bold;">
+    </form>
+</div>
+{% endblock %}

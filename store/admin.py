@@ -3,10 +3,12 @@ from django.urls import path
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django import forms
+from django.http import HttpResponse # <--- Потрібно для скачування файлу
 import openpyxl
 import re
 import gc
 from django.utils.html import format_html
+from django.db.models import Q 
 from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage
 
 # --- ЗАМОВЛЕННЯ ---
@@ -27,7 +29,7 @@ class OrderAdmin(admin.ModelAdmin):
         return sum(item.get_cost() for item in obj.items.all())
     total_cost.short_description = 'Сума'
 
-# --- ГАЛЕРЕЯ ФОТО ---
+# --- ГАЛЕРЕЯ ---
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
@@ -41,12 +43,14 @@ class ProductImageInline(admin.TabularInline):
             return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
         return "-"
 
-# --- ТОВАРИ ТА ІМПОРТ ---
-# Додали поля для вибору діапазону
+# --- ФОРМИ ---
 class ExcelImportForm(forms.Form):
-    excel_file = forms.FileField(label="Файл Excel")
-    start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка (Заголовок це 1)")
+    excel_file = forms.FileField(label="Прайс-лист (Товари)")
+    start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
     end_row = forms.IntegerField(initial=2000, min_value=2, label="Закінчити рядком")
+
+class PhotoImportForm(forms.Form):
+    excel_file = forms.FileField(label="Файл з ФОТО")
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -74,14 +78,83 @@ class ProductAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
-        my_urls = [path('import-excel/', self.import_excel, name="import_excel")]
+        my_urls = [
+            path('import-excel/', self.import_excel, name="import_excel"),
+            path('import-photos/', self.import_photos, name="import_photos"),
+            path('export-models/', self.export_unique_models, name="export_unique_models"), # Нова функція
+        ]
         return my_urls + urls
 
+    # --- 1. ЕКСПОРТ УНІКАЛЬНИХ МОДЕЛЕЙ (ЩОБ ВИ НЕ МУЧИЛИСЬ) ---
+    def export_unique_models(self, request):
+        # Створюємо Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Models for Photos"
+        
+        # Заголовки
+        ws.append(['Brand', 'Model', 'Photo URL (Вставте сюди)'])
+        
+        # Отримуємо унікальні пари Бренд+Модель з бази
+        # .distinct() прибирає дублікати
+        unique_products = Product.objects.values('brand__name', 'name').distinct().order_by('brand__name', 'name')
+        
+        count = 0
+        for p in unique_products:
+            b_name = p['brand__name'] if p['brand__name'] else "Unknown"
+            m_name = p['name']
+            ws.append([b_name, m_name, ''])
+            count += 1
+            
+        # Налаштовуємо відповідь браузеру (скачування файлу)
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=unique_models_for_photos.xlsx'
+        wb.save(response)
+        
+        return response
+
+    # --- 2. ІМПОРТ ФОТО ---
+    def import_photos(self, request):
+        if request.method == "POST":
+            excel_file = request.FILES["excel_file"]
+            try:
+                wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
+                sheet = wb.active
+                updated_products = 0
+                
+                # Читаємо файл (Brand | Model | URL)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    if not row[0] or not row[2]: continue
+                    
+                    brand_txt = str(row[0]).strip()
+                    model_txt = str(row[1]).strip()
+                    url_txt = str(row[2]).strip()
+                    
+                    if not url_txt.startswith('http'): continue
+
+                    # Шукаємо всі товари цього бренду і моделі
+                    products_to_update = Product.objects.filter(
+                        brand__name__icontains=brand_txt,
+                        name__icontains=model_txt
+                    )
+                    
+                    # Оновлюємо, якщо фото ще немає
+                    # (або приберіть photo_url__isnull=True, якщо хочете перезаписати старі фото)
+                    count = products_to_update.update(photo_url=url_txt)
+                    updated_products += count
+                
+                messages.success(request, f"Фото оновлено для {updated_products} товарів!")
+            except Exception as e:
+                messages.error(request, f"Помилка: {e}")
+            return redirect("..")
+            
+        form = PhotoImportForm()
+        return render(request, "store/admin_import_photos.html", {"form": form})
+
+    # --- 3. ІМПОРТ ТОВАРІВ (Без змін) ---
     def import_excel(self, request):
         if request.method == "POST":
-            # Створюємо форму з переданими даними
             form = ExcelImportForm(request.POST, request.FILES)
-            
             if form.is_valid():
                 excel_file = form.cleaned_data["excel_file"]
                 start_row_limit = form.cleaned_data["start_row"]
@@ -90,18 +163,11 @@ class ProductAdmin(admin.ModelAdmin):
                 try:
                     wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
                     sheet = wb.active
-                    
-                    created_count = 0
-                    updated_count = 0
-                    
+                    created_count = 0; updated_count = 0
                     existing_brands = {b.name.upper(): b for b in Brand.objects.all()}
                     rows_iter = sheet.iter_rows(values_only=True)
-                    
-                    try:
-                        header_row = next(rows_iter) # Це рядок №1
-                    except StopIteration:
-                        messages.error(request, "Файл порожній.")
-                        return redirect("..")
+                    try: header_row = next(rows_iter)
+                    except: return redirect("..")
 
                     def find_col(aliases):
                         for idx, cell in enumerate(header_row):
@@ -110,57 +176,39 @@ class ProductAdmin(admin.ModelAdmin):
                                 if val.startswith(alias): return idx
                         return None
 
-                    c_brand = find_col(["бренд", "brand", "фірма"]) or 0
-                    c_model = find_col(["модель", "model", "назва"]) or 1
-                    c_size = find_col(["типоразмер", "размер", "size"]) or 2
+                    c_brand = find_col(["бренд", "brand"]) or 0
+                    c_model = find_col(["модель", "model"]) or 1
+                    c_size = find_col(["типоразмер", "size"]) or 2
                     c_season = find_col(["сезон", "season"]) or 3
-                    c_price = find_col(["цена", "price", "варт"]) or 4
-                    c_qty = find_col(["кол", "кільк", "qty"]) or 5
-                    c_country = find_col(["країна", "страна", "country"]) or 6
-                    c_year = find_col(["рік", "год", "year"]) or 7
-                    c_photo = find_col(["фото", "photo", "image"])
-                    
-                    # i починається з 0, що відповідає рядку 2 в Excel (бо заголовок ми вже пропустили)
-                    # Тобто: i=0 -> Row 2, i=1 -> Row 3...
-                    # Формула номера рядка в Excel: current_excel_row = i + 2
+                    c_price = find_col(["цена", "price"]) or 4
+                    c_qty = find_col(["кол", "qty"]) or 5
+                    c_country = find_col(["країна", "country"]) or 6
+                    c_year = find_col(["рік", "year"]) or 7
+                    c_photo = find_col(["фото", "photo"])
                     
                     for i, row in enumerate(rows_iter):
                         current_excel_row = i + 2
-                        
-                        # --- ЛОГІКА ПРОПУСКУ ---
-                        if current_excel_row < start_row_limit:
-                            continue # Ще рано
-                        if current_excel_row > end_row_limit:
-                            break # Вже досить, зупиняємось
-                        
-                        # Чистка пам'яті
+                        if current_excel_row < start_row_limit: continue
+                        if current_excel_row > end_row_limit: break
                         if i % 100 == 0: gc.collect()
-
                         if not row[c_brand] and not row[c_model]: continue
 
-                        # Далі логіка без змін...
                         brand_name = str(row[c_brand]).strip()
                         if not brand_name or brand_name == "None": brand_name = "Unknown"
-                        
                         brand_key = brand_name.upper()
-                        if brand_key in existing_brands:
-                            brand_obj = existing_brands[brand_key]
+                        if brand_key in existing_brands: brand_obj = existing_brands[brand_key]
                         else:
                             brand_obj = Brand.objects.create(name=brand_name)
                             existing_brands[brand_key] = brand_obj
 
                         model_name = str(row[c_model]).strip()
-                        
                         size_raw = str(row[c_size]).strip()
                         match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_raw)
-                        if match:
-                            w, p, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
-                        else:
-                            w, p, d = 0, 0, 0
+                        if match: w, p, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                        else: w, p, d = 0, 0, 0
 
                         unique_name = model_name
-                        if (w == 0 or p == 0 or d == 0) and size_raw:
-                            unique_name = f"{model_name} [{size_raw}]"
+                        if (w == 0 or p == 0 or d == 0) and size_raw: unique_name = f"{model_name} [{size_raw}]"
 
                         season_raw = str(row[c_season]).lower() if row[c_season] else ""
                         season_key = 'all-season'
@@ -191,19 +239,13 @@ class ProductAdmin(admin.ModelAdmin):
                         photo_link = str(row[c_photo]).strip() if c_photo and row[c_photo] else None
 
                         obj, created = Product.objects.update_or_create(
-                            name=unique_name,
-                            brand=brand_obj,
-                            width=w, profile=p, diameter=d,
+                            name=unique_name, brand=brand_obj, width=w, profile=p, diameter=d,
                             defaults={
-                                'seasonality': season_key,
-                                'cost_price': cost,
-                                'stock_quantity': qty,
-                                'country': country,
-                                'year': year,
+                                'seasonality': season_key, 'cost_price': cost, 'stock_quantity': qty,
+                                'country': country, 'year': year,
                                 'description': f"Шини {brand_name} {model_name}. {size_raw}. {season_raw}."
                             }
                         )
-                        
                         if photo_link and not obj.photo_url:
                             obj.photo_url = photo_link
                             obj.save(update_fields=['photo_url'])
@@ -211,15 +253,10 @@ class ProductAdmin(admin.ModelAdmin):
                         if created: created_count += 1
                         else: updated_count += 1
 
-                    messages.success(request, f"Частина оброблена! (Рядки {start_row_limit}-{end_row_limit}). ✅ Нових: {created_count}, 🔄 Оновлено: {updated_count}")
-
-                except Exception as e:
-                    messages.error(request, f"Помилка: {e}")
-                
+                    messages.success(request, f"Частина оброблена! ({start_row_limit}-{end_row_limit}). ✅: {created_count}, 🔄: {updated_count}")
+                except Exception as e: messages.error(request, f"Помилка: {e}")
                 return redirect("..")
-        else:
-            form = ExcelImportForm()
-            
+        else: form = ExcelImportForm()
         return render(request, "store/admin_import.html", {"form": form})
 
 @admin.register(Brand)

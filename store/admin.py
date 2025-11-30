@@ -9,7 +9,8 @@ import re
 import gc
 from django.utils.html import format_html
 from django.db.models import Q 
-from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage
+# Додали SiteSettings в імпорт
+from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage, SiteSettings
 
 # --- ЗАМОВЛЕННЯ ---
 class OrderItemInline(admin.TabularInline):
@@ -43,6 +44,14 @@ class ProductImageInline(admin.TabularInline):
             return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
         return "-"
 
+# --- НАЛАШТУВАННЯ САЙТУ (НАЦІНКА) ---
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ['global_markup']
+    def has_add_permission(self, request):
+        # Забороняємо створювати більше одного запису
+        return not SiteSettings.objects.exists()
+
 # --- ФОРМИ ---
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField(label="Прайс-лист (Товари)")
@@ -54,22 +63,29 @@ class PhotoImportForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'stock_quantity', 'year', 'photo_preview']
-    list_filter = ['brand', 'seasonality', 'diameter']
+    # Додали знижку в таблицю
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'year', 'photo_preview']
+    list_filter = ['brand', 'seasonality', 'diameter', 'stud_type']
     search_fields = ['name', 'width', 'brand__name']
     change_list_template = "store/admin_changelist.html"
-    readonly_fields = ["photo_preview"]
+    readonly_fields = ["photo_preview", "final_price_preview"]
     inlines = [ProductImageInline]
 
     fieldsets = (
         (None, {'fields': ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
-        ('Ціни та наявність', {'fields': ('cost_price', 'stock_quantity')}),
+        # Додали поля знижки
+        ('Ціни та наявність', {'fields': ('cost_price', 'discount_percent', 'final_price_preview', 'stock_quantity')}),
         ('Головне фото', {'fields': ('photo', 'photo_url', 'photo_preview')}),
         ('Характеристики', {'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')}),
     )
 
     def price_display(self, obj): return obj.price
-    price_display.short_description = "Ціна (+30%)"
+    price_display.short_description = "Ціна на сайті"
+
+    # Показує фінальну ціну зі знижкою прямо в адмінці
+    def final_price_preview(self, obj):
+        return f"{obj.price} грн (Стара: {obj.old_price})"
+    final_price_preview.short_description = "Ціна зі знижкою"
 
     def photo_preview(self, obj):
         if obj.photo_url: return format_html('<img src="{}" style="max-height: 50px;"/>', obj.photo_url)
@@ -85,7 +101,7 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- 1. ЕКСПОРТ МОДЕЛЕЙ ---
+    # --- 1. РОЗУМНИЙ ЕКСПОРТ (ОЧИЩЕННЯ ВІД РОЗМІРІВ) ---
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -99,6 +115,7 @@ class ProductAdmin(admin.ModelAdmin):
             brand_name = p.brand.name if p.brand else "Unknown"
             raw_name = p.name
             
+            # Чистимо назву від сміття
             clean = re.sub(r'шина', '', raw_name, flags=re.IGNORECASE)
             clean = re.sub(r'\b\d{3}/\d{2}R?\d{0,2}\b', '', clean) 
             clean = re.sub(r'\bR\d{2}C?\b', '', clean)
@@ -122,7 +139,7 @@ class ProductAdmin(admin.ModelAdmin):
         wb.save(response)
         return response
 
-    # --- 2. ІМПОРТ ФОТО (ВИПРАВЛЕНО!) ---
+    # --- 2. ІМПОРТ ФОТО (ВИПРАВЛЕНО) ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -132,24 +149,16 @@ class ProductAdmin(admin.ModelAdmin):
                 updated_products = 0
                 
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    # --- ЗАХИСТ ВІД ПУСТИХ РЯДКІВ ---
-                    # Якщо рядок занадто короткий (немає навіть 3 колонок) - пропускаємо
-                    if not row or len(row) < 3: 
-                        continue
-                    
-                    # Якщо хоч одна з комірок пуста (None) - пропускаємо
-                    if not row[0] or not row[1] or not row[2]: 
-                        continue
+                    # Захист від пустих рядків
+                    if not row or len(row) < 3: continue
+                    if not row[0] or not row[1] or not row[2]: continue
                     
                     brand_txt = str(row[0]).strip()
                     model_txt = str(row[1]).strip()
                     url_txt = str(row[2]).strip()
                     
-                    # Якщо в URL немає http - це сміття, пропускаємо
-                    if not url_txt.startswith('http'): 
-                        continue
+                    if not url_txt.startswith('http'): continue
 
-                    # Шукаємо і оновлюємо
                     products_to_update = Product.objects.filter(
                         brand__name__icontains=brand_txt,
                         name__icontains=model_txt
@@ -166,7 +175,7 @@ class ProductAdmin(admin.ModelAdmin):
         form = PhotoImportForm()
         return render(request, "store/admin_import_photos.html", {"form": form})
 
-    # --- 3. ІМПОРТ ТОВАРІВ ---
+    # --- 3. ІМПОРТ ТОВАРІВ (Той самий, надійний) ---
     def import_excel(self, request):
         if request.method == "POST":
             form = ExcelImportForm(request.POST, request.FILES)
@@ -207,7 +216,6 @@ class ProductAdmin(admin.ModelAdmin):
                         if current_excel_row > end_row_limit: break
                         if i % 100 == 0: gc.collect()
                         
-                        # Перевірка на довжину
                         if not row or len(row) < 2: continue
                         if not row[c_brand] and not row[c_model]: continue
 

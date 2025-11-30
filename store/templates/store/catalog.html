@@ -13,7 +13,6 @@
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         position: relative;
-        /* Важливо: прозорий фон, щоб не було білих смуг, якщо картинка не ідеальна */
         background-color: transparent; 
     }
 
@@ -23,17 +22,15 @@
 
     .banner-img {
         width: 100%;
-        height: 100%;
+        height: auto; /* ВАЖЛИВО: Висота автоматична, щоб не розтягувати і не обрізати */
         display: block;
-        /* cover - заповнює весь простір, не залишаючи дірок */
-        object-fit: cover; 
-        object-position: center;
+        object-fit: contain; /* Показуємо все фото цілком */
     }
 
     /* --- ГАРНІ КНОПКИ --- */
     .carousel-control-prev, 
     .carousel-control-next {
-        width: 8%; /* Трохи ширша зона кліку */
+        width: 8%;
         opacity: 1;
     }
 
@@ -75,25 +72,25 @@
             width: 100%;
         }
         .carousel-inner {
-            height: auto; 
-            aspect-ratio: 16/9; /* Пропорція для мобільного */
+            height: auto; /* Висота підлаштовується */
         }
         .nav-circle { width: 32px; height: 32px; }
     }
 
-    /* НА КОМП'ЮТЕРІ (ОСЬ ТУТ ВИПРАВЛЕННЯ) */
+    /* НА КОМП'ЮТЕРІ (ВИПРАВЛЕНО) */
     @media (min-width: 992px) {
         .banner-wrapper {
-            /* ОБМЕЖУЄМО ШИРИНУ РАМКИ */
-            /* Це "обрізає" білі поля з боків, стискаючи сам блок */
-            max-width: 960px; 
+            /* Ширина обмежена, щоб не було на весь екран */
+            max-width: 1000px; 
             margin-left: auto;
             margin-right: auto;
         }
         
         .carousel-inner {
-            /* Фіксуємо висоту, щоб було акуратно */
-            height: 380px; 
+            /* ВАЖЛИВО: Висота AUTO. 
+               Це означає "візьми висоту картинки".
+               Нічого не обріжеться. */
+            height: auto; 
         }
     }
 </style>
@@ -199,10 +196,16 @@
 
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-left nav-icon"></i>
+                            </span>
+                            <span class="visually-hidden">Попередня</span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-right nav-icon"></i>
+                            </span>
+                            <span class="visually-hidden">Наступна</span>
                         </button>
                     {% endif %}
                 </div>
@@ -250,7 +253,7 @@
                         {% if product.discount_percent > 0 %}
                             <div class="d-flex align-items-center gap-2">
                                 <span class="product-price text-danger fw-bold">{{ product.price }} грн</span>
-                                <small class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">{{ product.old_price }}</small>
+                                <small class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">{{ product.old_price }} грн</small>
                             </div>
                         {% else %}
                             <p class="product-price text-primary">{{ product.price }} грн</p>

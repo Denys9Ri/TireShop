@@ -24,6 +24,7 @@ class Product(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ціна з прайсу (закупка)")
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
+    # Головне фото (одне)
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (застаріле)")
     photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Головне URL Фото (Обкладинка)")
 
@@ -76,15 +77,16 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name if self.product else 'Видалений товар'}"
 
-# --- 4. ДОДАТКОВІ ФОТО ---
+# --- 4. ГАЛЕРЕЯ ФОТО (Для живих фото) ---
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name="Товар")
-    image_url = models.URLField(max_length=1024, verbose_name="URL Додаткового Фото")
+    image = models.ImageField(upload_to='product_gallery/', blank=True, null=True, verbose_name="Фото файлом")
+    image_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Посилання на фото (для Render)")
     
     def __str__(self):
         return f"Фото для {self.product.name}"
 
-# --- 5. РЕКЛАМНИЙ БАНЕР (НОВЕ) ---
+# --- 5. РЕКЛАМНИЙ БАНЕР ---
 class SiteBanner(models.Model):
     title = models.CharField(max_length=100, verbose_name="Назва (для себе)")
     image = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name="Фото файлом")

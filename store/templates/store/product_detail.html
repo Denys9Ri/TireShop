@@ -26,13 +26,15 @@
         height: 350px; /* Висота контейнера */
     }
 
+    /* Слайд - без зайвих анімацій, чистий Bootstrap */
     .carousel-item {
         height: 350px;
         background-color: #fff;
         cursor: zoom-in;
+        transition: transform 0.6s ease-in-out; /* Стандартна анімація Bootstrap */
     }
     
-    /* Центрування картинки */
+    /* Центрування картинки всередині слайда */
     .carousel-item-content {
         width: 100%;
         height: 100%;
@@ -46,13 +48,13 @@
         max-height: 100%;
         width: auto;
         height: auto;
-        object-fit: contain;
+        object-fit: contain; /* Картинка вписується, не обрізається */
     }
 
     /* Стрілочки слайдера */
     .carousel-control-prev, .carousel-control-next {
-        width: 15%;
-        opacity: 0;
+        width: 15%; /* Зона кліку */
+        opacity: 0; /* Приховані за замовчуванням */
         transition: opacity 0.3s;
     }
     
@@ -83,8 +85,8 @@
         justify-content: center;
     }
     
-    .gallery-container::-webkit-scrollbar { height: 4px; }
-    .gallery-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    .thumbnails-row::-webkit-scrollbar { height: 4px; }
+    .thumbnails-row::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 
     .thumb-btn {
         width: 60px;
@@ -145,9 +147,10 @@
         .glass-product-card { padding: 1.5rem; }
         .product-carousel, .carousel-item { height: 280px; }
         .thumbnails-row { justify-content: flex-start; }
-        .carousel-control-prev, .carousel-control-next { opacity: 1; } 
+        .carousel-control-prev, .carousel-control-next { opacity: 1; } /* На мобільному стрілки завжди видно */
     }
     
+    /* Інші стилі кнопок */
     .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
     .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f7ff; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
     .qty-btn:hover { background: #0d6efd; color: white; }
@@ -160,6 +163,7 @@
     .specs-label { color: #555; }
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
+    .desc-box { margin-top: 20px; font-size: 0.95rem; color: #555; line-height: 1.6; }
     
     @media (max-width: 576px) {
         .glass-product-card { padding: 1.5rem; }
@@ -182,7 +186,7 @@
             
             <div class="col-lg-6">
                 
-                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-interval="false">
+                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
                     <div class="carousel-inner">
                         <div class="carousel-item active" onclick="openLightbox(0)">
                             <div class="carousel-item-content">
@@ -260,126 +264,4 @@
                 <h1 class="fw-bold mb-2 lh-sm">{{ product.brand.name }} {{ product.name }}</h1>
                 <p class="text-muted fs-5 mb-4">{{ product.width }} / {{ product.profile }} R{{ product.diameter }}</p>
 
-                <h2 class="text-primary fw-bold mb-4 price-text" style="font-size: 2rem;">
-                    {{ product.price }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
-                </h2>
-
-                <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-4">
-                    {% csrf_token %}
-                    <div class="action-row">
-                        <div class="quantity-selector">
-                            <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
-                            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="99" class="qty-input" readonly>
-                            <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-buy-glass">
-                            <i class="bi bi-cart2 me-2"></i> В кошик
-                        </button>
-                    </div>
-                </form>
-
-                <div class="specs-box">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">Характеристики</h5>
-                    <ul class="specs-list">
-                        <li class="specs-item"><span class="specs-label">Бренд</span><span class="specs-dots"></span><span class="specs-value">{{ product.brand.name }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Ширина</span><span class="specs-dots"></span><span class="specs-value">{{ product.width }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Профіль</span><span class="specs-dots"></span><span class="specs-value">{{ product.profile }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Діаметр</span><span class="specs-dots"></span><span class="specs-value">R{{ product.diameter }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Сезон</span><span class="specs-dots"></span><span class="specs-value">
-                            {% if product.seasonality == 'winter' %}❄️ Зимові{% elif product.seasonality == 'summer' %}☀️ Літні{% else %}🌤 Всесезонні{% endif %}
-                        </span></li>
-                        <li class="specs-item"><span class="specs-label">Країна / Рік</span><span class="specs-dots"></span><span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Індекси</span><span class="specs-dots"></span><span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Шипи</span><span class="specs-dots"></span><span class="specs-value">{{ product.stud_type }}</span></li>
-                        <li class="specs-item"><span class="specs-label">Тип авто</span><span class="specs-dots"></span><span class="specs-value">{{ product.vehicle_type }}</span></li>
-                    </ul>
-                    {% if product.description %}
-                        <div class="desc-box border-top pt-3 mt-3">
-                            <strong>Опис:</strong><br>{{ product.description }}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content">
-            <div class="modal-header border-0 bg-transparent position-absolute w-100" style="z-index: 1060;">
-                <button type="button" class="btn-close btn-close-white ms-auto m-3" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0 d-flex align-items-center justify-content-center">
-                
-                <div id="lightboxCarousel" class="carousel slide lightbox-carousel w-100 h-100" data-bs-interval="false">
-                    <div class="carousel-inner h-100">
-                        <div class="carousel-item active h-100">
-                            <div class="lightbox-img-wrap">
-                                {% if product.photo_url %}
-                                    <img src="{{ product.photo_url }}" alt="{{ product.name }}">
-                                {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}" alt="{{ product.name }}">
-                                {% else %}
-                                    <img src="https://placehold.co/600x600?text=No+Photo">
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        {% for img in product.images.all %}
-                            <div class="carousel-item h-100">
-                                <div class="lightbox-img-wrap">
-                                    {% if img.image_url %}
-                                        <img src="{{ img.image_url }}" alt="Gallery">
-                                    {% elif img.image %}
-                                        <img src="{{ img.image.url }}" alt="Gallery">
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    {% if product.images.all %}
-                        <button class="carousel-control-prev" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="prev">
-                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="next">
-                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
-                        </button>
-                    {% endif %}
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function updateQty(change) {
-        const input = document.getElementById('qtyInput');
-        let newVal = parseInt(input.value) + change;
-        if (newVal < 1) newVal = 1;
-        if (newVal > 20) newVal = 20; 
-        input.value = newVal;
-    }
-
-    // СИНХРОНІЗАЦІЯ
-    const mainCarouselEl = document.getElementById('productMainCarousel');
-    const thumbs = document.querySelectorAll('.thumb-btn');
-    
-    mainCarouselEl.addEventListener('slide.bs.carousel', function (e) {
-        thumbs.forEach(t => t.classList.remove('active'));
-        if(thumbs[e.to]) thumbs[e.to].classList.add('active');
-    });
-
-    function openLightbox(index) {
-        var lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
-        var lightboxCarousel = new bootstrap.Carousel(document.getElementById('lightboxCarousel'));
-        
-        lightboxModal.show();
-        setTimeout(() => {
-            lightboxCarousel.to(index);
-        }, 150);
-    }
-</script>
-{% endblock %}
+                <h2 class="text-primary fw-bold mb-4

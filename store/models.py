@@ -2,6 +2,24 @@ from django.db import models
 from django.contrib.auth.models import User
 import decimal
 
+# --- 0. НАЛАШТУВАННЯ САЙТУ (Глобальна націнка) ---
+class SiteSettings(models.Model):
+    # Націнка, наприклад 1.30 (це 30%)
+    global_markup = models.DecimalField(max_digits=5, decimal_places=2, default=1.30, verbose_name="Глобальна націнка (коефіцієнт)")
+
+    class Meta:
+        verbose_name = "Налаштування Сайту (Націнка)"
+        verbose_name_plural = "Налаштування Сайту (Націнка)"
+
+    def __str__(self):
+        return f"Поточна націнка: {self.global_markup}"
+
+    # Метод, щоб завжди брати єдиний запис налаштувань
+    @classmethod
+    def get_solo(cls):
+        obj, created = cls.objects.get_or_create(id=1)
+        return obj
+
 # --- 1. БРЕНД ---
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Назва бренду")
@@ -24,11 +42,13 @@ class Product(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ціна з прайсу (закупка)")
     stock_quantity = models.IntegerField(default=0, verbose_name="Наявність (на складі)")
     
-    # Головне фото (одне)
+    # ЗНИЖКА (НОВЕ ПОЛЕ)
+    discount_percent = models.IntegerField(default=0, verbose_name="Знижка (%)")
+    
     photo = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Фото (застаріле)")
     photo_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Головне URL Фото (Обкладинка)")
 
-    # --- ХАРАКТЕРИСТИКИ ---
+    # ХАРАКТЕРИСТИКИ
     country = models.CharField(max_length=50, blank=True, null=True, verbose_name="Країна виробник")
     year = models.IntegerField(default=2024, verbose_name="Рік виробництва")
     load_index = models.CharField(max_length=50, blank=True, null=True, verbose_name="Індекс навантаження")
@@ -36,11 +56,29 @@ class Product(models.Model):
     stud_type = models.CharField(max_length=50, default="Не шип", verbose_name="Шипи")
     vehicle_type = models.CharField(max_length=50, default="Легковий", verbose_name="Тип авто")
 
+    # --- 1. СТАРА ЦІНА (Ціна продажу ДО знижки) ---
+    @property
+    def old_price(self):
+        # Беремо глобальну націнку з адмінки
+        try:
+            settings = SiteSettings.get_solo()
+            markup = settings.global_markup
+        except:
+            markup = decimal.Decimal('1.30') # Про всяк випадок, якщо бази ще немає
+            
+        base_price = self.cost_price * markup
+        return base_price.quantize(decimal.Decimal('0.01'))
+
+    # --- 2. АКТУАЛЬНА ЦІНА (З урахуванням знижки) ---
     @property
     def price(self):
-        markup = decimal.Decimal('1.30')
-        display_price = self.cost_price * markup
-        return display_price.quantize(decimal.Decimal('0.01'))
+        base = self.old_price
+        if self.discount_percent > 0:
+            # Віднімаємо відсоток
+            discount_factor = decimal.Decimal(100 - self.discount_percent) / 100
+            final_price = base * discount_factor
+            return final_price.quantize(decimal.Decimal('0.01'))
+        return base
 
     def __str__(self):
         if self.brand:
@@ -77,7 +115,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name if self.product else 'Видалений товар'}"
 
-# --- 4. ГАЛЕРЕЯ ФОТО (Для живих фото) ---
+# --- 4. ДОДАТКОВІ ФОТО ---
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name="Товар")
     image = models.ImageField(upload_to='product_gallery/', blank=True, null=True, verbose_name="Фото файлом")
@@ -86,7 +124,7 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Фото для {self.product.name}"
 
-# --- 5. РЕКЛАМНИЙ БАНЕР ---
+# --- 5. БАНЕР ---
 class SiteBanner(models.Model):
     title = models.CharField(max_length=100, verbose_name="Назва (для себе)")
     image = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name="Фото файлом")

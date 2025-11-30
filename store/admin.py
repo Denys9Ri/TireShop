@@ -78,27 +78,28 @@ class ProductAdmin(admin.ModelAdmin):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
             try:
-                # 1. Завантажуємо файл
+                # 1. Відкриваємо файл у режимі "Тільки читання" (економить пам'ять)
                 wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
                 sheet = wb.active
                 
                 created_count = 0
                 updated_count = 0
                 
-                # Створюємо кеш брендів, щоб не шукати їх в базі 1000 разів
-                # Це значно прискорює процес
+                # Створюємо кеш брендів, щоб не смикати базу 2000 разів
                 existing_brands = {b.name.upper(): b for b in Brand.objects.all()}
 
-                # 2. ПОЧАТОК ТРАНЗАКЦІЇ (Це вирішує проблему Timeout!)
+                # 2. ЗАПУСКАЄМО ТРАНЗАКЦІЮ (Прискорює запис у 10 разів)
                 with transaction.atomic():
                     rows_iter = sheet.iter_rows(values_only=True)
+                    
+                    # Пробуємо знайти заголовки
                     try:
                         header_row = next(rows_iter)
                     except StopIteration:
                         messages.error(request, "Файл порожній.")
                         return redirect("..")
 
-                    # Пошук колонок (розумний)
+                    # Функція пошуку колонки
                     def find_col(aliases):
                         for idx, cell in enumerate(header_row):
                             val = str(cell or "").strip().lower()
@@ -106,26 +107,27 @@ class ProductAdmin(admin.ModelAdmin):
                                 if val.startswith(alias): return idx
                         return None
 
-                    # Карта колонок
+                    # Визначаємо індекси колонок
                     c_brand = find_col(["бренд", "brand", "фірма"]) or 0
                     c_model = find_col(["модель", "model", "назва"]) or 1
                     c_size = find_col(["типоразмер", "размер", "size"]) or 2
                     c_season = find_col(["сезон", "season"]) or 3
                     c_price = find_col(["цена", "price", "варт"]) or 4
                     c_qty = find_col(["кол", "кільк", "qty"]) or 5
-                    c_country = find_col(["країна", "страна", "country"])
-                    c_year = find_col(["рік", "год", "year"])
+                    c_country = find_col(["країна", "страна", "country"]) or 6
+                    c_year = find_col(["рік", "год", "year"]) or 7
                     c_photo = find_col(["фото", "photo", "image"])
                     
-                    # Проходимо по рядках
+                    # Обробка рядків
                     for row in rows_iter:
+                        # Пропускаємо пусті рядки
                         if not row[c_brand] and not row[c_model]: continue
 
-                        # ЧИСТКА ДАНИХ (Щоб не було дублів)
+                        # --- ОЧИЩЕННЯ ДАНИХ (Щоб не було дублів) ---
                         brand_name = str(row[c_brand]).strip()
                         if not brand_name or brand_name == "None": brand_name = "Unknown"
                         
-                        # Перевіряємо бренд у кеші
+                        # Бренд (шукаємо в кеші)
                         brand_key = brand_name.upper()
                         if brand_key in existing_brands:
                             brand_obj = existing_brands[brand_key]
@@ -135,7 +137,7 @@ class ProductAdmin(admin.ModelAdmin):
 
                         model_name = str(row[c_model]).strip()
                         
-                        # Обробка розміру
+                        # Розмір (Ширина/Профіль/Діаметр)
                         size_raw = str(row[c_size]).strip()
                         match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_raw)
                         if match:
@@ -143,31 +145,31 @@ class ProductAdmin(admin.ModelAdmin):
                         else:
                             w, p, d = 0, 0, 0
 
-                        # Унікальне ім'я для пошуку (вирішує проблему дублікатів)
-                        # Якщо розмір кривий - додаємо його в назву, щоб відрізняти
+                        # Унікальна назва (Модель + розмір)
+                        # Якщо розмір кривий - додаємо його текст в назву
                         unique_name = model_name
                         if (w == 0 or p == 0 or d == 0) and size_raw:
                             unique_name = f"{model_name} [{size_raw}]"
 
                         # Сезон
-                        season_raw = str(row[c_season]).lower()
+                        season_raw = str(row[c_season]).lower() if row[c_season] else ""
                         season_key = 'all-season'
                         if 'зим' in season_raw or 'winter' in season_raw: season_key = 'winter'
                         elif 'літ' in season_raw or 'summer' in season_raw: season_key = 'summer'
 
-                        # Ціна (Бронебійна)
-                        raw_price = row[c_price]
+                        # Ціна (чистимо від сміття)
                         try:
-                            if isinstance(raw_price, (int, float)):
-                                cost = float(raw_price)
+                            raw_val = row[c_price]
+                            if isinstance(raw_val, (int, float)):
+                                cost = float(raw_val)
                             else:
-                                clean_price = re.sub(r'[^\d,.]', '', str(raw_price))
-                                clean_price = clean_price.replace(',', '.')
-                                # Фікс для 1.200.00
-                                if clean_price.count('.') > 1:
-                                    parts = clean_price.split('.')
-                                    clean_price = "".join(parts[:-1]) + "." + parts[-1]
-                                cost = float(clean_price)
+                                clean_val = re.sub(r'[^\d,.]', '', str(raw_val))
+                                clean_val = clean_val.replace(',', '.')
+                                # Фікс 1.200.00
+                                if clean_val.count('.') > 1:
+                                    parts = clean_val.split('.')
+                                    clean_val = "".join(parts[:-1]) + "." + parts[-1]
+                                cost = float(clean_val)
                         except: cost = 0.0
 
                         # Кількість
@@ -178,13 +180,15 @@ class ProductAdmin(admin.ModelAdmin):
                         except: qty = 0
 
                         # Додаткові поля
-                        country = str(row[c_country]).strip() if c_country and row[c_country] else "-"
-                        try: year = int(row[c_year]) if c_year and row[c_year] else 2024
+                        country = str(row[c_country]).strip() if c_country is not None and len(row) > c_country and row[c_country] else "-"
+                        try: 
+                            year = int(row[c_year]) if c_year is not None and len(row) > c_year and row[c_year] else 2024
                         except: year = 2024
                         
-                        photo_link = str(row[c_photo]).strip() if c_photo and row[c_photo] else None
+                        photo_link = str(row[c_photo]).strip() if c_photo is not None and len(row) > c_photo and row[c_photo] else None
 
-                        # --- ГОЛОВНА ДІЯ: UPDATE OR CREATE ---
+                        # --- ЗАПИС У БАЗУ ---
+                        # Використовуємо update_or_create для захисту від дублів
                         obj, created = Product.objects.update_or_create(
                             name=unique_name,
                             brand=brand_obj,
@@ -199,7 +203,6 @@ class ProductAdmin(admin.ModelAdmin):
                             }
                         )
                         
-                        # Оновлюємо фото тільки якщо його немає
                         if photo_link and not obj.photo_url:
                             obj.photo_url = photo_link
                             obj.save(update_fields=['photo_url'])
@@ -210,7 +213,7 @@ class ProductAdmin(admin.ModelAdmin):
                 messages.success(request, f"Успішно! ✅ Нових: {created_count}, 🔄 Оновлено: {updated_count}")
 
             except Exception as e:
-                messages.error(request, f"Критична помилка: {e}")
+                messages.error(request, f"Помилка: {e}")
             
             return redirect("..")
 

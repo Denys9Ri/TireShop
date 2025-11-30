@@ -23,27 +23,37 @@
         box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
         overflow: hidden;
         position: relative;
-        height: 350px;
+        height: 350px; /* Висота контейнера */
     }
 
+    /* ВИПРАВЛЕНО: Прибрали зайві анімації, додали центрування */
     .carousel-item {
         height: 350px;
-        text-align: center;
         background-color: #fff;
         cursor: zoom-in;
-        transition: transform 0.3s ease-in-out; /* Плавність ручного гортання */
+    }
+    
+    /* Додатковий клас для центрування вмісту слайда */
+    .carousel-item-content {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .product-image {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain; /* Картинка вписується, не обрізається */
     }
 
     /* Стрілочки слайдера */
     .carousel-control-prev, .carousel-control-next {
-        width: 50px;
-        opacity: 0;
+        width: 15%; /* Зона кліку */
+        opacity: 0; /* Приховані, поки не наведеш */
         transition: opacity 0.3s;
     }
     
@@ -53,8 +63,8 @@
     }
 
     .nav-circle {
-        width: 35px;
-        height: 35px;
+        width: 40px;
+        height: 40px;
         background-color: rgba(0, 74, 153, 0.8);
         border-radius: 50%;
         display: flex;
@@ -62,7 +72,7 @@
         justify-content: center;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    .nav-icon { color: white; font-size: 1rem; font-weight: bold; }
+    .nav-icon { color: white; font-size: 1.2rem; font-weight: bold; }
 
     /* 3. МІНІАТЮРИ */
     .thumbnails-row {
@@ -117,6 +127,10 @@
     .lightbox-carousel .carousel-item {
         height: 90vh;
         background: transparent;
+    }
+    .lightbox-img-wrap {
+        width: 100%;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -124,8 +138,6 @@
     .lightbox-carousel img {
         max-width: 100%;
         max-height: 100%;
-        width: auto;
-        height: auto;
         object-fit: contain;
     }
 
@@ -134,10 +146,10 @@
         .glass-product-card { padding: 1.5rem; }
         .product-carousel, .carousel-item { height: 280px; }
         .thumbnails-row { justify-content: flex-start; }
-        .carousel-control-prev, .carousel-control-next { opacity: 1; }
+        .carousel-control-prev, .carousel-control-next { opacity: 1; } /* На мобільному стрілки завжди видно */
     }
     
-    /* Інші стилі */
+    /* Інші стилі кнопок */
     .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
     .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f7ff; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
     .qty-btn:hover { background: #0d6efd; color: white; }
@@ -150,8 +162,7 @@
     .specs-label { color: #555; }
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
-    .desc-box { margin-top: 20px; font-size: 0.95rem; color: #555; line-height: 1.6; }
-
+    
     @media (max-width: 576px) {
         .glass-product-card { padding: 1.5rem; }
         .action-row { gap: 10px; }
@@ -160,8 +171,7 @@
     }
     @media (min-width: 992px) {
         .glass-product-card { padding: 3rem; }
-        .product-carousel { height: 450px; }
-        .carousel-item { height: 450px; }
+        .product-carousel, .carousel-item { height: 450px; }
         h1 { font-size: 2.2rem; }
         .price-text { font-size: 2.5rem; }
         .action-row { max-width: 500px; }
@@ -174,25 +184,29 @@
             
             <div class="col-lg-6">
                 
-                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-interval="false">
+                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-ride="carousel" data-bs-interval="false" data-bs-touch="true">
                     <div class="carousel-inner">
                         <div class="carousel-item active" onclick="openLightbox(0)">
-                            {% if product.photo_url %}
-                                <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
-                            {% elif product.photo %}
-                                <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.name }}">
-                            {% else %}
-                                <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="No image">
-                            {% endif %}
+                            <div class="carousel-item-content">
+                                {% if product.photo_url %}
+                                    <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
+                                {% elif product.photo %}
+                                    <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="No image">
+                                {% endif %}
+                            </div>
                         </div>
 
                         {% for img in product.images.all %}
                             <div class="carousel-item" onclick="openLightbox({{ forloop.counter }})">
-                                {% if img.image_url %}
-                                    <img src="{{ img.image_url }}" class="product-image" alt="Gallery Image">
-                                {% elif img.image %}
-                                    <img src="{{ img.image.url }}" class="product-image" alt="Gallery Image">
-                                {% endif %}
+                                <div class="carousel-item-content">
+                                    {% if img.image_url %}
+                                        <img src="{{ img.image_url }}" class="product-image" alt="Gallery">
+                                    {% elif img.image %}
+                                        <img src="{{ img.image.url }}" class="product-image" alt="Gallery">
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -303,22 +317,26 @@
                 <div id="lightboxCarousel" class="carousel slide lightbox-carousel w-100 h-100" data-bs-interval="false">
                     <div class="carousel-inner h-100">
                         <div class="carousel-item active h-100">
-                            {% if product.photo_url %}
-                                <img src="{{ product.photo_url }}" alt="{{ product.name }}">
-                            {% elif product.photo %}
-                                <img src="{{ product.photo.url }}" alt="{{ product.name }}">
-                            {% else %}
-                                <img src="https://placehold.co/600x600?text=No+Photo">
-                            {% endif %}
+                            <div class="lightbox-img-wrap">
+                                {% if product.photo_url %}
+                                    <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                                {% elif product.photo %}
+                                    <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="https://placehold.co/600x600?text=No+Photo">
+                                {% endif %}
+                            </div>
                         </div>
 
                         {% for img in product.images.all %}
                             <div class="carousel-item h-100">
-                                {% if img.image_url %}
-                                    <img src="{{ img.image_url }}" alt="Gallery">
-                                {% elif img.image %}
-                                    <img src="{{ img.image.url }}" alt="Gallery">
-                                {% endif %}
+                                <div class="lightbox-img-wrap">
+                                    {% if img.image_url %}
+                                        <img src="{{ img.image_url }}" alt="Gallery">
+                                    {% elif img.image %}
+                                        <img src="{{ img.image.url }}" alt="Gallery">
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -347,37 +365,23 @@
         input.value = newVal;
     }
 
-    // СИНХРОНІЗАЦІЯ СЛАЙДЕРІВ
+    // СИНХРОНІЗАЦІЯ
     const mainCarouselEl = document.getElementById('productMainCarousel');
     const thumbs = document.querySelectorAll('.thumb-btn');
     
-    // Коли гортається основний слайдер - підсвічуємо мініатюри
     mainCarouselEl.addEventListener('slide.bs.carousel', function (e) {
         thumbs.forEach(t => t.classList.remove('active'));
         if(thumbs[e.to]) thumbs[e.to].classList.add('active');
     });
 
-    // Відкриття лайтбокса на потрібному слайді
     function openLightbox(index) {
         var lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
         var lightboxCarousel = new bootstrap.Carousel(document.getElementById('lightboxCarousel'));
         
         lightboxModal.show();
-        // Чекаємо, поки модалка відкриється, і перемикаємо слайд
         setTimeout(() => {
             lightboxCarousel.to(index);
         }, 150);
     }
-    
-    // ДОДАТКОВО: Примусова зупинка авто-прокрутки через JS (на всяк випадок)
-    document.addEventListener('DOMContentLoaded', function() {
-        var carousels = document.querySelectorAll('.carousel');
-        carousels.forEach(function(carousel) {
-            new bootstrap.Carousel(carousel, {
-                interval: false, // ВИМИКАЄМО АВТО-ПРОКРУТКУ
-                wrap: true
-            });
-        });
-    });
 </script>
 {% endblock %}

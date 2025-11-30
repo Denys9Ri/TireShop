@@ -1,10 +1,27 @@
 {% extends "admin/base_site.html" %}
+
 {% block content %}
-<h1>Завантаження Прайсу (Excel)</h1>
-<p>Ціни автоматично збільшаться на 30%.</p>
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Завантажити" style="background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer;">
-</form>
+<div style="max-width: 600px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h1 style="margin-top: 0;">📥 Завантаження Прайс-листа</h1>
+    
+    <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold;">⚠️ Важливо для великих файлів:</p>
+        <p style="margin: 5px 0 0;">Якщо у вас більше 1500 товарів, завантажуйте частинами, щоб сервер не завис.</p>
+        <ul style="margin-bottom: 0;">
+            <li>Спочатку: 2 - 1500</li>
+            <li>Потім: 1501 - 3000</li>
+        </ul>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            {{ form.as_p }}
+        </div>
+
+        <input type="submit" value="🚀 Завантажити товари" 
+               style="background: #007bff; color: white; padding: 12px 20px; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; font-weight: bold;">
+    </form>
+</div>
 {% endblock %}

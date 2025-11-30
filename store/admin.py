@@ -6,7 +6,7 @@ from django import forms
 import openpyxl
 import re
 from django.utils.html import format_html
-# Імпортуємо всі моделі, включаючи ProductImage та SiteBanner
+from django.db import transaction # <--- ВАЖЛИВО ДЛЯ ШВИДКОСТІ
 from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage
 
 # --- ЗАМОВЛЕННЯ ---
@@ -27,11 +27,10 @@ class OrderAdmin(admin.ModelAdmin):
         return sum(item.get_cost() for item in obj.items.all())
     total_cost.short_description = 'Сума'
 
-# --- ГАЛЕРЕЯ ФОТО (ВБУДОВАНА В ТОВАР) ---
-# Це дозволяє додавати "Живі фото" всередині товару
+# --- ГАЛЕРЕЯ ФОТО ---
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
-    extra = 1 # Скільки пустих рядків показувати
+    extra = 1
     fields = ('image_url', 'image', 'preview')
     readonly_fields = ('preview',)
 
@@ -48,43 +47,25 @@ class ExcelImportForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'country', 'year', 'price_display', 'stock_quantity', 'photo_preview']
-    list_filter = ['brand', 'seasonality', 'diameter', 'stud_type']
-    search_fields = ['name', 'width']
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'stock_quantity', 'year', 'photo_preview']
+    list_filter = ['brand', 'seasonality', 'diameter']
+    search_fields = ['name', 'width', 'brand__name']
     change_list_template = "store/admin_changelist.html"
     readonly_fields = ["photo_preview"]
-    
-    # Включаємо галерею в адмінку товару
     inlines = [ProductImageInline]
 
     fieldsets = (
-        (None, {
-            'fields': (
-                'name', 'brand', 'width', 'profile', 'diameter', 'seasonality',
-                'description'
-            )
-        }),
-        ('Ціни та наявність', {
-            'fields': ('cost_price', 'stock_quantity')
-        }),
-        ('Головне фото (Обкладинка)', {
-            'fields': ('photo', 'photo_url', 'photo_preview'),
-            'description': 'Це головне фото для каталогу. Щоб додати "живі фото", використовуйте розділ "Product images" знизу.'
-        }),
-        ('Характеристики', {
-            'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')
-        }),
+        (None, {'fields': ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
+        ('Ціни та наявність', {'fields': ('cost_price', 'stock_quantity')}),
+        ('Головне фото', {'fields': ('photo', 'photo_url', 'photo_preview')}),
+        ('Характеристики', {'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')}),
     )
 
-    def price_display(self, obj):
-        return obj.price
+    def price_display(self, obj): return obj.price
     price_display.short_description = "Ціна (+30%)"
 
     def photo_preview(self, obj):
-        if obj.photo_url:
-            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px; border-radius: 4px;"/>', obj.photo_url)
-        if obj.photo:
-            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px; border-radius: 4px;"/>', obj.photo.url)
+        if obj.photo_url: return format_html('<img src="{}" style="max-height: 50px;"/>', obj.photo_url)
         return "—"
     photo_preview.short_description = "Фото"
 
@@ -97,168 +78,142 @@ class ProductAdmin(admin.ModelAdmin):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
             try:
+                # 1. Завантажуємо файл
                 wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
                 sheet = wb.active
-
+                
                 created_count = 0
                 updated_count = 0
-                skipped_count = 0
+                
+                # Створюємо кеш брендів, щоб не шукати їх в базі 1000 разів
+                # Це значно прискорює процес
+                existing_brands = {b.name.upper(): b for b in Brand.objects.all()}
 
-                rows_iter = sheet.iter_rows(values_only=True)
-                try:
-                    header_row = next(rows_iter)
-                except StopIteration:
-                    messages.error(request, "Файл порожній.")
-                    return redirect("..")
+                # 2. ПОЧАТОК ТРАНЗАКЦІЇ (Це вирішує проблему Timeout!)
+                with transaction.atomic():
+                    rows_iter = sheet.iter_rows(values_only=True)
+                    try:
+                        header_row = next(rows_iter)
+                    except StopIteration:
+                        messages.error(request, "Файл порожній.")
+                        return redirect("..")
 
-                def find_column(aliases):
-                    for idx, cell in enumerate(header_row):
-                        cell_val = str(cell or "").strip().lower()
-                        for alias in aliases:
-                            if cell_val.startswith(alias):
-                                return idx
-                    return None
+                    # Пошук колонок (розумний)
+                    def find_col(aliases):
+                        for idx, cell in enumerate(header_row):
+                            val = str(cell or "").strip().lower()
+                            for alias in aliases:
+                                if val.startswith(alias): return idx
+                        return None
 
-                col_brand = find_column(["бренд", "brand", "фірма", "марка"])
-                col_model = find_column(["модель", "model", "назва", "название"])
-                col_size = find_column(["типоразмер", "типорозмір", "размер", "size"])
-                col_season = find_column(["сезон", "season", "сезонність"])
-                col_price = find_column(["цена", "price", "варт", "cost"])
-                col_qty = find_column(["кол", "кільк", "qty", "шт"])
-                col_country = find_column(["країна", "страна", "country"])
-                col_year = find_column(["рік", "год", "year"])
-                col_load = find_column(["індекс нав", "нагруз", "load"])
-                col_speed = find_column(["індекс швид", "скор", "speed"])
-                col_stud = find_column(["шип", "stud"])
-                col_vehicle = find_column(["тип авто", "авто", "vehicle"])
-                col_photo = find_column(["фото", "photo", "image"])
-
-                col_brand = 0 if col_brand is None else col_brand
-                col_model = 1 if col_model is None else col_model
-                col_size = 2 if col_size is None else col_size
-                col_season = 3 if col_season is None else col_season
-                col_price = 4 if col_price is None else col_price
-                col_qty = 5 if col_qty is None else col_qty
-
-                for row in rows_iter:
-                    if not any(row):
-                        skipped_count += 1
-                        continue
-
-                    # 1. Основні дані
-                    brand_raw = row[col_brand] if col_brand is not None and len(row) > col_brand else None
-                    brand_name = str(brand_raw).strip() if brand_raw else ""
-
-                    model_raw = row[col_model] if col_model is not None and len(row) > col_model else None
-                    model_name = str(model_raw).strip() if model_raw else ""
-
-                    if not brand_name and not model_name:
-                        skipped_count += 1
-                        continue
-
-                    if not brand_name: brand_name = "Unknown"
-                    if not model_name: model_name = "Model"
-
-                    brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
-
-                    # 2. Розмір
-                    size_raw = row[col_size] if col_size is not None and len(row) > col_size else ""
-                    size_str = str(size_raw).strip() if size_raw else ""
-                    match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_str)
+                    # Карта колонок
+                    c_brand = find_col(["бренд", "brand", "фірма"]) or 0
+                    c_model = find_col(["модель", "model", "назва"]) or 1
+                    c_size = find_col(["типоразмер", "размер", "size"]) or 2
+                    c_season = find_col(["сезон", "season"]) or 3
+                    c_price = find_col(["цена", "price", "варт"]) or 4
+                    c_qty = find_col(["кол", "кільк", "qty"]) or 5
+                    c_country = find_col(["країна", "страна", "country"])
+                    c_year = find_col(["рік", "год", "year"])
+                    c_photo = find_col(["фото", "photo", "image"])
                     
-                    size_valid = False
-                    if match:
-                        width = int(match.group(1))
-                        profile = int(match.group(2))
-                        diameter = int(match.group(3))
-                        size_valid = True
-                    else:
-                        width = 0; profile = 0; diameter = 0
+                    # Проходимо по рядках
+                    for row in rows_iter:
+                        if not row[c_brand] and not row[c_model]: continue
 
-                    unique_model_name = model_name
-                    if not size_valid and size_str:
-                        unique_model_name = f"{model_name} [{size_str}]"
+                        # ЧИСТКА ДАНИХ (Щоб не було дублів)
+                        brand_name = str(row[c_brand]).strip()
+                        if not brand_name or brand_name == "None": brand_name = "Unknown"
+                        
+                        # Перевіряємо бренд у кеші
+                        brand_key = brand_name.upper()
+                        if brand_key in existing_brands:
+                            brand_obj = existing_brands[brand_key]
+                        else:
+                            brand_obj = Brand.objects.create(name=brand_name)
+                            existing_brands[brand_key] = brand_obj
 
-                    # 3. Сезон
-                    season_raw = row[col_season] if col_season is not None and len(row) > col_season else ""
-                    season_raw_str = str(season_raw).lower() if season_raw else ""
-                    season_key = 'all-season'
-                    if 'зим' in season_raw_str or 'winter' in season_raw_str: season_key = 'winter'
-                    elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str: season_key = 'summer'
+                        model_name = str(row[c_model]).strip()
+                        
+                        # Обробка розміру
+                        size_raw = str(row[c_size]).strip()
+                        match = re.search(r'(\d+)/(\d+)\s*[a-zA-Z]*\s*(\d+)', size_raw)
+                        if match:
+                            w, p, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                        else:
+                            w, p, d = 0, 0, 0
 
-                    # 4. Ціна (Бронебійна)
-                    raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
+                        # Унікальне ім'я для пошуку (вирішує проблему дублікатів)
+                        # Якщо розмір кривий - додаємо його в назву, щоб відрізняти
+                        unique_name = model_name
+                        if (w == 0 or p == 0 or d == 0) and size_raw:
+                            unique_name = f"{model_name} [{size_raw}]"
 
-                    if isinstance(raw_val, (int, float)):
-                        raw_cost = float(raw_val)
-                    else:
-                        val_str = str(raw_val) if raw_val is not None else ""
-                        val_str = re.sub(r'[^\d,.]', '', val_str)
-                        val_str = val_str.replace(',', '.')
-                        if val_str.count('.') > 1:
-                            parts = val_str.split('.')
-                            val_str = "".join(parts[:-1]) + "." + parts[-1]
+                        # Сезон
+                        season_raw = str(row[c_season]).lower()
+                        season_key = 'all-season'
+                        if 'зим' in season_raw or 'winter' in season_raw: season_key = 'winter'
+                        elif 'літ' in season_raw or 'summer' in season_raw: season_key = 'summer'
+
+                        # Ціна (Бронебійна)
+                        raw_price = row[c_price]
                         try:
-                            raw_cost = float(val_str)
-                        except ValueError:
-                            raw_cost = 0.0
+                            if isinstance(raw_price, (int, float)):
+                                cost = float(raw_price)
+                            else:
+                                clean_price = re.sub(r'[^\d,.]', '', str(raw_price))
+                                clean_price = clean_price.replace(',', '.')
+                                # Фікс для 1.200.00
+                                if clean_price.count('.') > 1:
+                                    parts = clean_price.split('.')
+                                    clean_price = "".join(parts[:-1]) + "." + parts[-1]
+                                cost = float(clean_price)
+                        except: cost = 0.0
 
-                    # 5. Кількість
-                    qty_cell = row[col_qty] if col_qty is not None and len(row) > col_qty else 0
-                    try:
-                        qty_str = str(qty_cell).strip()
-                        if qty_str == '>12': qty = 20
-                        elif qty_str.isdigit(): qty = int(qty_str)
-                        else: qty = int(re.sub(r'[^0-9]', '', qty_str) or 0)
-                    except: qty = 0
+                        # Кількість
+                        try:
+                            qty_val = str(row[c_qty]).strip()
+                            if '>' in qty_val: qty = 20
+                            else: qty = int(re.sub(r'[^0-9]', '', qty_val) or 0)
+                        except: qty = 0
 
-                    # 6. Додаткові поля
-                    country_val = str(row[col_country]).strip() if col_country is not None and len(row) > col_country and row[col_country] else "-"
-                    try:
-                        year_val = int(row[col_year]) if col_year is not None and len(row) > col_year and row[col_year] else 2024
-                    except: year_val = 2024
+                        # Додаткові поля
+                        country = str(row[c_country]).strip() if c_country and row[c_country] else "-"
+                        try: year = int(row[c_year]) if c_year and row[c_year] else 2024
+                        except: year = 2024
+                        
+                        photo_link = str(row[c_photo]).strip() if c_photo and row[c_photo] else None
 
-                    load_val = str(row[col_load]).strip() if col_load is not None and len(row) > col_load and row[col_load] else "-"
-                    speed_val = str(row[col_speed]).strip() if col_speed is not None and len(row) > col_speed and row[col_speed] else "-"
-                    stud_val = str(row[col_stud]).strip() if col_stud is not None and len(row) > col_stud and row[col_stud] else "Не шип"
-                    vehicle_val = str(row[col_vehicle]).strip() if col_vehicle is not None and len(row) > col_vehicle and row[col_vehicle] else "Легковий"
-                    
-                    photo_url_val = str(row[col_photo]).strip() if col_photo is not None and len(row) > col_photo and row[col_photo] else None
+                        # --- ГОЛОВНА ДІЯ: UPDATE OR CREATE ---
+                        obj, created = Product.objects.update_or_create(
+                            name=unique_name,
+                            brand=brand_obj,
+                            width=w, profile=p, diameter=d,
+                            defaults={
+                                'seasonality': season_key,
+                                'cost_price': cost,
+                                'stock_quantity': qty,
+                                'country': country,
+                                'year': year,
+                                'description': f"Шини {brand_name} {model_name}. {size_raw}. {season_raw}."
+                            }
+                        )
+                        
+                        # Оновлюємо фото тільки якщо його немає
+                        if photo_link and not obj.photo_url:
+                            obj.photo_url = photo_link
+                            obj.save(update_fields=['photo_url'])
 
-                    full_desc = (f"Шини {brand_name} {model_name}. Розмір: {size_str}. "
-                                 f"Сезон: {season_raw_str}. Виробництво: {country_val} {year_val}.")
+                        if created: created_count += 1
+                        else: updated_count += 1
 
-                    obj, created = Product.objects.update_or_create(
-                        name=unique_model_name,
-                        brand=brand_obj,
-                        width=width,
-                        profile=profile,
-                        diameter=diameter,
-                        defaults={
-                            'seasonality': season_key,
-                            'cost_price': raw_cost,
-                            'stock_quantity': qty,
-                            'description': full_desc,
-                            'country': country_val,
-                            'year': year_val,
-                            'load_index': load_val,
-                            'speed_index': speed_val,
-                            'stud_type': stud_val,
-                            'vehicle_type': vehicle_val,
-                        }
-                    )
+                messages.success(request, f"Успішно! ✅ Нових: {created_count}, 🔄 Оновлено: {updated_count}")
 
-                    if photo_url_val and not obj.photo_url:
-                        obj.photo_url = photo_url_val
-                        obj.save(update_fields=["photo_url"])
-
-                    if created: created_count += 1
-                    else: updated_count += 1
-
-                messages.success(request, f"ОБРОБЛЕНО. ✅ Нових: {created_count}. 🔄 Оновлено: {updated_count}. Пропущено: {skipped_count}.")
             except Exception as e:
-                messages.error(request, f'Помилка імпорту: {e}')
+                messages.error(request, f"Критична помилка: {e}")
+            
             return redirect("..")
+
         form = ExcelImportForm()
         return render(request, "store/admin_import.html", {"form": form})
 
@@ -266,8 +221,6 @@ class ProductAdmin(admin.ModelAdmin):
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name']
 
-# --- РЕЄСТРАЦІЯ БАНЕРА (Щоб він був в адмінці) ---
 @admin.register(SiteBanner)
 class SiteBannerAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active', 'created_at']
-    list_editable = ['is_active']
+    list_display = ['title', 'is_active']

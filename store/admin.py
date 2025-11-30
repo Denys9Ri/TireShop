@@ -3,7 +3,7 @@ from django.urls import path
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django import forms
-from django.http import HttpResponse # <--- Потрібно для скачування файлу
+from django.http import HttpResponse
 import openpyxl
 import re
 import gc
@@ -81,39 +81,61 @@ class ProductAdmin(admin.ModelAdmin):
         my_urls = [
             path('import-excel/', self.import_excel, name="import_excel"),
             path('import-photos/', self.import_photos, name="import_photos"),
-            path('export-models/', self.export_unique_models, name="export_unique_models"), # Нова функція
+            path('export-models/', self.export_unique_models, name="export_unique_models"),
         ]
         return my_urls + urls
 
-    # --- 1. ЕКСПОРТ УНІКАЛЬНИХ МОДЕЛЕЙ (ЩОБ ВИ НЕ МУЧИЛИСЬ) ---
+    # --- 1. РОЗУМНИЙ ЕКСПОРТ (ОЧИЩЕННЯ ВІД РОЗМІРІВ) ---
     def export_unique_models(self, request):
-        # Створюємо Excel
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Models for Photos"
+        ws.title = "Models"
+        ws.append(['Brand', 'Clean Model Name', 'Photo URL'])
         
-        # Заголовки
-        ws.append(['Brand', 'Model', 'Photo URL (Вставте сюди)'])
+        # Беремо всі товари
+        products = Product.objects.all().select_related('brand')
         
-        # Отримуємо унікальні пари Бренд+Модель з бази
-        # .distinct() прибирає дублікати
-        unique_products = Product.objects.values('brand__name', 'name').distinct().order_by('brand__name', 'name')
+        # Множина, щоб зберігати тільки унікальні (Бренд + Чиста модель)
+        seen = set()
         
-        count = 0
-        for p in unique_products:
-            b_name = p['brand__name'] if p['brand__name'] else "Unknown"
-            m_name = p['name']
-            ws.append([b_name, m_name, ''])
-            count += 1
+        for p in products:
+            brand_name = p.brand.name if p.brand else "Unknown"
+            raw_name = p.name # Наприклад "Шина 155/65R13 73T A609 (APLUS)"
             
-        # Налаштовуємо відповідь браузеру (скачування файлу)
+            # --- ЧИСТКА НАЗВИ ВІД СМІТТЯ ---
+            # 1. Прибираємо слово "Шина"
+            clean = re.sub(r'шина', '', raw_name, flags=re.IGNORECASE)
+            # 2. Прибираємо розміри типу 155/65, 155/65R13, R13
+            clean = re.sub(r'\b\d{3}/\d{2}R?\d{0,2}\b', '', clean) 
+            clean = re.sub(r'\bR\d{2}C?\b', '', clean)
+            # 3. Прибираємо індекси типу 73T, 100V, 91H
+            clean = re.sub(r'\b\d{2,3}[A-Z]\b', '', clean)
+            # 4. Прибираємо назву бренду, якщо вона є в дужках (APLUS)
+            if p.brand:
+                clean = re.sub(rf'\({re.escape(p.brand.name)}\)', '', clean, flags=re.IGNORECASE)
+                clean = re.sub(rf'\b{re.escape(p.brand.name)}\b', '', clean, flags=re.IGNORECASE)
+            
+            # 5. Прибираємо зайві символи та пробіли
+            clean = clean.replace('()', '').strip()
+            clean = re.sub(r'\s+', ' ', clean) # Подвійні пробіли на одинарні
+            
+            # Якщо після чистки нічого не лишилось, беремо оригінал (щоб не втратити)
+            if len(clean) < 2:
+                clean = p.name
+
+            # Створюємо унікальний ключ
+            key = (brand_name.upper(), clean.upper())
+            
+            if key not in seen:
+                ws.append([brand_name, clean, '']) # Записуємо чисту назву
+                seen.add(key)
+            
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=unique_models_for_photos.xlsx'
+        response['Content-Disposition'] = 'attachment; filename=clean_models_for_photos.xlsx'
         wb.save(response)
-        
         return response
 
-    # --- 2. ІМПОРТ ФОТО ---
+    # --- 2. ІМПОРТ ФОТО (РОЗУМНИЙ) ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -122,24 +144,22 @@ class ProductAdmin(admin.ModelAdmin):
                 sheet = wb.active
                 updated_products = 0
                 
-                # Читаємо файл (Brand | Model | URL)
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    if not row[0] or not row[2]: continue
+                    if not row[0] or not row[1] or not row[2]: continue
                     
-                    brand_txt = str(row[0]).strip()
-                    model_txt = str(row[1]).strip()
-                    url_txt = str(row[2]).strip()
+                    brand_txt = str(row[0]).strip() # Brand
+                    model_txt = str(row[1]).strip() # Clean Model (напр. A609)
+                    url_txt = str(row[2]).strip()   # URL
                     
                     if not url_txt.startswith('http'): continue
 
-                    # Шукаємо всі товари цього бренду і моделі
+                    # Шукаємо товари, які містять цей бренд і цю модель
+                    # icontains знайде "A609" всередині "155/65R13 A609"
                     products_to_update = Product.objects.filter(
                         brand__name__icontains=brand_txt,
                         name__icontains=model_txt
                     )
                     
-                    # Оновлюємо, якщо фото ще немає
-                    # (або приберіть photo_url__isnull=True, якщо хочете перезаписати старі фото)
                     count = products_to_update.update(photo_url=url_txt)
                     updated_products += count
                 
@@ -151,7 +171,7 @@ class ProductAdmin(admin.ModelAdmin):
         form = PhotoImportForm()
         return render(request, "store/admin_import_photos.html", {"form": form})
 
-    # --- 3. ІМПОРТ ТОВАРІВ (Без змін) ---
+    # --- 3. ІМПОРТ ТОВАРІВ (Той самий) ---
     def import_excel(self, request):
         if request.method == "POST":
             form = ExcelImportForm(request.POST, request.FILES)
@@ -176,8 +196,8 @@ class ProductAdmin(admin.ModelAdmin):
                                 if val.startswith(alias): return idx
                         return None
 
-                    c_brand = find_col(["бренд", "brand"]) or 0
-                    c_model = find_col(["модель", "model"]) or 1
+                    c_brand = find_col(["бренд", "brand", "фірма"]) or 0
+                    c_model = find_col(["модель", "model", "назва"]) or 1
                     c_size = find_col(["типоразмер", "size"]) or 2
                     c_season = find_col(["сезон", "season"]) or 3
                     c_price = find_col(["цена", "price"]) or 4

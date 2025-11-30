@@ -4,104 +4,16 @@
 {% block title %}Каталог - R16{% endblock %}
 
 {% block content %}
-<style>
-    /* --- СТИЛІ ДЛЯ КАРУСЕЛІ (ВИПРАВЛЕНІ ПІД ПК) --- */
-    
-    .banner-wrapper {
-        margin-bottom: 40px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        position: relative;
-        background-color: transparent; /* Прибираємо білий фон */
-    }
-
-    .carousel-item {
-        transition: transform 0.6s ease-in-out;
-    }
-
-    .banner-img {
-        width: 100%;
-        height: auto; /* Висота залежить від ширини */
-        display: block;
-        object-fit: cover; /* Заповнювати простір */
-    }
-
-    /* --- ГАРНІ КНОПКИ --- */
-    .carousel-control-prev, 
-    .carousel-control-next {
-        width: 5%;
-        opacity: 1;
-    }
-
-    .nav-circle {
-        width: 40px;
-        height: 40px;
-        background-color: rgba(0, 74, 153, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.3s, transform 0.2s;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    .carousel-control-prev:hover .nav-circle,
-    .carousel-control-next:hover .nav-circle {
-        background-color: #004a99;
-        transform: scale(1.1);
-    }
-
-    .nav-icon {
-        font-size: 1.2rem;
-        color: white;
-        font-weight: bold;
-    }
-
-    .carousel-indicators [data-bs-target] {
-        background-color: #004a99;
-        height: 4px;
-        border-radius: 2px;
-    }
-
-    /* --- АДАПТАЦІЯ (Тут магія для вашої проблеми) --- */
-    
-    /* НА ТЕЛЕФОНІ (маленький екран) */
-    @media (max-width: 991px) {
-        .banner-wrapper {
-            width: 100%; /* На всю ширину */
-        }
-        .banner-img {
-            min-height: 200px; /* Мінімальна висота, щоб не зникав */
-            object-fit: cover; /* На телефоні краще cover, щоб не було мілким */
-        }
-        .nav-circle { width: 32px; height: 32px; }
-    }
-
-    /* НА КОМП'ЮТЕРІ (Великий екран) */
-    @media (min-width: 992px) {
-        .banner-wrapper {
-            /* ОБМЕЖУЄМО ШИРИНУ, щоб не було білих полів */
-            max-width: 960px; 
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .carousel-inner {
-            /* Висота автоматична - підлаштується під картинку */
-            height: auto; 
-        }
-    }
-</style>
-
 <div class="catalog-wrapper">
 
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
+
     <div id="filter-overlay" class="filter-overlay"></div>
 
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
+
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -109,6 +21,7 @@
                     <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
+
             <label>Сезон:</label>
             <select name="season">
                 <option value="">Будь-який</option>
@@ -116,6 +29,7 @@
                     <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
+
             <label>Ширина:</label>
             <select name="width">
                 <option value="">Всі</option>
@@ -123,6 +37,7 @@
                     <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
                 {% endfor %}
             </select>
+
             <label>Профіль:</label>
             <select name="profile">
                 <option value="">Всі</option>
@@ -130,6 +45,7 @@
                     <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
                 {% endfor %}
             </select>
+
             <label>Діаметр:</label>
             <select name="diameter">
                 <option value="">Всі</option>
@@ -137,6 +53,7 @@
                     <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
                 {% endfor %}
             </select>
+
             <button type="submit" class="filter-submit-btn">Фільтрувати</button>
             <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
         </form>
@@ -157,7 +74,8 @@
         </div>
 
         {% if show_banner and banners %}
-            <div class="banner-wrapper">
+            <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: transparent;">
+                
                 <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
                     
                     {% if banners|length > 1 %}
@@ -179,9 +97,9 @@
                                 {% endif %}
                                     
                                     {% if banner.image_url %}
-                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" onerror="this.style.display='none'">
+                                        <img src="{{ banner.image_url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}" onerror="this.style.display='none'">
                                     {% elif banner.image %}
-                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
+                                        <img src="{{ banner.image.url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}">
                                     {% endif %}
 
                                 {% if banner.link %}
@@ -195,16 +113,10 @@
 
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="nav-circle">
-                                <i class="bi bi-chevron-left nav-icon"></i>
-                            </span>
-                            <span class="visually-hidden">Попередня</span>
+                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="nav-circle">
-                                <i class="bi bi-chevron-right nav-icon"></i>
-                            </span>
-                            <span class="visually-hidden">Наступна</span>
+                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
                         </button>
                     {% endif %}
                 </div>
@@ -222,6 +134,11 @@
         <div class="product-grid">
             {% for product in page_obj %}
                 <div class="product-card">
+                    
+                    {% if product.discount_percent > 0 %}
+                        <span class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill" style="z-index: 10;">-{{ product.discount_percent }}%</span>
+                    {% endif %}
+
                     {% if product.photo_url %}
                         <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
                     {% elif product.photo %}
@@ -229,16 +146,30 @@
                     {% else %}
                         <img src="https://placehold.co/600x600?text=No+Photo" alt="Немає фото" class="product-image">
                     {% endif %}
+                    
                     <h3 class="product-name">
                         <a href="{% url 'store:product_detail' product.id %}">
                             {{ product.brand.name }} {{ product.name }}
                         </a>
                     </h3>
+                    
                     <p class="product-specs">
                         {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
                     </p>
-                    <p class="product-price">{{ product.price }} грн</p>
+                    
+                    <div class="product-price-block mb-2">
+                        {% if product.discount_percent > 0 %}
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="product-price text-danger fw-bold">{{ product.price }} грн</span>
+                                <small class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">{{ product.old_price }}</small>
+                            </div>
+                        {% else %}
+                            <p class="product-price text-primary">{{ product.price }} грн</p>
+                        {% endif %}
+                    </div>
+
                     <p class="product-stock">Наявність: {{ product.stock_quantity }} шт.</p>
+                    
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form">
                         {% csrf_token %}
                         <div class="quantity-stepper">

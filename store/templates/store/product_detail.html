@@ -3,7 +3,7 @@
 
 {% block content %}
 <style>
-    /* 1. ГЛАСМОРФІЗМ (Загальний контейнер) */
+    /* 1. ГЛАСМОРФІЗМ */
     .glass-product-card {
         background: rgba(225, 240, 255, 0.9);
         backdrop-filter: blur(15px);
@@ -16,204 +16,208 @@
         margin-bottom: 40px;
     }
 
-    /* 2. ФОТО ТОВАРУ */
-    .product-image-container {
-        position: relative;
+    /* 2. СЛАЙДЕР ТОВАРУ */
+    .product-carousel {
         background: #fff;
         border-radius: 20px;
         box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
+        overflow: hidden;
+        position: relative;
+        height: 350px; /* Фіксована висота для слайдера */
+    }
+
+    .carousel-item {
+        height: 350px;
         text-align: center;
-        cursor: zoom-in;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        height: 280px; 
-        margin-bottom: 15px; /* Відступ до галереї */
+        background-color: #fff;
+        cursor: zoom-in; /* Показуємо, що можна збільшити */
     }
 
     .product-image {
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
-        transition: opacity 0.3s ease;
     }
 
-    /* --- НОВЕ: ГАЛЕРЕЯ --- */
-    .gallery-container {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto; /* Скрол, якщо фото багато */
-        padding-bottom: 5px;
+    /* Стрілочки слайдера (Гарні кружечки) */
+    .carousel-control-prev, .carousel-control-next {
+        width: 50px;
+        opacity: 0; /* Приховані, поки не наведеш (або на мобільному завжди) */
+        transition: opacity 0.3s;
     }
     
-    .gallery-container::-webkit-scrollbar { height: 4px; }
-    .gallery-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    .product-carousel:hover .carousel-control-prev,
+    .product-carousel:hover .carousel-control-next {
+        opacity: 1;
+    }
 
-    .gallery-thumb {
-        width: 70px;
-        height: 70px;
-        border-radius: 12px;
+    .nav-circle {
+        width: 35px;
+        height: 35px;
+        background-color: rgba(0, 74, 153, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .nav-icon { color: white; font-size: 1rem; font-weight: bold; }
+
+    /* 3. МІНІАТЮРИ (THUMBNAILS) */
+    .thumbnails-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        justify-content: center; /* Центруємо мініатюри */
+    }
+    
+    .thumb-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
         border: 2px solid transparent;
-        cursor: pointer;
-        object-fit: cover;
+        padding: 0;
         background: #fff;
+        cursor: pointer;
+        opacity: 0.6;
         transition: all 0.2s;
-        opacity: 0.7;
+        overflow: hidden;
         flex-shrink: 0;
     }
 
-    .gallery-thumb:hover { opacity: 1; }
-    
-    .gallery-thumb.active {
+    .thumb-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .thumb-btn:hover { opacity: 1; }
+    .thumb-btn.active {
         border-color: #0d6efd;
         opacity: 1;
         transform: scale(1.05);
     }
 
-    /* 3. КНОПКИ КІЛЬКОСТІ (+ 1 -) */
-    .quantity-selector {
-        display: inline-flex;
-        align-items: center;
-        background: #fff;
-        border-radius: 50px;
-        padding: 4px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid #cce0ff;
-        flex-shrink: 0; 
-    }
-
-    .qty-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
+    /* 4. ЛАЙТБОКС (СЛАЙДЕР НА ВЕСЬ ЕКРАН) */
+    .modal-fullscreen .modal-content {
+        background-color: rgba(0, 0, 0, 0.95);
         border: none;
-        background: #f0f7ff;
-        color: #0d6efd;
-        font-weight: bold;
-        font-size: 1.2rem;
-        cursor: pointer;
+    }
+    .modal-fullscreen .btn-close {
+        filter: invert(1);
+        opacity: 1;
+        z-index: 1050;
+    }
+    .lightbox-carousel .carousel-item {
+        height: 90vh; /* Висота на весь екран */
+        background: transparent;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.2s;
+    }
+    .lightbox-carousel img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+    }
+
+    /* --- АДАПТАЦІЯ --- */
+    @media (max-width: 768px) {
+        .glass-product-card { padding: 1.5rem; }
+        .product-carousel, .carousel-item { height: 280px; } /* Менше на телефоні */
+        .thumbnails-row { justify-content: flex-start; } /* Зліва, щоб скролити */
+        .carousel-control-prev, .carousel-control-next { opacity: 1; } /* Стрілки завжди видно */
     }
     
+    /* Стилі кнопок і характеристик (з минулого коду) */
+    .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
+    .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f7ff; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
     .qty-btn:hover { background: #0d6efd; color: white; }
-
-    .qty-input {
-        width: 40px;
-        text-align: center;
-        border: none;
-        font-weight: bold;
-        font-size: 1.1rem;
-        color: #333;
-        background: transparent;
-    }
-
-    /* 4. КНОПКА КУПИТИ */
-    .btn-buy-glass {
-        padding: 12px 25px;
-        border-radius: 50px;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 1rem;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
-        width: 100%;
-        transition: transform 0.2s;
-        white-space: nowrap;
-    }
-    .btn-buy-glass:hover { transform: translateY(-2px); }
-
-    .action-row {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex-wrap: nowrap;
-    }
-
-    /* ХАРАКТЕРИСТИКИ */
-    .specs-box {
-        background: rgba(255,255,255,0.6); 
-        border: 1px solid rgba(255,255,255,0.8);
-        border-radius: 16px;
-        padding: 20px;
-        margin-top: 20px;
-    }
+    .qty-input { width: 40px; text-align: center; border: none; font-weight: bold; font-size: 1.1rem; color: #333; background: transparent; }
+    .btn-buy-glass { padding: 12px 25px; border-radius: 50px; font-weight: 700; text-transform: uppercase; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); width: 100%; transition: transform 0.2s; white-space: nowrap; }
+    .action-row { display: flex; gap: 15px; align-items: center; flex-wrap: nowrap; }
+    .specs-box { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); border-radius: 16px; padding: 20px; margin-top: 20px; }
     .specs-list { list-style: none; padding: 0; margin: 0; }
     .specs-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 1rem; }
     .specs-label { color: #555; }
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
-    
-    .desc-box {
-        margin-top: 20px;
-        font-size: 0.95rem;
-        color: #555;
-        line-height: 1.6;
-    }
-
-    /* АДАПТАЦІЯ */
-    @media (max-width: 576px) {
-        .glass-product-card { padding: 1.5rem; }
-        .action-row { gap: 10px; }
-        .btn-buy-glass { padding: 10px 15px; font-size: 0.9rem; }
-        .quantity-selector { transform: scale(0.95); }
-    }
-    @media (min-width: 992px) {
-        .glass-product-card { padding: 3rem; }
-        .product-image-container { height: 450px; padding: 30px; }
-        h1 { font-size: 2.2rem; }
-        .price-text { font-size: 2.5rem; }
-        .action-row { max-width: 500px; }
-    }
+    .desc-box { margin-top: 20px; font-size: 0.95rem; color: #555; line-height: 1.6; }
 </style>
 
 <div class="container py-4">
-    
     <div class="glass-product-card">
         <div class="row g-4 g-lg-5">
             
             <div class="col-lg-6">
-                <div class="product-image-container" onclick="openLightbox()">
-                    {% if product.photo_url %}
-                        <img src="{{ product.photo_url }}" class="product-image" id="mainImage" 
-                             alt="{{ product.name }}" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
-                    {% elif product.photo %}
-                        <img src="{{ product.photo.url }}" class="product-image" id="mainImage" alt="{{ product.name }}">
-                    {% else %}
-                        <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" id="mainImage" alt="No image">
+                
+                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-ride="false" data-bs-interval="false">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active" data-bs-toggle="modal" data-bs-target="#lightboxModal" onclick="syncLightbox(0)">
+                            {% if product.photo_url %}
+                                <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
+                            {% elif product.photo %}
+                                <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="No image">
+                            {% endif %}
+                        </div>
+
+                        {% for img in product.images.all %}
+                            <div class="carousel-item" data-bs-toggle="modal" data-bs-target="#lightboxModal" onclick="syncLightbox({{ forloop.counter }})">
+                                {% if img.image_url %}
+                                    <img src="{{ img.image_url }}" class="product-image" alt="Gallery Image">
+                                {% elif img.image %}
+                                    <img src="{{ img.image.url }}" class="product-image" alt="Gallery Image">
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if product.images.all %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#productMainCarousel" data-bs-slide="prev">
+                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#productMainCarousel" data-bs-slide="next">
+                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
+                        </button>
                     {% endif %}
                     
-                    <div style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer;">
-                        <i class="bi bi-arrows-fullscreen"></i>
+                    <div style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; pointer-events: none;">
+                        <i class="bi bi-zoom-in"></i>
                     </div>
                 </div>
 
-                {% if product.images.all or product.photo_url or product.photo %}
-                <div class="gallery-container">
-                    {% if product.photo_url %}
-                        <img src="{{ product.photo_url }}" class="gallery-thumb active" onclick="changeImage(this.src, this)">
-                    {% elif product.photo %}
-                        <img src="{{ product.photo.url }}" class="gallery-thumb active" onclick="changeImage(this.src, this)">
-                    {% endif %}
+                {% if product.images.all %}
+                <div class="thumbnails-row">
+                    <button type="button" data-bs-target="#productMainCarousel" data-bs-slide-to="0" class="thumb-btn active">
+                        {% if product.photo_url %}
+                            <img src="{{ product.photo_url }}" onerror="this.src='https://placehold.co/100x100?text=Error';">
+                        {% elif product.photo %}
+                            <img src="{{ product.photo.url }}">
+                        {% else %}
+                            <img src="https://placehold.co/100x100?text=No">
+                        {% endif %}
+                    </button>
 
                     {% for img in product.images.all %}
-                        {% if img.image_url %}
-                            <img src="{{ img.image_url }}" class="gallery-thumb" onclick="changeImage(this.src, this)">
-                        {% elif img.image %}
-                            <img src="{{ img.image.url }}" class="gallery-thumb" onclick="changeImage(this.src, this)">
-                        {% endif %}
+                        <button type="button" data-bs-target="#productMainCarousel" data-bs-slide-to="{{ forloop.counter }}" class="thumb-btn">
+                            {% if img.image_url %}
+                                <img src="{{ img.image_url }}">
+                            {% elif img.image %}
+                                <img src="{{ img.image.url }}">
+                            {% endif %}
+                        </button>
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
 
             <div class="col-lg-6 d-flex flex-column">
-                
                 <div class="mb-3">
                     {% if product.stock_quantity > 0 %}
                         <span class="badge bg-success bg-opacity-75 text-white rounded-pill px-3 py-2">✅ В наявності</span>
@@ -223,9 +227,7 @@
                 </div>
 
                 <h1 class="fw-bold mb-2 lh-sm">{{ product.brand.name }} {{ product.name }}</h1>
-                <p class="text-muted fs-5 mb-4">
-                    {{ product.width }} / {{ product.profile }} R{{ product.diameter }}
-                </p>
+                <p class="text-muted fs-5 mb-4">{{ product.width }} / {{ product.profile }} R{{ product.diameter }}</p>
 
                 <h2 class="text-primary fw-bold mb-4 price-text" style="font-size: 2rem;">
                     {{ product.price }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
@@ -239,7 +241,6 @@
                             <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="99" class="qty-input" readonly>
                             <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
                         </div>
-
                         <button type="submit" class="btn btn-primary btn-buy-glass">
                             <i class="bi bi-cart2 me-2"></i> В кошик
                         </button>
@@ -253,23 +254,63 @@
                         <li class="specs-item"><span class="specs-label">Ширина</span><span class="specs-dots"></span><span class="specs-value">{{ product.width }}</span></li>
                         <li class="specs-item"><span class="specs-label">Профіль</span><span class="specs-dots"></span><span class="specs-value">{{ product.profile }}</span></li>
                         <li class="specs-item"><span class="specs-label">Діаметр</span><span class="specs-dots"></span><span class="specs-value">R{{ product.diameter }}</span></li>
-                        
                         <li class="specs-item"><span class="specs-label">Сезон</span><span class="specs-dots"></span><span class="specs-value">
-                            {% if product.seasonality == 'winter' %}❄️ Зимові
-                            {% elif product.seasonality == 'summer' %}☀️ Літні
-                            {% else %}🌤 Всесезонні{% endif %}
+                            {% if product.seasonality == 'winter' %}❄️ Зимові{% elif product.seasonality == 'summer' %}☀️ Літні{% else %}🌤 Всесезонні{% endif %}
                         </span></li>
                         <li class="specs-item"><span class="specs-label">Країна / Рік</span><span class="specs-dots"></span><span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span></li>
                         <li class="specs-item"><span class="specs-label">Індекси</span><span class="specs-dots"></span><span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></li>
                         <li class="specs-item"><span class="specs-label">Шипи</span><span class="specs-dots"></span><span class="specs-value">{{ product.stud_type }}</span></li>
                         <li class="specs-item"><span class="specs-label">Тип авто</span><span class="specs-dots"></span><span class="specs-value">{{ product.vehicle_type }}</span></li>
                     </ul>
-
                     {% if product.description %}
                         <div class="desc-box border-top pt-3 mt-3">
-                            <strong>Опис:</strong><br>
-                            {{ product.description }}
+                            <strong>Опис:</strong><br>{{ product.description }}
                         </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-transparent position-absolute w-100" style="z-index: 1060;">
+                <button type="button" class="btn-close btn-close-white ms-auto m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center">
+                
+                <div id="lightboxCarousel" class="carousel slide lightbox-carousel w-100 h-100" data-bs-ride="false" data-bs-interval="false">
+                    <div class="carousel-inner h-100">
+                        <div class="carousel-item active h-100">
+                            {% if product.photo_url %}
+                                <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                            {% elif product.photo %}
+                                <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="https://placehold.co/600x600?text=No+Photo">
+                            {% endif %}
+                        </div>
+
+                        {% for img in product.images.all %}
+                            <div class="carousel-item h-100">
+                                {% if img.image_url %}
+                                    <img src="{{ img.image_url }}" alt="Gallery">
+                                {% elif img.image %}
+                                    <img src="{{ img.image.url }}" alt="Gallery">
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if product.images.all %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="prev">
+                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="next">
+                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
+                        </button>
                     {% endif %}
                 </div>
 
@@ -278,17 +319,8 @@
     </div>
 </div>
 
-<div id="lightbox" class="lightbox" onclick="closeLightbox()">
-    <span class="lightbox-close">&times;</span>
-    <img id="lightbox-img" src="">
-</div>
-<style>
-    .lightbox { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; cursor: zoom-out;}
-    .lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 50px rgba(255,255,255,0.1); }
-    .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
-</style>
-
 <script>
+    // Логіка кнопок кількості
     function updateQty(change) {
         const input = document.getElementById('qtyInput');
         let newVal = parseInt(input.value) + change;
@@ -296,26 +328,24 @@
         if (newVal > 20) newVal = 20; 
         input.value = newVal;
     }
+
+    // СИНХРОНІЗАЦІЯ СЛАЙДЕРІВ
+    // 1. Коли гортається основний слайдер - підсвічуємо мініатюри
+    const mainCarousel = document.getElementById('productMainCarousel');
+    const thumbs = document.querySelectorAll('.thumb-btn');
     
-    // --- ЗМІНА ФОТО ПРИ КЛІКУ ---
-    function changeImage(src, element) {
-        const mainImg = document.getElementById('mainImage');
-        mainImg.style.opacity = 0;
-        setTimeout(() => {
-            mainImg.src = src;
-            mainImg.style.opacity = 1;
-        }, 150);
+    mainCarousel.addEventListener('slide.bs.carousel', function (e) {
+        thumbs.forEach(t => t.classList.remove('active'));
+        // e.to - індекс слайда, на який перейшли
+        if(thumbs[e.to]) thumbs[e.to].classList.add('active');
+    });
 
-        document.querySelectorAll('.gallery-thumb').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-    }
-
-    function openLightbox() {
-        document.getElementById('lightbox-img').src = document.getElementById('mainImage').src;
-        document.getElementById('lightbox').style.display = 'flex';
-    }
-    function closeLightbox() {
-        document.getElementById('lightbox').style.display = 'none';
+    // 2. Коли відкриваємо лайтбокс - перемикаємо його на те саме фото
+    function syncLightbox(index) {
+        // Знаходимо карусель лайтбокса
+        var lightboxCarousel = new bootstrap.Carousel(document.getElementById('lightboxCarousel'));
+        // Перемикаємо на потрібний слайд
+        lightboxCarousel.to(index);
     }
 </script>
 {% endblock %}

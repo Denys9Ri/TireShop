@@ -29,6 +29,7 @@
         justify-content: center;
         padding: 10px;
         height: 280px; 
+        margin-bottom: 15px; /* Відступ до галереї */
     }
 
     .product-image {
@@ -37,11 +38,39 @@
         width: auto;
         height: auto;
         object-fit: contain;
-        transition: transform 0.3s ease;
+        transition: opacity 0.3s ease;
     }
 
-    .product-image:hover {
-        transform: scale(1.03);
+    /* --- НОВЕ: ГАЛЕРЕЯ --- */
+    .gallery-container {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto; /* Скрол, якщо фото багато */
+        padding-bottom: 5px;
+    }
+    
+    .gallery-container::-webkit-scrollbar { height: 4px; }
+    .gallery-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+    .gallery-thumb {
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        object-fit: cover;
+        background: #fff;
+        transition: all 0.2s;
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+
+    .gallery-thumb:hover { opacity: 1; }
+    
+    .gallery-thumb.active {
+        border-color: #0d6efd;
+        opacity: 1;
+        transform: scale(1.05);
     }
 
     /* 3. КНОПКИ КІЛЬКОСТІ (+ 1 -) */
@@ -119,39 +148,27 @@
     .specs-label { color: #555; }
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
-
-    /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
-    @media (max-width: 576px) {
-        .glass-product-card {
-            padding: 1.5rem;
-        }
-        .action-row {
-            gap: 10px;
-        }
-        .btn-buy-glass {
-            padding: 10px 15px; 
-            font-size: 0.9rem;
-        }
-        .quantity-selector {
-            transform: scale(0.95);
-        }
+    
+    .desc-box {
+        margin-top: 20px;
+        font-size: 0.95rem;
+        color: #555;
+        line-height: 1.6;
     }
 
-    /* --- АДАПТАЦІЯ ПІД КОМП'ЮТЕР --- */
+    /* АДАПТАЦІЯ */
+    @media (max-width: 576px) {
+        .glass-product-card { padding: 1.5rem; }
+        .action-row { gap: 10px; }
+        .btn-buy-glass { padding: 10px 15px; font-size: 0.9rem; }
+        .quantity-selector { transform: scale(0.95); }
+    }
     @media (min-width: 992px) {
-        .glass-product-card {
-            padding: 3rem;
-        }
-        .product-image-container {
-            height: 450px;
-            padding: 30px;
-        }
+        .glass-product-card { padding: 3rem; }
+        .product-image-container { height: 450px; padding: 30px; }
         h1 { font-size: 2.2rem; }
         .price-text { font-size: 2.5rem; }
-        
-        .action-row {
-            max-width: 500px;
-        }
+        .action-row { max-width: 500px; }
     }
 </style>
 
@@ -175,6 +192,24 @@
                         <i class="bi bi-arrows-fullscreen"></i>
                     </div>
                 </div>
+
+                {% if product.images.all or product.photo_url or product.photo %}
+                <div class="gallery-container">
+                    {% if product.photo_url %}
+                        <img src="{{ product.photo_url }}" class="gallery-thumb active" onclick="changeImage(this.src, this)">
+                    {% elif product.photo %}
+                        <img src="{{ product.photo.url }}" class="gallery-thumb active" onclick="changeImage(this.src, this)">
+                    {% endif %}
+
+                    {% for img in product.images.all %}
+                        {% if img.image_url %}
+                            <img src="{{ img.image_url }}" class="gallery-thumb" onclick="changeImage(this.src, this)">
+                        {% elif img.image %}
+                            <img src="{{ img.image.url }}" class="gallery-thumb" onclick="changeImage(this.src, this)">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
 
             <div class="col-lg-6 d-flex flex-column">
@@ -214,57 +249,28 @@
                 <div class="specs-box">
                     <h5 class="fw-bold mb-3 border-bottom pb-2">Характеристики</h5>
                     <ul class="specs-list">
-                        <li class="specs-item">
-                            <span class="specs-label">Бренд</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.brand.name }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Ширина</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.width }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Профіль</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.profile }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Діаметр</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">R{{ product.diameter }}</span>
-                        </li>
+                        <li class="specs-item"><span class="specs-label">Бренд</span><span class="specs-dots"></span><span class="specs-value">{{ product.brand.name }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Ширина</span><span class="specs-dots"></span><span class="specs-value">{{ product.width }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Профіль</span><span class="specs-dots"></span><span class="specs-value">{{ product.profile }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Діаметр</span><span class="specs-dots"></span><span class="specs-value">R{{ product.diameter }}</span></li>
                         
-                        <li class="specs-item">
-                            <span class="specs-label">Сезон</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">
-                                {% if product.seasonality == 'winter' %}❄️ Зимові
-                                {% elif product.seasonality == 'summer' %}☀️ Літні
-                                {% else %}🌤 Всесезонні{% endif %}
-                            </span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Країна / Рік</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Індекси</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Шипи</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.stud_type }}</span>
-                        </li>
-                        <li class="specs-item">
-                            <span class="specs-label">Тип авто</span>
-                            <span class="specs-dots"></span>
-                            <span class="specs-value">{{ product.vehicle_type }}</span>
-                        </li>
+                        <li class="specs-item"><span class="specs-label">Сезон</span><span class="specs-dots"></span><span class="specs-value">
+                            {% if product.seasonality == 'winter' %}❄️ Зимові
+                            {% elif product.seasonality == 'summer' %}☀️ Літні
+                            {% else %}🌤 Всесезонні{% endif %}
+                        </span></li>
+                        <li class="specs-item"><span class="specs-label">Країна / Рік</span><span class="specs-dots"></span><span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Індекси</span><span class="specs-dots"></span><span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Шипи</span><span class="specs-dots"></span><span class="specs-value">{{ product.stud_type }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Тип авто</span><span class="specs-dots"></span><span class="specs-value">{{ product.vehicle_type }}</span></li>
                     </ul>
+
+                    {% if product.description %}
+                        <div class="desc-box border-top pt-3 mt-3">
+                            <strong>Опис:</strong><br>
+                            {{ product.description }}
+                        </div>
+                    {% endif %}
                 </div>
 
             </div>
@@ -290,6 +296,20 @@
         if (newVal > 20) newVal = 20; 
         input.value = newVal;
     }
+    
+    // --- ЗМІНА ФОТО ПРИ КЛІКУ ---
+    function changeImage(src, element) {
+        const mainImg = document.getElementById('mainImage');
+        mainImg.style.opacity = 0;
+        setTimeout(() => {
+            mainImg.src = src;
+            mainImg.style.opacity = 1;
+        }, 150);
+
+        document.querySelectorAll('.gallery-thumb').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+    }
+
     function openLightbox() {
         document.getElementById('lightbox-img').src = document.getElementById('mainImage').src;
         document.getElementById('lightbox').style.display = 'flex';

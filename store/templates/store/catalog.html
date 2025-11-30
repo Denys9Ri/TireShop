@@ -7,13 +7,11 @@
 <div class="catalog-wrapper">
 
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
-
     <div id="filter-overlay" class="filter-overlay"></div>
 
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
-
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -21,7 +19,6 @@
                     <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
-
             <label>Сезон:</label>
             <select name="season">
                 <option value="">Будь-який</option>
@@ -29,7 +26,6 @@
                     <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
-
             <label>Ширина:</label>
             <select name="width">
                 <option value="">Всі</option>
@@ -37,7 +33,6 @@
                     <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
                 {% endfor %}
             </select>
-
             <label>Профіль:</label>
             <select name="profile">
                 <option value="">Всі</option>
@@ -45,7 +40,6 @@
                     <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
                 {% endfor %}
             </select>
-
             <label>Діаметр:</label>
             <select name="diameter">
                 <option value="">Всі</option>
@@ -53,7 +47,6 @@
                     <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
                 {% endfor %}
             </select>
-
             <button type="submit" class="filter-submit-btn">Фільтрувати</button>
             <a href="{% url 'catalog' %}" class="filter-reset-btn">Скинути</a>
         </form>
@@ -75,42 +68,27 @@
 
         {% if show_banner and banners %}
             <div class="promo-banner" style="margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: transparent;">
-                
                 <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-                    
                     {% if banners|length > 1 %}
                     <div class="carousel-indicators">
                         {% for banner in banners %}
-                            <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                                    class="{% if forloop.first %}active{% endif %}" aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
+                            <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}"></button>
                         {% endfor %}
                     </div>
                     {% endif %}
-
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.link %}
-                                    <a href="{{ banner.link }}" style="display: block;">
-                                {% else %}
-                                    <div>
-                                {% endif %}
-                                    
+                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% else %}<div>{% endif %}
                                     {% if banner.image_url %}
                                         <img src="{{ banner.image_url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}" onerror="this.style.display='none'">
                                     {% elif banner.image %}
                                         <img src="{{ banner.image.url }}" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;" alt="{{ banner.title }}">
                                     {% endif %}
-
-                                {% if banner.link %}
-                                    </a>
-                                {% else %}
-                                    </div>
-                                {% endif %}
+                                {% if banner.link %}</a>{% else %}</div>{% endif %}
                             </div>
                         {% endfor %}
                     </div>
-
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
                             <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
@@ -124,19 +102,18 @@
         {% endif %}
 
         <h1 class="page-title">
-            {% if search_query %}
-                Результати пошуку: "{{ search_query }}"
-            {% else %}
-                Каталог Товарів
-            {% endif %}
+            {% if search_query %}Результати пошуку: "{{ search_query }}"{% else %}Каталог Товарів{% endif %}
         </h1>
 
         <div class="product-grid">
             {% for product in page_obj %}
-                <div class="product-card">
+                <div class="product-card position-relative">
                     
                     {% if product.discount_percent > 0 %}
-                        <span class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill" style="z-index: 10;">-{{ product.discount_percent }}%</span>
+                        <div class="position-absolute top-0 start-0 m-3 badge bg-danger rounded-pill shadow-sm" 
+                             style="z-index: 10; font-size: 0.9rem; padding: 8px 12px;">
+                            -{{ product.discount_percent }}%
+                        </div>
                     {% endif %}
 
                     {% if product.photo_url %}
@@ -173,9 +150,9 @@
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form">
                         {% csrf_token %}
                         <div class="quantity-stepper">
-                            <button type="button" class="quantity-btn" data-direction="decrease" aria-label="Зменшити кількість">−</button>
-                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" aria-label="Кількість">
-                            <button type="button" class="quantity-btn" data-direction="increase" aria-label="Збільшити кількість">+</button>
+                            <button type="button" class="quantity-btn" data-direction="decrease">−</button>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                            <button type="button" class="quantity-btn" data-direction="increase">+</button>
                         </div>
                         <button type="submit" class="add-to-cart-btn">В кошик</button>
                     </form>
@@ -208,49 +185,34 @@
 </div>
 
 <script>
+  // Скрипти фільтрів і кнопок
   const filterBtn = document.getElementById('filter-toggle');
   const filterPanel = document.getElementById('filter-panel');
   const filterOverlay = document.getElementById('filter-overlay');
 
-  filterBtn.addEventListener('click', function() {
-    filterPanel.classList.toggle('is-active');
-    filterOverlay.classList.toggle('is-active');
-  });
-
-  filterOverlay.addEventListener('click', function() {
-    filterPanel.classList.remove('is-active');
-    filterOverlay.classList.remove('is-active');
-  });
+  if(filterBtn) {
+      filterBtn.addEventListener('click', () => {
+        filterPanel.classList.toggle('is-active');
+        filterOverlay.classList.toggle('is-active');
+      });
+      filterOverlay.addEventListener('click', () => {
+        filterPanel.classList.remove('is-active');
+        filterOverlay.classList.remove('is-active');
+      });
+  }
 
   document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
     const input = stepper.querySelector('input[name="quantity"]');
     const buttons = stepper.querySelectorAll('.quantity-btn');
-
     buttons.forEach((button) => {
       button.addEventListener('click', () => {
         const direction = button.dataset.direction;
-        const min = parseInt(input.getAttribute('min'), 10) || 1;
-        const max = parseInt(input.getAttribute('max'), 10) || 99;
-        const current = parseInt(input.value, 10) || min;
-        let next = current;
-
-        if (direction === 'increase' && current < max) {
-          next = current + 1;
-        }
-        if (direction === 'decrease' && current > min) {
-          next = current - 1;
-        }
-
-        input.value = next;
+        const min = 1;
+        const max = 99;
+        let current = parseInt(input.value, 10) || 1;
+        if (direction === 'increase' && current < max) input.value = current + 1;
+        if (direction === 'decrease' && current > min) input.value = current - 1;
       });
-    });
-
-    input.addEventListener('change', () => {
-      const min = parseInt(input.getAttribute('min'), 10) || 1;
-      const max = parseInt(input.getAttribute('max'), 10) || 99;
-      let value = parseInt(input.value, 10) || min;
-      value = Math.min(Math.max(value, min), max);
-      input.value = value;
     });
   });
 </script>

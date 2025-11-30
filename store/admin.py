@@ -6,8 +6,8 @@ from django import forms
 import openpyxl
 import re
 from django.utils.html import format_html
-# Додано SiteBanner
-from .models import Product, Brand, Order, OrderItem, SiteBanner
+# Імпортуємо всі моделі, включаючи ProductImage та SiteBanner
+from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage
 
 # --- ЗАМОВЛЕННЯ ---
 class OrderItemInline(admin.TabularInline):
@@ -27,6 +27,21 @@ class OrderAdmin(admin.ModelAdmin):
         return sum(item.get_cost() for item in obj.items.all())
     total_cost.short_description = 'Сума'
 
+# --- ГАЛЕРЕЯ ФОТО (ВБУДОВАНА В ТОВАР) ---
+# Це дозволяє додавати "Живі фото" всередині товару
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1 # Скільки пустих рядків показувати
+    fields = ('image_url', 'image', 'preview')
+    readonly_fields = ('preview',)
+
+    def preview(self, obj):
+        if obj.image_url:
+            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image_url)
+        if obj.image:
+            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
+        return "-"
+
 # --- ТОВАРИ ТА ІМПОРТ ---
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField()
@@ -38,6 +53,9 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ['name', 'width']
     change_list_template = "store/admin_changelist.html"
     readonly_fields = ["photo_preview"]
+    
+    # Включаємо галерею в адмінку товару
+    inlines = [ProductImageInline]
 
     fieldsets = (
         (None, {
@@ -49,9 +67,9 @@ class ProductAdmin(admin.ModelAdmin):
         ('Ціни та наявність', {
             'fields': ('cost_price', 'stock_quantity')
         }),
-        ('Головне фото', {
+        ('Головне фото (Обкладинка)', {
             'fields': ('photo', 'photo_url', 'photo_preview'),
-            'description': 'Додайте пряме посилання на фото (photo_url), щоб воно одразу відобразилось на сайті.'
+            'description': 'Це головне фото для каталогу. Щоб додати "живі фото", використовуйте розділ "Product images" знизу.'
         }),
         ('Характеристики', {
             'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')
@@ -168,7 +186,7 @@ class ProductAdmin(admin.ModelAdmin):
                     if 'зим' in season_raw_str or 'winter' in season_raw_str: season_key = 'winter'
                     elif 'літ' in season_raw_str or 'лет' in season_raw_str or 'summer' in season_raw_str: season_key = 'summer'
 
-                    # 4. Ціна
+                    # 4. Ціна (Бронебійна)
                     raw_val = row[col_price] if col_price is not None and len(row) > col_price else None
 
                     if isinstance(raw_val, (int, float)):
@@ -248,7 +266,7 @@ class ProductAdmin(admin.ModelAdmin):
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name']
 
-# --- БАНЕР В АДМІНЦІ ---
+# --- РЕЄСТРАЦІЯ БАНЕРА (Щоб він був в адмінці) ---
 @admin.register(SiteBanner)
 class SiteBannerAdmin(admin.ModelAdmin):
     list_display = ['title', 'is_active', 'created_at']

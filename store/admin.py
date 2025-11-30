@@ -85,49 +85,36 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- 1. РОЗУМНИЙ ЕКСПОРТ (ОЧИЩЕННЯ ВІД РОЗМІРІВ) ---
+    # --- 1. ЕКСПОРТ МОДЕЛЕЙ ---
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Models"
         ws.append(['Brand', 'Clean Model Name', 'Photo URL'])
         
-        # Беремо всі товари
         products = Product.objects.all().select_related('brand')
-        
-        # Множина, щоб зберігати тільки унікальні (Бренд + Чиста модель)
         seen = set()
         
         for p in products:
             brand_name = p.brand.name if p.brand else "Unknown"
-            raw_name = p.name # Наприклад "Шина 155/65R13 73T A609 (APLUS)"
+            raw_name = p.name
             
-            # --- ЧИСТКА НАЗВИ ВІД СМІТТЯ ---
-            # 1. Прибираємо слово "Шина"
             clean = re.sub(r'шина', '', raw_name, flags=re.IGNORECASE)
-            # 2. Прибираємо розміри типу 155/65, 155/65R13, R13
             clean = re.sub(r'\b\d{3}/\d{2}R?\d{0,2}\b', '', clean) 
             clean = re.sub(r'\bR\d{2}C?\b', '', clean)
-            # 3. Прибираємо індекси типу 73T, 100V, 91H
             clean = re.sub(r'\b\d{2,3}[A-Z]\b', '', clean)
-            # 4. Прибираємо назву бренду, якщо вона є в дужках (APLUS)
             if p.brand:
                 clean = re.sub(rf'\({re.escape(p.brand.name)}\)', '', clean, flags=re.IGNORECASE)
                 clean = re.sub(rf'\b{re.escape(p.brand.name)}\b', '', clean, flags=re.IGNORECASE)
             
-            # 5. Прибираємо зайві символи та пробіли
             clean = clean.replace('()', '').strip()
-            clean = re.sub(r'\s+', ' ', clean) # Подвійні пробіли на одинарні
+            clean = re.sub(r'\s+', ' ', clean)
             
-            # Якщо після чистки нічого не лишилось, беремо оригінал (щоб не втратити)
-            if len(clean) < 2:
-                clean = p.name
+            if len(clean) < 2: clean = p.name
 
-            # Створюємо унікальний ключ
             key = (brand_name.upper(), clean.upper())
-            
             if key not in seen:
-                ws.append([brand_name, clean, '']) # Записуємо чисту назву
+                ws.append([brand_name, clean, ''])
                 seen.add(key)
             
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -135,7 +122,7 @@ class ProductAdmin(admin.ModelAdmin):
         wb.save(response)
         return response
 
-    # --- 2. ІМПОРТ ФОТО (РОЗУМНИЙ) ---
+    # --- 2. ІМПОРТ ФОТО (ВИПРАВЛЕНО!) ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -145,16 +132,24 @@ class ProductAdmin(admin.ModelAdmin):
                 updated_products = 0
                 
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    if not row[0] or not row[1] or not row[2]: continue
+                    # --- ЗАХИСТ ВІД ПУСТИХ РЯДКІВ ---
+                    # Якщо рядок занадто короткий (немає навіть 3 колонок) - пропускаємо
+                    if not row or len(row) < 3: 
+                        continue
                     
-                    brand_txt = str(row[0]).strip() # Brand
-                    model_txt = str(row[1]).strip() # Clean Model (напр. A609)
-                    url_txt = str(row[2]).strip()   # URL
+                    # Якщо хоч одна з комірок пуста (None) - пропускаємо
+                    if not row[0] or not row[1] or not row[2]: 
+                        continue
                     
-                    if not url_txt.startswith('http'): continue
+                    brand_txt = str(row[0]).strip()
+                    model_txt = str(row[1]).strip()
+                    url_txt = str(row[2]).strip()
+                    
+                    # Якщо в URL немає http - це сміття, пропускаємо
+                    if not url_txt.startswith('http'): 
+                        continue
 
-                    # Шукаємо товари, які містять цей бренд і цю модель
-                    # icontains знайде "A609" всередині "155/65R13 A609"
+                    # Шукаємо і оновлюємо
                     products_to_update = Product.objects.filter(
                         brand__name__icontains=brand_txt,
                         name__icontains=model_txt
@@ -171,7 +166,7 @@ class ProductAdmin(admin.ModelAdmin):
         form = PhotoImportForm()
         return render(request, "store/admin_import_photos.html", {"form": form})
 
-    # --- 3. ІМПОРТ ТОВАРІВ (Той самий) ---
+    # --- 3. ІМПОРТ ТОВАРІВ ---
     def import_excel(self, request):
         if request.method == "POST":
             form = ExcelImportForm(request.POST, request.FILES)
@@ -196,8 +191,8 @@ class ProductAdmin(admin.ModelAdmin):
                                 if val.startswith(alias): return idx
                         return None
 
-                    c_brand = find_col(["бренд", "brand", "фірма"]) or 0
-                    c_model = find_col(["модель", "model", "назва"]) or 1
+                    c_brand = find_col(["бренд", "brand"]) or 0
+                    c_model = find_col(["модель", "model"]) or 1
                     c_size = find_col(["типоразмер", "size"]) or 2
                     c_season = find_col(["сезон", "season"]) or 3
                     c_price = find_col(["цена", "price"]) or 4
@@ -211,6 +206,9 @@ class ProductAdmin(admin.ModelAdmin):
                         if current_excel_row < start_row_limit: continue
                         if current_excel_row > end_row_limit: break
                         if i % 100 == 0: gc.collect()
+                        
+                        # Перевірка на довжину
+                        if not row or len(row) < 2: continue
                         if not row[c_brand] and not row[c_model]: continue
 
                         brand_name = str(row[c_brand]).strip()

@@ -1,20 +1,33 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
 from django.views.static import serve 
-from django.contrib.sitemaps.views import sitemap # <--- Імпорт для карти сайту
-from django.views.generic.base import TemplateView # <--- Імпорт для Robots.txt
+from django.contrib.sitemaps.views import sitemap
+from django.http import HttpResponse # <--- ЦЕ ВАЖЛИВО
 
-# Імпортуємо наші карти (потрібен файл store/sitemaps.py)
+# Імпорт карт сайту
 from store.sitemaps import ProductSitemap, StaticViewSitemap
 from store.views import catalog_view, contacts_view, delivery_payment_view
 
-# Налаштування карти
 sitemaps = {
     'products': ProductSitemap,
     'static': StaticViewSitemap,
 }
+
+# --- ФУНКЦІЯ ROBOTS.TXT (ПРЯМО В КОДІ) ---
+def robots_txt(request):
+    content = """User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /users/
+Disallow: /accounts/
+Disallow: /store/cart/
+Disallow: /store/checkout/
+
+Sitemap: https://r16.com.ua/sitemap.xml
+"""
+    return HttpResponse(content, content_type="text/plain")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,14 +38,12 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('accounts/', include('django.contrib.auth.urls')), 
     
-    # --- SEO: КАРТА САЙТУ ---
+    # --- SEO ---
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-
-    # --- SEO: ROBOTS.TXT ---
-    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    path('robots.txt', robots_txt), # <--- ТУТ ВИКЛИКАЄМО ФУНКЦІЮ
 ]
 
-# --- МАГІЯ ДЛЯ RENDER ---
+# --- MEDIA FILES ---
 urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {
         'document_root': settings.MEDIA_ROOT,

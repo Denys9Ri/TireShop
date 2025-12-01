@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
+    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+
     <title>{% block title %}R16.com.ua - Шини та Диски{% endblock %}</title>
     
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -214,7 +218,8 @@
         {% else %}
             <a href="{% url 'login' %}" class="navbar-item">Вхід</a>
             <a href="{% url 'users:register' %}" class="navbar-item btn-register">Реєстрація</a>
-        {% endif %} </div>
+        {% endif %}
+    </div>
     
     <button class="hamburger" id="hamburger-button">
         <span></span>

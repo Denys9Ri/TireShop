@@ -6,14 +6,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
 
-# --- ЛОГІКА DEBUG ---
+# --- ЛОГІКА DEBUG ТА ДОМЕНІВ ---
 # Якщо ми на Render:
 if 'RENDER' in os.environ:
-    # ТИМЧАСОВО ставимо True, щоб ви побачили текст помилки 500.
-    # Коли все полагодимо - повернемо на False для економії пам'яті.
-    DEBUG = True 
-    ALLOWED_HOSTS = [os.environ.get('RENDER_EXTERNAL_HOSTNAME', '*')]
+    # На живому сайті вимикаємо DEBUG (безпека + швидкість)
+    DEBUG = False 
+    ALLOWED_HOSTS = [
+        os.environ.get('RENDER_EXTERNAL_HOSTNAME'), # Адреса від Render (tireshop...onrender.com)
+        'r16.com.ua',       # <--- ВАШ НОВИЙ ДОМЕН
+        'www.r16.com.ua',   # <--- ВЕРСІЯ З WWW
+    ]
 else:
+    # Вдома на комп'ютері
     DEBUG = True
     ALLOWED_HOSTS = ['*']
 
@@ -25,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps', # Для карти сайту (Google)
     
     'store.apps.StoreConfig', 
     'users.apps.UsersConfig', 
@@ -65,7 +70,7 @@ WSGI_APPLICATION = 'TireShop.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=0 
+        conn_max_age=0 # Щоб база не "відвалювалася"
     )
 }
 
@@ -87,7 +92,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# --- ЗМІНЕНО НА БІЛЬШ СТАБІЛЬНУ ВЕРСІЮ ---
+# Стабільна версія для статики
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 MEDIA_URL = '/media/'

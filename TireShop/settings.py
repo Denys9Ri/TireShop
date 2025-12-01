@@ -105,3 +105,8 @@ LOGIN_REDIRECT_URL = 'users:profile'
 LOGOUT_REDIRECT_URL = 'catalog'
 
 GSPREAD_CREDENTIALS_PATH = '/etc/secrets/credentials.json'
+
+# --- НАЛАШТУВАННЯ TELEGRAM БОТА ---
+# Ці дані ми пропишемо на Render у вкладці Environment
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')

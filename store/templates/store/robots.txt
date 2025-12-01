@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Забороняємо ботам заходити в технічні розділи
+Disallow: /admin/
+Disallow: /users/
+Disallow: /accounts/
+Disallow: /store/cart/
+Disallow: /store/checkout/
+
+# Вказуємо Гуглу, де лежить карта сайту
+Sitemap: https://r16.com.ua/sitemap.xml

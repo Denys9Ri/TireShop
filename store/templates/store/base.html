@@ -14,7 +14,7 @@
     </script>
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
-    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -276,9 +276,13 @@
             <div class="footer-contact-item">
                 <a href="mailto:r16_info@gmail.com" class="footer-link"><i class="bi bi-envelope"></i> r16_info@gmail.com</a>
             </div>
-            <div class="footer-contact-item">
-                <span><i class="bi bi-clock"></i> Пн-Пт: 8:00-21:00</span>
+            
+            <div class="mt-3" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <a href="{% url 'delivery_payment' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Доставка</a>
+                <a href="{% url 'warranty' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Гарантія</a>
+                <a href="{% url 'contacts' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Контакти</a>
             </div>
+
         </div>
     </div>
     <p class="footer-legal">Copyright ©2025 R16.com.ua All rights reserved</p>

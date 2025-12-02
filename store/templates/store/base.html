@@ -10,11 +10,15 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-F63L5ESNN8');
     </script>
+
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
     <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo.png' %}">
 
     <title>{% block title %}R16.com.ua - Шини та Диски{% endblock %}</title>
     
@@ -60,7 +64,7 @@
         .logo-link:active { transform: scale(0.95); }
 
         .logo-img {
-            height: 55px;
+            height: 55px; /* Оптимально для ПК */
             width: auto;
             object-fit: contain;
             display: block;
@@ -142,7 +146,7 @@
             transition: all 0.3s ease;
         }
 
-        /* --- Мобільне меню --- */
+        /* --- Мобільне меню (висувне) --- */
         .mobile-menu {
             position: fixed;
             top: 0;
@@ -193,7 +197,7 @@
         @media (max-width: 992px) {
             .navbar { padding: 8px 20px; }
             .logo-img { height: 40px; }
-            .logo-text { display: none; }
+            /* .logo-text { display: none; } - Текст ми прибрали взагалі */
             .navbar-menu { display: none; }
             .hamburger { display: flex; }
         }

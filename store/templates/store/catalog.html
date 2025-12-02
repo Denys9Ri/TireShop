@@ -17,29 +17,32 @@
     @media (max-width: 991px) { .banner-wrapper { width: 100%; } .carousel-inner { height: auto; aspect-ratio: 16/9; } .nav-circle { width: 32px; height: 32px; } }
     @media (min-width: 992px) { .banner-wrapper { max-width: 960px; margin-left: auto; margin-right: auto; } .carousel-inner { height: 380px; } }
 
-    /* --- СТИЛЬ ДЛЯ ЗНИЖКИ (ЛІВИЙ КУТ) --- */
+    /* --- СТИЛЬ ДЛЯ ЗНИЖКИ (Яскравий бейдж) --- */
     .discount-badge {
         position: absolute;
         top: 10px;
         left: 10px;
         z-index: 20;
+        
+        /* Градієнт і тінь */
         background: linear-gradient(45deg, #ff3547, #ff6b6b);
         color: white;
-        font-weight: 700;
-        font-size: 0.85rem;
-        padding: 5px 10px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        
+        padding: 6px 12px;
         border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(255, 53, 71, 0.3);
+        box-shadow: 0 4px 10px rgba(255, 53, 71, 0.4);
     }
 
-    /* --- СТИЛЬ ДЛЯ СЕЗОНУ (ПРАВИЙ КУТ) --- */
+    /* --- СТИЛЬ ДЛЯ СЕЗОНУ (Яскравий кружечок) --- */
     .season-badge {
         position: absolute;
         top: 10px;
         right: 10px;
         z-index: 20;
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -47,10 +50,11 @@
         color: white;
         font-size: 1.1rem;
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        border: 2px solid white;
     }
-    .season-badge.winter { background-color: #0dcaf0; border: 1px solid #fff; }
-    .season-badge.summer { background-color: #fd7e14; border: 1px solid #fff; }
-    .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); border: 1px solid #fff; }
+    .season-badge.winter { background-color: #0dcaf0; }
+    .season-badge.summer { background-color: #fd7e14; }
+    .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
     /* Виправлення картки */
     .product-card {
@@ -67,9 +71,16 @@
     }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    
     .product-name a { text-decoration: none; color: #333; font-weight: 700; font-size: 1.1rem; line-height: 1.3; }
     .product-name { margin-bottom: 5px; min-height: 44px; }
+    
     .product-price-block { margin-top: auto; margin-bottom: 15px; } /* Притискає ціну до низу */
+    
+    /* Ціни в каталозі */
+    .price-old { text-decoration: line-through; color: #999; font-size: 0.9rem; margin-right: 8px; }
+    .price-new { color: #dc3545; font-weight: 800; font-size: 1.3rem; }
+    .price-regular { color: #0d6efd; font-weight: 800; font-size: 1.3rem; }
 </style>
 
 <div class="catalog-wrapper">
@@ -190,7 +201,10 @@
                     {% elif product.seasonality == 'summer' %}
                         <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
                     {% else %}
-                        <div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill"></i></div>
+                        <div class="season-badge all-season" title="Всесезонна">
+                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i>
+                            <i class="bi bi-snow" style="font-size: 0.8rem;"></i>
+                        </div>
                     {% endif %}
 
                     {% if product.photo_url %}
@@ -214,13 +228,11 @@
                     <div class="product-price-block mb-2">
                         {% if product.discount_percent > 0 %}
                             <div class="d-flex align-items-center gap-2">
-                                <span class="product-price text-danger fw-bold">{{ product.price }} грн</span>
-                                <small class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">
-                                    {{ product.old_price }} грн
-                                </small>
+                                <span class="price-new">{{ product.price }} грн</span>
+                                <small class="price-old">{{ product.old_price }} грн</small>
                             </div>
                         {% else %}
-                            <p class="product-price text-primary fw-bold">{{ product.price }} грн</p>
+                            <p class="price-regular">{{ product.price }} грн</p>
                         {% endif %}
                     </div>
 

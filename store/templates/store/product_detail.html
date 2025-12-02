@@ -108,7 +108,7 @@
     .lightbox-img-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
     .lightbox-carousel img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    /* 5. БЛОК ПЕРЕВАГ (Trust Badges) */
+    /* 5. БЛОК ПЕРЕВАГ */
     .trust-badges {
         display: flex;
         flex-wrap: wrap;
@@ -142,6 +142,24 @@
     .similar-title { font-size: 1rem; font-weight: 700; color: #333; text-decoration: none; }
     .similar-price { color: #0d6efd; font-weight: 800; }
 
+    /* --- СТИЛІ ДЛЯ ЦІНИ (ВИПРАВЛЕНО: МЕНШ ЖИРНИЙ) --- */
+    .price-regular {
+        color: #0d6efd;
+        font-weight: 700; /* Було 800 */
+        font-size: 2rem;  /* Було 2.5rem */
+    }
+    .price-new {
+        color: #dc3545;
+        font-weight: 700; /* Було 800 */
+        font-size: 2rem;  /* Було 2.5rem */
+    }
+    .price-old {
+        text-decoration: line-through;
+        color: #888;
+        font-size: 1.2rem;
+        margin-top: 5px;
+    }
+
     /* АДАПТАЦІЯ */
     .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
     .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f7ff; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
@@ -157,7 +175,7 @@
     .specs-dots { flex-grow: 1; border-bottom: 1px dotted #999; margin: 0 10px; opacity: 0.5; }
     .specs-value { font-weight: 600; color: #222; text-align: right; }
     .desc-box { margin-top: 20px; font-size: 0.95rem; color: #555; line-height: 1.6; }
-
+    
     @media (max-width: 768px) {
         .glass-product-card { padding: 1.5rem; }
         .product-carousel, .carousel-item { height: 280px; }
@@ -166,12 +184,13 @@
         .action-row { gap: 10px; }
         .btn-buy-glass { padding: 10px 15px; font-size: 0.9rem; }
         .quantity-selector { transform: scale(0.95); }
+        
+        .price-regular, .price-new { font-size: 1.8rem; } /* Ще менше на телефоні */
     }
     @media (min-width: 992px) {
         .glass-product-card { padding: 3rem; }
         .product-carousel, .carousel-item { height: 450px; }
         h1 { font-size: 2.2rem; }
-        .price-text { font-size: 2.5rem; }
         .action-row { max-width: 500px; }
     }
 </style>
@@ -181,7 +200,7 @@
         <div class="row g-4 g-lg-5">
             
             <div class="col-lg-6">
-                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
+                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-interval="false" data-bs-touch="true">
                     <div class="carousel-inner">
                         <div class="carousel-item active" onclick="openLightbox(0)">
                             <div class="carousel-item-content">
@@ -260,17 +279,17 @@
                 <div class="mb-4">
                     {% if product.discount_percent > 0 %}
                         <div class="d-flex align-items-center gap-3 flex-wrap">
-                            <h2 class="text-danger fw-bold mb-0 price-text" style="font-size: 2.5rem;">
-                                {{ product.price }} <span style="font-size: 1.1rem; color: #333; font-weight: normal;">грн/шт</span>
+                            <h2 class="price-new mb-0">
+                                {{ product.price }} <span style="font-size: 1rem; color: #333; font-weight: normal;">грн/шт</span>
                             </h2>
                             <div class="d-flex flex-column align-items-start">
-                                <span class="text-decoration-line-through text-muted fs-5">{{ product.old_price }} грн</span>
+                                <span class="price-old">{{ product.old_price }} грн</span>
                                 <span class="badge bg-danger rounded-pill px-3">-{{ product.discount_percent }}%</span>
                             </div>
                         </div>
                     {% else %}
-                        <h2 class="text-primary fw-bold mb-0 price-text" style="font-size: 2.5rem;">
-                            {{ product.price }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
+                        <h2 class="price-regular mb-0">
+                            {{ product.price }} <span style="font-size: 1rem; color: #666; font-weight: normal;">грн/шт</span>
                         </h2>
                     {% endif %}
                 </div>
@@ -316,7 +335,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% if similar_products %}
         <div class="mt-5">
             <h3 class="fw-bold mb-4 text-center">Схожі шини цього розміру</h3>
@@ -335,3 +354,90 @@
                         {% if sim.discount_percent > 0 %}
                             <span class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill small">-{{ sim.discount_percent }}%</span>
                         {% endif %}
+
+                        <a href="{% url 'store:product_detail' sim.id %}" class="similar-title mt-2 stretched-link">
+                            {{ sim.brand.name }} {{ sim.name }}
+                        </a>
+                        <p class="text-muted small mb-1">{{ sim.width }}/{{ sim.profile }} R{{ sim.diameter }}</p>
+                        
+                        <div class="mt-auto">
+                            {% if sim.discount_percent > 0 %}
+                                <span class="similar-price text-danger">{{ sim.price }} грн</span>
+                                <small class="text-decoration-line-through text-muted ms-1">{{ sim.old_price }}</small>
+                            {% else %}
+                                <span class="similar-price">{{ sim.price }} грн</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-transparent position-absolute w-100" style="z-index: 1060;">
+                <button type="button" class="btn-close btn-close-white ms-auto m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center">
+                <div id="lightboxCarousel" class="carousel slide lightbox-carousel w-100 h-100" data-bs-interval="false">
+                    <div class="carousel-inner h-100">
+                        <div class="carousel-item active h-100">
+                            <div class="lightbox-img-wrap">
+                                {% if product.photo_url %}
+                                    <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                                {% elif product.photo %}
+                                    <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="https://placehold.co/600x600?text=No+Photo">
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% for img in product.images.all %}
+                            <div class="carousel-item h-100">
+                                <div class="lightbox-img-wrap">
+                                    {% if img.image_url %}
+                                        <img src="{{ img.image_url }}" alt="Gallery">
+                                    {% elif img.image %}
+                                        <img src="{{ img.image.url }}" alt="Gallery">
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if product.images.all %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="prev"><span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span></button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#lightboxCarousel" data-bs-slide="next"><span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span></button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateQty(change) {
+        const input = document.getElementById('qtyInput');
+        let newVal = parseInt(input.value) + change;
+        if (newVal < 1) newVal = 1;
+        if (newVal > 20) newVal = 20; 
+        input.value = newVal;
+    }
+    const mainCarouselEl = document.getElementById('productMainCarousel');
+    const thumbs = document.querySelectorAll('.thumb-btn');
+    mainCarouselEl.addEventListener('slide.bs.carousel', function (e) {
+        thumbs.forEach(t => t.classList.remove('active'));
+        if(thumbs[e.to]) thumbs[e.to].classList.add('active');
+    });
+    function openLightbox(index) {
+        var lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+        var lightboxCarousel = new bootstrap.Carousel(document.getElementById('lightboxCarousel'));
+        lightboxModal.show();
+        setTimeout(() => { lightboxCarousel.to(index); }, 150);
+    }
+</script>
+{% endblock %}

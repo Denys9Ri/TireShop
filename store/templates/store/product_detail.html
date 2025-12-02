@@ -200,7 +200,7 @@
         <div class="row g-4 g-lg-5">
             
             <div class="col-lg-6">
-                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-interval="false" data-bs-touch="true">
+                <div id="productMainCarousel" class="carousel slide product-carousel" data-bs-ride="false" data-bs-interval="false" data-bs-touch="true">
                     <div class="carousel-inner">
                         <div class="carousel-item active" onclick="openLightbox(0)">
                             <div class="carousel-item-content">
@@ -280,7 +280,7 @@
                     {% if product.discount_percent > 0 %}
                         <div class="d-flex align-items-center gap-3 flex-wrap">
                             <h2 class="price-new mb-0">
-                                {{ product.price }} <span style="font-size: 1rem; color: #333; font-weight: normal;">грн/шт</span>
+                                {{ product.price }} <span style="font-size: 1.1rem; color: #333; font-weight: normal;">грн/шт</span>
                             </h2>
                             <div class="d-flex flex-column align-items-start">
                                 <span class="price-old">{{ product.old_price }} грн</span>
@@ -289,7 +289,7 @@
                         </div>
                     {% else %}
                         <h2 class="price-regular mb-0">
-                            {{ product.price }} <span style="font-size: 1rem; color: #666; font-weight: normal;">грн/шт</span>
+                            {{ product.price }} <span style="font-size: 1.1rem; color: #666; font-weight: normal;">грн/шт</span>
                         </h2>
                     {% endif %}
                 </div>
@@ -335,7 +335,7 @@
                 </div>
             </div>
         </div>
-
+        
         {% if similar_products %}
         <div class="mt-5">
             <h3 class="fw-bold mb-4 text-center">Схожі шини цього розміру</h3>
@@ -374,6 +374,7 @@
             </div>
         </div>
         {% endif %}
+
     </div>
 </div>
 

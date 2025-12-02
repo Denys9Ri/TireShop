@@ -6,65 +6,18 @@
 {% block content %}
 <style>
     /* --- СТИЛІ ДЛЯ БАНЕРА --- */
-    .banner-wrapper {
-        margin-bottom: 40px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        position: relative;
-        background-color: transparent; 
-    }
+    .banner-wrapper { margin-bottom: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; background-color: transparent; }
+    .carousel-item { transition: transform 0.6s ease-in-out; }
+    .banner-img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+    .carousel-control-prev, .carousel-control-next { width: 8%; opacity: 1; }
+    .nav-circle { width: 40px; height: 40px; background-color: rgba(0, 74, 153, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.3s, transform 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .carousel-control-prev:hover .nav-circle, .carousel-control-next:hover .nav-circle { background-color: #004a99; transform: scale(1.1); }
+    .nav-icon { font-size: 1.2rem; color: white; font-weight: bold; }
+    .carousel-indicators [data-bs-target] { background-color: #004a99; height: 4px; border-radius: 2px; }
+    @media (max-width: 991px) { .banner-wrapper { width: 100%; } .carousel-inner { height: auto; aspect-ratio: 16/9; } .nav-circle { width: 32px; height: 32px; } }
+    @media (min-width: 992px) { .banner-wrapper { max-width: 960px; margin-left: auto; margin-right: auto; } .carousel-inner { height: 380px; } }
 
-    .carousel-item {
-        transition: transform 0.6s ease-in-out;
-    }
-
-    .banner-img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        /* cover - заповнює весь простір, щоб не було білих смуг */
-        object-fit: cover; 
-        object-position: center;
-    }
-
-    /* Кнопки каруселі */
-    .carousel-control-prev, .carousel-control-next {
-        width: 8%;
-        opacity: 1;
-    }
-
-    .nav-circle {
-        width: 40px;
-        height: 40px;
-        background-color: rgba(0, 74, 153, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.3s, transform 0.2s;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    .carousel-control-prev:hover .nav-circle,
-    .carousel-control-next:hover .nav-circle {
-        background-color: #004a99;
-        transform: scale(1.1);
-    }
-
-    .nav-icon {
-        font-size: 1.2rem;
-        color: white;
-        font-weight: bold;
-    }
-
-    .carousel-indicators [data-bs-target] {
-        background-color: #004a99;
-        height: 4px;
-        border-radius: 2px;
-    }
-
-    /* --- БЕЙДЖІ (ЗНИЖКА І СЕЗОН) --- */
+    /* --- СТИЛЬ ДЛЯ ЗНИЖКИ (ЛІВИЙ КУТ) --- */
     .discount-badge {
         position: absolute;
         top: 10px;
@@ -79,6 +32,7 @@
         box-shadow: 0 4px 10px rgba(255, 53, 71, 0.3);
     }
 
+    /* --- СТИЛЬ ДЛЯ СЕЗОНУ (ПРАВИЙ КУТ) --- */
     .season-badge {
         position: absolute;
         top: 10px;
@@ -94,28 +48,28 @@
         font-size: 1.1rem;
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
-
     .season-badge.winter { background-color: #0dcaf0; border: 1px solid #fff; }
     .season-badge.summer { background-color: #fd7e14; border: 1px solid #fff; }
     .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); border: 1px solid #fff; }
-
-    /* --- АДАПТАЦІЯ --- */
-    @media (max-width: 991px) {
-        .banner-wrapper { width: 100%; }
-        .carousel-inner { height: auto; aspect-ratio: 16/9; }
-        .nav-circle { width: 32px; height: 32px; }
+    
+    /* Виправлення картки */
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #f0f0f0;
     }
-
-    @media (min-width: 992px) {
-        .banner-wrapper {
-            max-width: 1000px; 
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .carousel-inner {
-            height: 400px; /* Фіксована висота на ПК */
-        }
-    }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    .product-name a { text-decoration: none; color: #333; font-weight: 700; font-size: 1.1rem; line-height: 1.3; }
+    .product-name { margin-bottom: 5px; min-height: 44px; }
+    .product-price-block { margin-top: auto; margin-bottom: 15px; } /* Притискає ціну до низу */
 </style>
 
 <div class="catalog-wrapper">
@@ -126,9 +80,7 @@
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
-            
             <input type="hidden" name="query" value="{{ search_query }}">
-
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -186,52 +138,33 @@
         {% if show_banner and banners %}
             <div class="banner-wrapper">
                 <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-                    
                     {% if banners|length > 1 %}
                     <div class="carousel-indicators">
                         {% for banner in banners %}
                             <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                                    class="{% if forloop.first %}active{% endif %}" aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
+                                    class="{% if forloop.first %}active{% endif %}"></button>
                         {% endfor %}
                     </div>
                     {% endif %}
-
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.link %}
-                                    <a href="{{ banner.link }}" style="display: block; height: 100%;">
-                                {% else %}
-                                    <div style="height: 100%;">
-                                {% endif %}
-                                    
+                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block; height: 100%;">{% else %}<div style="height: 100%;">{% endif %}
                                     {% if banner.image_url %}
                                         <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" onerror="this.style.display='none'">
                                     {% elif banner.image %}
                                         <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% endif %}
-
-                                {% if banner.link %}
-                                    </a>
-                                {% else %}
-                                    </div>
-                                {% endif %}
+                                {% if banner.link %}</a>{% else %}</div>{% endif %}
                             </div>
                         {% endfor %}
                     </div>
-
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="nav-circle">
-                                <i class="bi bi-chevron-left nav-icon"></i>
-                            </span>
-                            <span class="visually-hidden">Попередня</span>
+                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="nav-circle">
-                                <i class="bi bi-chevron-right nav-icon"></i>
-                            </span>
-                            <span class="visually-hidden">Наступна</span>
+                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
                         </button>
                     {% endif %}
                 </div>
@@ -239,11 +172,7 @@
         {% endif %}
 
         <h1 class="page-title">
-            {% if search_query %}
-                Результати пошуку: "{{ search_query }}"
-            {% else %}
-                Каталог Товарів
-            {% endif %}
+            {% if search_query %}Результати пошуку: "{{ search_query }}"{% else %}Каталог Товарів{% endif %}
         </h1>
 
         <div class="product-grid">
@@ -261,10 +190,7 @@
                     {% elif product.seasonality == 'summer' %}
                         <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
                     {% else %}
-                        <div class="season-badge all-season" title="Всесезонна">
-                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.9rem; margin-right: 2px;"></i>
-                            <i class="bi bi-snow" style="font-size: 0.9rem;"></i>
-                        </div>
+                        <div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill"></i></div>
                     {% endif %}
 
                     {% if product.photo_url %}
@@ -294,7 +220,7 @@
                                 </small>
                             </div>
                         {% else %}
-                            <p class="product-price text-primary">{{ product.price }} грн</p>
+                            <p class="product-price text-primary fw-bold">{{ product.price }} грн</p>
                         {% endif %}
                     </div>
 

@@ -3,15 +3,14 @@ from django.urls import reverse
 from .models import Product
 
 class ProductSitemap(Sitemap):
-    changefreq = "daily"  # Як часто змінюються товари
-    priority = 0.9        # Пріоритетність (висока)
+    changefreq = "daily"
+    priority = 0.9
 
     def items(self):
         # Повертаємо в карту тільки товари, які є в наявності
         return Product.objects.filter(stock_quantity__gt=0)
 
     def location(self, obj):
-        # Генерує посилання на кожен товар
         return reverse('store:product_detail', args=[obj.id])
 
 class StaticViewSitemap(Sitemap):
@@ -19,8 +18,13 @@ class StaticViewSitemap(Sitemap):
     changefreq = 'weekly'
 
     def items(self):
-        # Назви сторінок, як вони записані в urls.py (name='...')
-        return ['catalog', 'contacts', 'delivery_payment']
+        # Тут перелічені назви (name='...') з вашого urls.py
+        return [
+            'catalog',
+            'contacts',
+            'delivery_payment',
+            'warranty',  # Нова сторінка гарантії
+        ]
 
     def location(self, item):
         return reverse(item)

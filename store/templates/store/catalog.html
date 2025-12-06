@@ -5,7 +5,7 @@
 
 {% block content %}
 <style>
-    /* --- СТИЛІ ДЛЯ БАНЕРА (ГУМОВА ВИСОТА) --- */
+    /* --- СТИЛІ ДЛЯ БАНЕРА (ГУМОВИЙ) --- */
     
     .banner-wrapper {
         margin-bottom: 40px;
@@ -14,13 +14,16 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         position: relative;
         background-color: transparent; 
+        /* Центруємо сам блок банера */
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .carousel-item {
         transition: transform 0.6s ease-in-out;
-        /* ВАЖЛИВО: Висота auto, щоб блок розтягувався під картинку */
+        /* ВАЖЛИВО: Висота автоматична! */
         height: auto; 
-        min-height: 100px; /* Щоб не зникав, якщо картинка не провантажилась */
+        min-height: 100px; 
     }
 
     .banner-img {
@@ -34,7 +37,7 @@
     .carousel-control-next {
         width: 8%;
         opacity: 1;
-        align-items: center; /* Центрування стрілок по вертикалі */
+        align-items: center; 
     }
 
     .nav-circle {
@@ -72,7 +75,7 @@
     /* НА ТЕЛЕФОНІ */
     @media (max-width: 991px) {
         .banner-wrapper {
-            width: 100%;
+            width: 100%; /* На всю ширину екрану */
         }
         .nav-circle { width: 32px; height: 32px; }
     }
@@ -80,11 +83,10 @@
     /* НА КОМП'ЮТЕРІ */
     @media (min-width: 992px) {
         .banner-wrapper {
-            /* Обмежуємо лише ширину. Висота підлаштується сама */
+            /* Обмежуємо ширину, щоб не було гігантським */
             max-width: 1000px; 
-            margin-left: auto;
-            margin-right: auto;
         }
+        /* Висота підлаштується сама під ширину 1000px */
     }
 
     /* --- СТИЛІ КАРТКИ ТОВАРУ --- */
@@ -226,7 +228,11 @@
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% else %}<div>{% endif %}
+                                {% if banner.link %}
+                                    <a href="{{ banner.link }}" style="display: block; height: 100%;">
+                                {% else %}
+                                    <div style="height: 100%;">
+                                {% endif %}
                                     
                                     {% if banner.image_url %}
                                         <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" onerror="this.style.display='none'">
@@ -234,17 +240,27 @@
                                         <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% endif %}
 
-                                {% if banner.link %}</a>{% else %}</div>{% endif %}
+                                {% if banner.link %}
+                                    </a>
+                                {% else %}
+                                    </div>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>
 
                     {% if banners|length > 1 %}
                         <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-left nav-icon"></i>
+                            </span>
+                            <span class="visually-hidden">Попередня</span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
+                            <span class="nav-circle">
+                                <i class="bi bi-chevron-right nav-icon"></i>
+                            </span>
+                            <span class="visually-hidden">Наступна</span>
                         </button>
                     {% endif %}
                 </div>
@@ -270,7 +286,10 @@
                     {% elif product.seasonality == 'summer' %}
                         <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
                     {% else %}
-                        <div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill"></i></div>
+                        <div class="season-badge all-season" title="Всесезонна">
+                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i>
+                            <i class="bi bi-snow" style="font-size: 0.8rem;"></i>
+                        </div>
                     {% endif %}
 
                     {% if product.photo_url %}

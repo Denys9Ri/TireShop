@@ -7,7 +7,7 @@ from django.conf import settings
 import requests 
 import re 
 
-from .models import Product, Order, OrderItem, Brand, SiteBanner
+from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 from .cart import Cart
 from users.models import UserProfile
 
@@ -244,6 +244,17 @@ def checkout_view(request):
     
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
+def about_view(request):
+    # Беремо всі фото для сторінки "Про нас"
+    images = AboutImage.objects.all().order_by('-created_at')
+    return render(request, 'store/about.html', {'images': images})
+
+def warranty_view(request):
+    return render(request, 'store/warranty.html')
+
+def contacts_view(request):
+    return render(request, 'store/contacts.html')
+    
 # --- АКВЕДУК ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials

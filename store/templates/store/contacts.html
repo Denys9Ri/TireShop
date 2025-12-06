@@ -1,29 +1,88 @@
 {% extends 'store/base.html' %}
-{% block title %}Контакти - R16{% endblock %}
+{% load static %}
+
+{% block title %}Контакти - R16.com.ua{% endblock %}
 
 {% block content %}
-<section class="content-section">
-    <h1 class="page-title">Контакти</h1>
-    <div class="info-grid">
-        <div class="info-card">
-            <h2>Зв'язок</h2>
-            <p class="info-line"><span class="info-label">Телефон / Viber:</span> <a href="tel:+380666881491">+38 (066) 688-14-91</a></p>
-            <p class="info-line"><span class="info-label">Пошта:</span> <a href="mailto:r16_info@gmail.com">r16_info@gmail.com</a></p>
+<div class="container py-5" style="max-width: 900px;">
+    <h1 class="text-center fw-bold mb-5 text-primary">Зв'яжіться з нами</h1>
+
+    <div class="row g-4">
+        
+        <div class="col-md-6">
+            <div class="bg-white p-4 rounded-4 shadow-sm h-100 border">
+                <h4 class="fw-bold mb-4">Наші контакти</h4>
+                
+                <div class="mb-4">
+                    <p class="text-muted mb-1 small text-uppercase fw-bold">Телефон / Viber / Telegram</p>
+                    <a href="tel:+380666881491" class="d-block fs-3 fw-bold text-dark text-decoration-none mb-2">+38 (066) 688-14-91</a>
+                    <p class="text-success fw-bold mb-0">
+                        <i class="bi bi-chat-dots-fill"></i> Пишіть/дзвоніть — допоможу підібрати шини!
+                    </p>
+                </div>
+
+                <div class="d-flex gap-2 mb-4">
+                    <a href="viber://chat?number=%2B380666881491" class="btn btn-lg flex-grow-1 text-white fw-bold" style="background-color: #665CAC;">
+                        <i class="bi bi-telephone-fill"></i> Viber
+                    </a>
+                    <a href="https://t.me/+380666881491" class="btn btn-lg flex-grow-1 text-white fw-bold" style="background-color: #0088cc;">
+                        <i class="bi bi-telegram"></i> Telegram
+                    </a>
+                </div>
+
+                <div class="mb-3">
+                    <p class="text-muted mb-1 small text-uppercase fw-bold">Графік роботи</p>
+                    <p class="mb-0">Пн–Пт: 8:00 – 21:00</p>
+                    <p class="mb-0">Сб: 9:00 – 16:00</p>
+                    <p class="text-muted">Нд: Вихідний</p>
+                </div>
+
+                <div>
+                    <p class="text-muted mb-1 small text-uppercase fw-bold">Email</p>
+                    <a href="mailto:r16_info@gmail.com" class="text-decoration-none">r16_info@gmail.com</a>
+                </div>
+            </div>
         </div>
-        <div class="info-card">
-            <h2>Графік роботи</h2>
-            <ul class="schedule-list">
-                <li><span class="info-label">Пн.–Пт.:</span> 8:00 – 21:00</li>
-                <li><span class="info-label">Сб.:</span> 9:00 – 16:00</li>
-                <li><span class="info-label">Неділя:</span> вихідний</li>
-            </ul>
+
+        <div class="col-md-6">
+            <div class="bg-white p-4 rounded-4 shadow-sm h-100 border">
+                <h4 class="fw-bold mb-4">Самовивіз у Києві</h4>
+                
+                <p class="fs-5 mb-2">вулиця Володимира Качали, 3</p>
+                <p class="text-muted mb-4">Гаражний кооператив «Палуба», Солом'янський район (Відрадний).</p>
+
+                <a href="https://www.google.com/maps/dir//50.4284989,30.4107093/@50.428499,30.410709,16z" target="_blank" class="btn btn-outline-primary w-100 mb-3">
+                    <i class="bi bi-geo-alt-fill"></i> Відкрити навігатор
+                </a>
+
+                <div class="ratio ratio-16x9 rounded-3 overflow-hidden border">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2541.676939269266!2d30.4107093!3d50.4284989!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40d4cc7d80682099%3A0x421207489345630!2z0LLRg9C70LjRhtGPINCS0L7Qu9C-0LTQuNC80LjRgNCwINCa0LDRh9Cw0LvQuCwgMywg0JrQuZfQsiwgMDIwMDA!5e0!3m2!1suk!2sua!4v1700000000000!5m2!1suk!2sua" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
         </div>
-        <div class="info-card">
-            <h2>Адреса самовивозу</h2>
-            <p class="info-line">3, вулиця Володимира Качали, 3, Київ, 02000</p>
-            <p class="info-muted">Гаражний кооператив «Палуба»</p>
-            <a class="button-link" href="https://maps.app.goo.gl/FbHS7D9Hntv5V8H27" target="_blank" rel="noopener">Відкрити на карті</a>
+
+    </div>
+
+    <div class="mt-5">
+        <h3 class="fw-bold text-center mb-4">Ми на карті</h3>
+        <div class="rounded-4 overflow-hidden shadow-sm border" style="height: 450px;">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2541.676939269266!2d30.4107093!3d50.4284989!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40d4cc7d80682099%3A0x421207489345630!2z0LLRg9C70LjRhtGPINCS0L7Qu9C-0LTQuNC80LjRgNCwINCa0LDRh9Cw0LvQuCwgMywg0JrQuZfQsiwgMDIwMDA!5e0!3m2!1suk!2sua!4v1700000000000!5m2!1suk!2sua" 
+                width="100%" 
+                height="100%" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
         </div>
     </div>
-</section>
+
+</div>
 {% endblock %}

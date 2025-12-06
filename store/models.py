@@ -135,3 +135,17 @@ class SiteBanner(models.Model):
 
     def __str__(self):
         return self.title
+
+# --- 6. ФОТО ДЛЯ СТОРІНКИ "ПРО НАС" ---
+class AboutImage(models.Model):
+    image = models.ImageField(upload_to='about_us/', verbose_name="Фото складу/офісу")
+    image_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Посилання на фото (для Render)")
+    description = models.CharField(max_length=200, blank=True, verbose_name="Підпис (не обов'язково)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Фото 'Про нас'"
+        verbose_name_plural = "Фото 'Про нас' (Склад)"
+
+    def __str__(self):
+        return f"Фото {self.id}"

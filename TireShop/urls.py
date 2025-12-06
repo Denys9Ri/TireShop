@@ -7,7 +7,7 @@ from django.http import HttpResponse
 
 # Імпорти для головних сторінок
 from store.sitemaps import ProductSitemap, StaticViewSitemap
-from store.views import catalog_view, contacts_view, delivery_payment_view, warranty_view
+from store.views import catalog_view, contacts_view, delivery_payment_view, warranty_view, about_view
 
 sitemaps = {
     'products': ProductSitemap,
@@ -35,6 +35,8 @@ urlpatterns = [
     # SEO
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', robots_txt),
+
+    path('about-us/', about_view, name='about'),
 ]
 
 # Медіа файли на сервері

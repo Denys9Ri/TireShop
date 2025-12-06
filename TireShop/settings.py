@@ -10,7 +10,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!
 # Якщо ми на Render:
 if 'RENDER' in os.environ:
     # На живому сайті вимикаємо DEBUG (безпека + швидкість)
-    DEBUG = False 
+    DEBUG = True
     ALLOWED_HOSTS = [
         os.environ.get('RENDER_EXTERNAL_HOSTNAME'), # Адреса від Render (tireshop...onrender.com)
         'r16.com.ua',       # <--- ВАШ НОВИЙ ДОМЕН

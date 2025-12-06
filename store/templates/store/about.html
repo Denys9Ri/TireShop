@@ -1,0 +1,60 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Про нас - R16.com.ua{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 900px;">
+    
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-body p-4 p-md-5 bg-white">
+            <h1 class="fw-bold text-primary mb-4 text-center">Про компанію R16</h1>
+            
+            <p class="fs-5 text-muted text-center mb-5">
+                Ми — спеціалізований інтернет-магазин шин та дисків. Працюємо на ринку України понад 5 років, допомагаючи водіям почуватися впевнено на будь-якій дорозі.
+            </p>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-4 text-center">
+                    <div class="mb-2 text-primary"><i class="bi bi-award fs-1"></i></div>
+                    <h5 class="fw-bold">Перевірені бренди</h5>
+                    <p class="small text-muted">Офіційно працюємо з Michelin, Hankook, Goodyear, а також якісним Китаєм (Aplus, Powertrac).</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mb-2 text-primary"><i class="bi bi-box-seam fs-1"></i></div>
+                    <h5 class="fw-bold">Власний склад</h5>
+                    <p class="small text-muted">Більшість шин у наявності в Києві. Відправка в день замовлення без затримок.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mb-2 text-primary"><i class="bi bi-people fs-1"></i></div>
+                    <h5 class="fw-bold">Експертність</h5>
+                    <p class="small text-muted">Ми не просто продаємо, а підбираємо шини саме під ваше авто та стиль їзди.</p>
+                </div>
+            </div>
+
+            <hr class="mb-5">
+
+            <h3 class="fw-bold mb-4 text-center">Наш склад і робота</h3>
+            
+            {% if images %}
+            <div class="row g-3">
+                {% for item in images %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="rounded-3 overflow-hidden shadow-sm" style="height: 250px;">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Склад R16">
+                        {% elif item.image %}
+                            <img src="{{ item.image.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Склад R16">
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center text-muted">Фото завантажуються...</p>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

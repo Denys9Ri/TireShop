@@ -10,7 +10,7 @@ import gc
 from django.utils.html import format_html
 from django.db.models import Q 
 # Додали SiteSettings в імпорт
-from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage, SiteSettings
+from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage, SiteSettings, AboutImage
 
 # --- ЗАМОВЛЕННЯ ---
 class OrderItemInline(admin.TabularInline):
@@ -292,3 +292,15 @@ class BrandAdmin(admin.ModelAdmin):
 @admin.register(SiteBanner)
 class SiteBannerAdmin(admin.ModelAdmin):
     list_display = ['title', 'is_active']
+
+@admin.register(AboutImage)
+class AboutImageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'description', 'image_preview']
+    
+    def image_preview(self, obj):
+        if obj.image_url:
+            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image_url)
+        if obj.image:
+            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
+        return "-"
+    image_preview.short_description = "Превью"

@@ -14,7 +14,7 @@
     </script>
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
-    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -52,7 +52,7 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
         }
 
-        /* Логотип в шапці (Залишається великим logo.png) */
+        /* Логотип */
         .logo-link {
             display: flex;
             align-items: center;
@@ -64,7 +64,7 @@
         .logo-link:active { transform: scale(0.95); }
 
         .logo-img {
-            height: 55px; /* Оптимально для ПК */
+            height: 55px;
             width: auto;
             object-fit: contain;
             display: block;
@@ -197,7 +197,6 @@
         @media (max-width: 992px) {
             .navbar { padding: 8px 20px; }
             .logo-img { height: 40px; }
-            .logo-text { display: none; }
             .navbar-menu { display: none; }
             .hamburger { display: flex; }
         }
@@ -213,6 +212,8 @@
     </div>
 
     <div class="navbar-menu">
+        <a href="{% url 'about' %}" class="navbar-item">Про нас</a>
+        
         <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
         <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка</a>
         
@@ -241,6 +242,8 @@
 </header>
 
 <div class="mobile-menu" id="mobile-menu">
+    <a href="{% url 'about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
+    
     <a href="{% url 'contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
     <a href="{% url 'delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
     <a href="{% url 'store:cart_detail' %}">
@@ -278,6 +281,7 @@
             </div>
             
             <div class="mt-3" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <a href="{% url 'about' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Про нас</a>
                 <a href="{% url 'delivery_payment' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Доставка</a>
                 <a href="{% url 'warranty' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Гарантія</a>
                 <a href="{% url 'contacts' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Контакти</a>

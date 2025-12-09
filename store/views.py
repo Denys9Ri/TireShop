@@ -39,7 +39,7 @@ def catalog_view(request):
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
-    # Сортуємо: спочатку ті, що в наявності (stock_quantity > 0)
+    # Базове сортування: спочатку ті, що є в наявності
     products = Product.objects.annotate(
         status_order=Case(When(stock_quantity__gt=0, then=Value(0)), default=Value(1), output_field=IntegerField())
     )
@@ -56,39 +56,40 @@ def catalog_view(request):
         else:
             products = products.filter(Q(name__icontains=search_query) | Q(brand__name__icontains=search_query))
 
-    # ФІЛЬТРИ
+    # ФІЛЬТРИ (Сайдбар + Бот)
     s_brand = request.GET.get('brand')
     s_width = request.GET.get('width')
     s_profile = request.GET.get('profile')
     s_diameter = request.GET.get('diameter')
     s_season = request.GET.get('season')
     
+    # Параметр від БОТА (ordering)
+    s_ordering = request.GET.get('ordering')
+
     if s_brand: products = products.filter(brand__id=s_brand)
     if s_width: products = products.filter(width=s_width)
     if s_profile: products = products.filter(profile=s_profile)
     if s_diameter: products = products.filter(diameter=s_diameter)
     if s_season: products = products.filter(seasonality=s_season)
     
-    # === ЛОГІКА СОРТУВАННЯ (БОТ) ===
-    # Використовуємо 'cost_price', бо 'price' немає в базі
-    ordering = request.GET.get('ordering', '')
-    
-    if ordering == 'cheap':
-        # Економ: Спочатку дешеві
-        products = products.order_by('status_order', 'cost_price')
+    # === ЛОГІКА БОТА (Чітко по категоріях бренду) ===
+    if s_ordering == 'cheap':
+        # Тільки бренди з галочкою "Економ"
+        products = products.filter(brand__category='budget')
+        products = products.order_by('status_order', 'cost_price') 
         
-    elif ordering == 'medium':
-        # Ціна/Якість: Відсікаємо дешеві (наприклад, > 1500 грн собівартості, що десь > 2000 грн в продажу)
-        products = products.filter(cost_price__gte=1500)
+    elif s_ordering == 'medium':
+        # Тільки бренди з галочкою "Ціна/Якість"
+        products = products.filter(brand__category='medium')
         products = products.order_by('status_order', 'cost_price')
 
-    elif ordering == 'expensive':
-        # ТОП: Фільтруємо по брендах
-        top_brands = ['Michelin', 'Continental', 'Goodyear', 'Bridgestone', 'Pirelli', 'Toyo', 'Hankook', 'Nokian']
-        products = products.filter(brand__name__in=top_brands)
-        products = products.order_by('status_order', '-cost_price') # Спочатку найдорожчі
+    elif s_ordering == 'expensive':
+        # Тільки бренди з галочкою "Топ"
+        products = products.filter(brand__category='top')
+        products = products.order_by('status_order', '-cost_price')
+        
     else:
-        # Стандартне сортування
+        # Якщо бот не активний - звичайний список
         products = products.order_by('status_order', 'brand__name', 'name')
     
     # БАНЕР
@@ -98,13 +99,17 @@ def catalog_view(request):
 
     # ПАГІНАЦІЯ
     paginator = Paginator(products, 12)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
+    # Зберігаємо всі фільтри для перемикання сторінок
     q_params = request.GET.copy()
     if 'page' in q_params: del q_params['page']
+    filter_query_string = q_params.urlencode()
 
     context = {
-        'page_obj': page_obj, 'filter_query_string': q_params.urlencode(),
+        'page_obj': page_obj, 
+        'filter_query_string': filter_query_string, # <--- Це лагодить пагінацію
         'all_brands': brands, 'all_widths': widths, 'all_profiles': profiles, 
         'all_diameters': diameters, 'all_seasons': season_choices,
         'selected_brand': int(s_brand) if s_brand else None,
@@ -116,7 +121,7 @@ def catalog_view(request):
     }
     return render(request, 'store/catalog.html', context)
 
-# --- ІНШІ VIEW (Без змін) ---
+# --- ІНШІ VIEW (Залишаємо без змін) ---
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     similar = Product.objects.filter(width=product.width, profile=product.profile, diameter=product.diameter).exclude(id=product.id)[:4]
@@ -153,7 +158,6 @@ def cart_remove_view(request, product_id):
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('catalog')
-    
     prefill = {}
     if request.user.is_authenticated:
         p, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -176,7 +180,6 @@ def checkout_view(request):
         send_order_to_telegram(order)
         cart.clear()
         return redirect('users:profile' if request.user.is_authenticated else 'catalog')
-
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
 @transaction.atomic

@@ -14,7 +14,7 @@
     </script>
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
-    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -27,235 +27,65 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
-        body {
-            background-color: #f0f4f8;
-            margin: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+        body { background-color: #f0f4f8; margin: 0; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
 
         /* --- ШАПКА --- */
-        .navbar {
-            background-color: rgba(0, 74, 153, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 8px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Логотип */
-        .logo-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            line-height: 0;
-        }
-        .logo-link:active { transform: scale(0.95); }
-
-        .logo-img {
-            height: 55px;
-            width: auto;
-            object-fit: contain;
-            display: block;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-
-        /* Меню (Десктоп) */
-        .navbar-menu {
-            display: flex;
-            gap: 25px;
-            align-items: center;
-        }
-
-        .navbar-item {
-            color: rgba(255, 255, 255, 0.95);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            padding: 8px 0;
-            position: relative;
-            transition: color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .navbar-item::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: #ffc107;
-            transition: width 0.3s;
-        }
-        .navbar-item:hover::after { width: 100%; }
+        .navbar { background-color: rgba(0, 74, 153, 0.9); backdrop-filter: blur(12px); padding: 8px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15); }
+        .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; line-height: 0; }
+        .logo-img { height: 55px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        
+        .navbar-menu { display: flex; gap: 25px; align-items: center; }
+        .navbar-item { color: rgba(255, 255, 255, 0.95); text-decoration: none; font-weight: 600; font-size: 1rem; padding: 8px 0; position: relative; transition: color 0.3s; display: flex; align-items: center; gap: 8px; }
         .navbar-item:hover { color: #fff; }
+        
+        .btn-register { background-color: #ffc107; color: #004a99 !important; padding: 6px 20px; border-radius: 50px; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4); }
+        
+        .hamburger { display: none; width: 36px; height: 36px; background: transparent; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; padding: 7px; flex-direction: column; justify-content: space-between; }
+        .hamburger span { display: block; width: 100%; height: 2px; background-color: #ffffff; transition: 0.3s; }
 
-        /* Кнопка реєстрації */
-        .btn-register {
-            background-color: #ffc107;
-            color: #004a99 !important;
-            padding: 6px 20px;
-            border-radius: 50px;
-            font-weight: 700;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4);
-        }
-        .btn-register::after { display: none; }
+        .mobile-menu { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background-color: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 1001; display: flex; flex-direction: column; padding: 80px 20px 20px; transition: right 0.3s ease; }
+        .mobile-menu.is-active { right: 0; }
+        .mobile-menu a, .mobile-menu button { display: block; padding: 15px; font-size: 1.1rem; color: #333; text-decoration: none; border-bottom: 1px solid #eee; font-weight: 600; display: flex; align-items: center; gap: 10px; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
+        .logout-button-mobile { color: #dc3545 !important; }
 
-        .cart-icon-bi { font-size: 1.3rem; }
+        main { flex: 1; }
+        .footer { background-color: #1a1a1a; color: #fff; padding: 40px 0 20px; text-align: center; margin-top: auto; }
+        .schedule-block { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin: 20px auto; max-width: 500px; font-size: 0.9rem; line-height: 1.6; }
 
-        /* Гамбургер */
-        .hamburger {
-            display: none;
-            width: 36px;
-            height: 36px;
-            background: transparent;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            cursor: pointer;
-            position: relative;
-            padding: 7px;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .hamburger span {
-            display: block;
-            width: 100%;
-            height: 2px;
-            background-color: #ffffff;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        /* --- Мобільне меню (висувне) --- */
-        .mobile-menu {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 280px;
-            height: 100vh;
-            background-color: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            padding: 80px 20px 20px;
-            transition: right 0.3s ease;
-        }
-
-        .mobile-menu.is-active {
-            right: 0;
-        }
-
-        .mobile-menu a, .mobile-menu button {
-            display: block;
-            padding: 15px;
-            font-size: 1.1rem;
-            color: #333;
-            text-decoration: none;
-            border-bottom: 1px solid #eee;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: none;
-            border: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        .logout-button-mobile {
-            color: #dc3545 !important;
-        }
-
-        main {
-            flex: 1;
-        }
-
-        /* --- Адаптація --- */
-        @media (max-width: 992px) {
-            .navbar { padding: 8px 20px; }
-            .logo-img { height: 40px; }
-            .navbar-menu { display: none; }
-            .hamburger { display: flex; }
-        }
+        @media (max-width: 992px) { .navbar { padding: 8px 20px; } .logo-img { height: 40px; } .navbar-menu { display: none; } .hamburger { display: flex; } }
     </style>
 </head>
 <body>
 
 <header class="navbar">
     <div class="navbar-brand">
-        <a href="{% url 'catalog' %}" class="logo-link" aria-label="На головну">
-            <img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img">
-        </a>
+        <a href="{% url 'catalog' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img"></a>
     </div>
-
     <div class="navbar-menu">
         <a href="{% url 'about' %}" class="navbar-item">Про нас</a>
-        
         <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
         <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка</a>
-        
-        <a href="{% url 'store:cart_detail' %}" class="navbar-item">
-            <i class="bi bi-cart3 cart-icon-bi"></i>
-            Кошик ({{ cart|length }})
-        </a>
-        
+        <a href="{% url 'store:cart_detail' %}" class="navbar-item"><i class="bi bi-cart3" style="font-size: 1.3rem;"></i> Кошик ({{ cart|length }})</a>
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}" class="navbar-item"><i class="bi bi-person-circle"></i> Кабінет</a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer; font-family:inherit;">Вийти</button>
-            </form>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">{% csrf_token %}<button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer;">Вийти</button></form>
         {% else %}
             <a href="{% url 'login' %}" class="navbar-item">Вхід</a>
             <a href="{% url 'users:register' %}" class="navbar-item btn-register">Реєстрація</a>
         {% endif %}
     </div>
-    
-    <button class="hamburger" id="hamburger-button">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
+    <button class="hamburger" id="hamburger-button"><span></span><span></span><span></span></button>
 </header>
 
 <div class="mobile-menu" id="mobile-menu">
     <a href="{% url 'about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
-    
     <a href="{% url 'contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
     <a href="{% url 'delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
-    <a href="{% url 'store:cart_detail' %}">
-        <i class="bi bi-cart3"></i> Кошик ({{ cart|length }})
-    </a>
-    
+    <a href="{% url 'store:cart_detail' %}"><i class="bi bi-cart3"></i> Кошик ({{ cart|length }})</a>
     {% if user.is_authenticated %}
         <a href="{% url 'users:profile' %}"><i class="bi bi-person"></i> Мій Кабінет</a>
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="logout-button-mobile"><i class="bi bi-box-arrow-right"></i> Вийти</button>
-        </form>
+        <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-button-mobile"><i class="bi bi-box-arrow-right"></i> Вийти</button></form>
     {% else %}
         <a href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i> Увійти</a>
         <a href="{% url 'users:register' %}"><i class="bi bi-person-plus"></i> Реєстрація</a>
@@ -268,474 +98,54 @@
 
 <footer class="footer">
     <div class="footer-content">
-        <div class="footer-brand">
-            <p class="footer-title">R16.com.ua</p>
-            <p class="footer-subtitle">Шини та сервіс, якому довіряють</p>
-        </div>
+        <div class="footer-brand"><p class="fs-4 fw-bold mb-1">R16.com.ua</p><p class="opacity-75 small">Шини та сервіс, якому довіряють</p></div>
         <div class="footer-contacts">
-            <div class="footer-contact-item">
-                <a href="tel:+380666881491" class="footer-link"><i class="bi bi-phone"></i> +38 (066) 688-14-91</a>
-            </div>
-            <div class="footer-contact-item">
-                <a href="mailto:r16info2025@gmail.com" class="footer-link"><i class="bi bi-envelope"></i> r16info2025@gmail.com</a>
-            </div>
+            <div class="mb-2"><a href="tel:+380666881491" style="color: #fff; text-decoration: none; font-weight: bold;"><i class="bi bi-phone me-2"></i> +38 (066) 688-14-91</a></div>
+            <div><a href="mailto:r16_info@gmail.com" style="color: rgba(255,255,255,0.8); text-decoration: none;"><i class="bi bi-envelope me-2"></i> r16_info@gmail.com</a></div>
+        </div>
         <div class="schedule-block">
             <div class="fw-bold text-warning mb-1"><i class="bi bi-clock-history me-1"></i> Графік роботи:</div>
-             <div class="d-flex justify-content-center gap-3 flex-wrap">
-                <span>Пн–Пт: 09:00 – 19:00</span>
-                <span>Сб: 10:00 – 16:00</span>
-                <span style="color: #ff6b6b;">Нд: Вихідний</span>
-            </div>
+            <div class="d-flex justify-content-center gap-3 flex-wrap"><span>Пн–Пт: 09:00 – 19:00</span><span>Сб: 10:00 – 16:00</span><span style="color: #ff6b6b;">Нд: Вихідний</span></div>
         </div>
-            <div class="mt-3" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-                <a href="{% url 'about' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Про нас</a>
-                <a href="{% url 'delivery_payment' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Доставка</a>
-                <a href="{% url 'warranty' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Гарантія</a>
-                <a href="{% url 'contacts' %}" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem;">Контакти</a>
-            </div>
-
+        <div class="mt-4" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; font-size: 0.9rem;">
+            <a href="{% url 'about' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Про нас</a>
+            <a href="{% url 'delivery_payment' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Доставка</a>
+            <a href="{% url 'warranty' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Гарантія</a>
+            <a href="{% url 'contacts' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Контакти</a>
         </div>
     </div>
-    <p class="footer-legal">Copyright ©2025 R16.com.ua All rights reserved</p>
+    <hr style="opacity: 0.2; margin: 20px auto; max-width: 200px;">
+    <p class="small opacity-50 mb-0">Copyright © 2025 R16.com.ua</p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
     const hamburgerButton = document.getElementById('hamburger-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    
     document.addEventListener('click', function(event) {
-        const isClickInsideMenu = mobileMenu.contains(event.target);
-        const isClickOnButton = hamburgerButton.contains(event.target);
-        
-        if (!isClickInsideMenu && !isClickOnButton && mobileMenu.classList.contains('is-active')) {
+        if (!mobileMenu.contains(event.target) && !hamburgerButton.contains(event.target) && mobileMenu.classList.contains('is-active')) {
             mobileMenu.classList.remove('is-active');
-            toggleHamburgerAnimation(false);
+            hamburgerButton.querySelectorAll('span')[1].style.opacity = '1';
         }
     });
-
     hamburgerButton.addEventListener('click', function() {
         mobileMenu.classList.toggle('is-active');
-        toggleHamburgerAnimation(mobileMenu.classList.contains('is-active'));
     });
-
-    function toggleHamburgerAnimation(isActive) {
-        const spans = hamburgerButton.querySelectorAll('span');
-        if (isActive) {
-            spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-            spans[1].style.opacity = '0';
-            spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
-            spans[0].style.backgroundColor = '#333';
-            spans[2].style.backgroundColor = '#333';
-        } else {
-            spans[0].style.transform = 'none';
-            spans[1].style.opacity = '1';
-            spans[2].style.transform = 'none';
-            spans[0].style.backgroundColor = '#fff';
-            spans[2].style.backgroundColor = '#fff';
-        }
-    }
 </script>
-<style>
-    /* КНОПКА-ШИНА */
-    .tire-bot-btn {
-        width: 50px; height: 50px;
-        background-color: #1a1a1a;
-        border: 2px dashed #555; /* Протектор */
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 22px;
-        cursor: pointer;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative; z-index: 100;
-    }
-    .tire-bot-btn:hover {
-        transform: rotate(180deg) scale(1.1); /* Ефект кочення */
-        border-color: #777;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-    .tire-bot-btn::after { /* Диск */
-        content: ''; position: absolute;
-        width: 36px; height: 36px;
-        border-radius: 50%; border: 1px solid #444;
-    }
-
-    /* Плаваюча кнопка (Справа внизу) */
-    .floating-bot {
-        position: fixed; bottom: 30px; right: 30px;
-        width: 65px; height: 65px; z-index: 9999;
-    }
-    .floating-bot::after { width: 48px; height: 48px; }
-
-    /* ВІКНО ЧАТУ (GLASSMORPHISM) */
-    .chat-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 10000; display: none;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-    }
-    .chat-window {
-        width: 90%; max-width: 400px; height: auto; min-height: 400px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.9); /* Скло */
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-        display: flex; flex-direction: column; overflow: hidden;
-        animation: botPop 0.3s ease-out;
-    }
-    @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    /* Елементи чату */
-    .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-    .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
-    
-    .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; }
-    .msg-bot { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-    .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-    .suggestion-btn {
-        background: rgba(255,255,255,0.7); border: 1px solid #ccc;
-        padding: 12px; border-radius: 12px; text-align: left;
-        font-weight: 600; color: #444; cursor: pointer; transition: 0.2s;
-        display: flex; align-items: center; gap: 10px;
-    }
-    .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
-    .suggestion-btn i { font-size: 1.2rem; }
-
-    /* Індикатор друку */
-    .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
-    .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
-    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-</style>
-
-<div class="tire-bot-btn floating-bot" onclick="openChat()">
-    <i class="bi bi-robot"></i>
-</div>
-
-<div id="chatOverlay" class="chat-overlay">
-    <div class="chat-window">
-        <div class="chat-header">
-            <h6 class="mb-0 fw-bold">🤖 R16 Експрес-підбір</h6>
-            <button onclick="closeChat()" class="btn-close"></button>
-        </div>
-
-        <div class="chat-body" id="chatBody">
-            <div class="msg msg-bot">
-                Привіт! 👋 Я допоможу підібрати шини за 10 секунд.
-            </div>
-            
-            <div id="stepBudget">
-                <div class="msg msg-bot">На яку суму розраховуєте? 💰</div>
-                <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Хочу дешевше (Економ)')">
-                        <i class="bi bi-piggy-bank"></i> Хочу дешевше (Економ)
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', '', '⚖️ Ціна / Якість')">
-                        <i class="bi bi-check-circle"></i> Ціна / Якість
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Шукаю найкраще (Топ)')">
-                        <i class="bi bi-star-fill text-warning"></i> Шукаю найкраще (Топ)
-                    </div>
-                </div>
-            </div>
-
-            <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-        </div>
-    </div>
-</div>
 
 <style>
-    /* КНОПКА-ШИНА */
-    .tire-bot-btn {
-        width: 50px; height: 50px;
-        background-color: #1a1a1a;
-        border: 2px dashed #666;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 22px;
-        cursor: pointer;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative; z-index: 100;
-    }
-    .tire-bot-btn:hover {
-        transform: rotate(180deg) scale(1.1);
-        border-color: #999;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-    .tire-bot-btn::after {
-        content: ''; position: absolute;
-        width: 36px; height: 36px;
-        border-radius: 50%; border: 1px solid #444;
-    }
-
-    /* Плаваюча кнопка (Справа внизу) */
-    .floating-bot {
-        position: fixed; bottom: 30px; right: 30px;
-        width: 65px; height: 65px; z-index: 9999;
-    }
-    .floating-bot::after { width: 48px; height: 48px; }
-
-    /* ВІКНО ЧАТУ */
-    .chat-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 10000; display: none;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-    }
-    .chat-window {
-        width: 90%; max-width: 400px; height: auto; min-height: 480px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-        display: flex; flex-direction: column; overflow: hidden;
-        animation: botPop 0.3s ease-out;
-    }
-    @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-    .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
-    
-    .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; }
-    .msg-bot { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-    /* Поля для розміру */
-    .size-inputs { display: flex; gap: 5px; align-items: center; margin-top: 10px; }
-    .size-input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; }
-    .size-separator { font-weight: bold; color: #999; }
-
-    .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-    .suggestion-btn {
-        background: rgba(255,255,255,0.7); border: 1px solid #ccc;
-        padding: 12px; border-radius: 12px; text-align: left;
-        font-weight: 600; color: #444; cursor: pointer; transition: 0.2s;
-        display: flex; align-items: center; gap: 10px;
-    }
-    .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
-    .suggestion-btn i { font-size: 1.2rem; }
-
-    .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
-    .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
-    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-</style>
-
-<div class="tire-bot-btn floating-bot" onclick="openChat()">
-    <i class="bi bi-robot"></i>
-</div>
-
-<div id="chatOverlay" class="chat-overlay">
-    <div class="chat-window">
-        <div class="chat-header">
-            <h6 class="mb-0 fw-bold">🤖 Експрес-підбір R16</h6>
-            <button onclick="closeChat()" class="btn-close"></button>
-        </div>
-
-        <div class="chat-body" id="chatBody">
-            <div class="msg msg-bot">Привіт! 👋 Я допоможу знайти шини за 3 кроки.</div>
-            
-            <div id="stepSize">
-                <div class="msg msg-bot">Введіть розмір шин:</div>
-                <div class="size-inputs">
-                    <input type="number" id="botWidth" class="size-input" placeholder="205">
-                    <span class="size-separator">/</span>
-                    <input type="number" id="botProfile" class="size-input" placeholder="55">
-                    <span class="size-separator">R</span>
-                    <input type="number" id="botDiameter" class="size-input" placeholder="16">
-                </div>
-                <button class="btn btn-primary w-100 mt-3 rounded-pill fw-bold" onclick="validateSize()">
-                    Далі <i class="bi bi-arrow-right"></i>
-                </button>
-            </div>
-
-            <div id="stepBudget" style="display: none;">
-                <div class="msg msg-bot">Який у вас бюджет? 💰</div>
-                <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Економ (Найдешевші)')">
-                        <i class="bi bi-piggy-bank"></i> Економ (Найдешевші)
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'medium', '⚖️ Ціна / Якість (від 1800 грн)')">
-                        <i class="bi bi-check-circle"></i> Ціна / Якість
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Топ Бренди (Michelin і т.д.)')">
-                        <i class="bi bi-star-fill text-warning"></i> Топ Бренди
-                    </div>
-                </div>
-            </div>
-
-            <div id="stepSeason" style="display: none;">
-                <div class="msg msg-bot">На який сезон потрібні? 🚗</div>
-                <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="finishBot('winter')"><i class="bi bi-snow text-info"></i> Зимові</div>
-                    <div class="suggestion-btn" onclick="finishBot('summer')"><i class="bi bi-sun-fill text-warning"></i> Літні</div>
-                    <div class="suggestion-btn" onclick="finishBot('all-season')"><i class="bi bi-cloud-sun text-success"></i> Всесезонні</div>
-                </div>
-            </div>
-
-            <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* КНОПКА-ШИНА */
-    .tire-bot-btn {
-        width: 50px; height: 50px;
-        background-color: #1a1a1a;
-        border: 2px dashed #555;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 22px;
-        cursor: pointer;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative; z-index: 100;
-    }
-    .tire-bot-btn:hover {
-        transform: rotate(180deg) scale(1.1);
-        border-color: #777;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-    .tire-bot-btn::after {
-        content: ''; position: absolute;
-        width: 36px; height: 36px;
-        border-radius: 50%; border: 1px solid #444;
-    }
-
-    .floating-bot {
-        position: fixed; bottom: 30px; right: 30px;
-        width: 65px; height: 65px; z-index: 9999;
-    }
-    .floating-bot::after { width: 48px; height: 48px; }
-
-    /* ВІКНО ЧАТУ */
-    .chat-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 10000; display: none;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-    }
-    .chat-window {
-        width: 90%; max-width: 400px; height: auto; min-height: 450px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-        display: flex; flex-direction: column; overflow: hidden;
-        animation: botPop 0.3s ease-out;
-    }
-    @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-    .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
-    
-    .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; }
-    .msg-bot { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-    /* Поля вводу розміру */
-    .size-inputs { display: flex; gap: 5px; align-items: center; margin-top: 10px; }
-    .size-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem; }
-    .size-separator { font-weight: bold; color: #999; }
-
-    .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-    .suggestion-btn {
-        background: rgba(255,255,255,0.7); border: 1px solid #ccc;
-        padding: 12px; border-radius: 12px; text-align: left;
-        font-weight: 600; color: #444; cursor: pointer; transition: 0.2s;
-        display: flex; align-items: center; gap: 10px;
-    }
-    .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
-    
-    .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
-    .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
-    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-</style>
-
-<div class="tire-bot-btn floating-bot" onclick="openChat()">
-    <i class="bi bi-robot"></i>
-</div>
-
-<div id="chatOverlay" class="chat-overlay">
-    <div class="chat-window">
-        <div class="chat-header">
-            <h6 class="mb-0 fw-bold">🤖 R16 Експрес-підбір</h6>
-            <button onclick="closeChat()" class="btn-close"></button>
-        </div>
-
-        <div class="chat-body" id="chatBody">
-            <div class="msg msg-bot">Привіт! 👋 Я допоможу швидко знайти шини.</div>
-            
-            <div id="stepSize">
-                <div class="msg msg-bot">Введіть розмір:</div>
-                <div class="size-inputs">
-                    <input type="number" id="botWidth" class="size-input" placeholder="205">
-                    <span class="size-separator">/</span>
-                    <input type="number" id="botProfile" class="size-input" placeholder="55">
-                    <span class="size-separator">R</span>
-                    <input type="number" id="botDiameter" class="size-input" placeholder="16">
-                </div>
-                <button class="btn btn-primary w-100 mt-3 rounded-pill fw-bold" onclick="validateSize()">Далі <i class="bi bi-arrow-right"></i></button>
-            </div>
-
-            <div id="stepBudget" style="display: none;">
-                <div class="msg msg-bot">На яку суму розраховуєте? 💰</div>
-                <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Хочу дешевше')">
-                        <i class="bi bi-piggy-bank"></i> Хочу дешевше
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'medium', '⚖️ Ціна / Якість')">
-                        <i class="bi bi-check-circle"></i> Ціна / Якість
-                    </div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Топ Бренди')">
-                        <i class="bi bi-star-fill text-warning"></i> Топ Бренди
-                    </div>
-                </div>
-            </div>
-
-            <div id="stepSeason" style="display: none;">
-                <div class="msg msg-bot">На який сезон потрібні? 🚗</div>
-                <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="finishBot('winter')"><i class="bi bi-snow text-info"></i> Зимові</div>
-                    <div class="suggestion-btn" onclick="finishBot('summer')"><i class="bi bi-sun-fill text-warning"></i> Літні</div>
-                    <div class="suggestion-btn" onclick="finishBot('all-season')"><i class="bi bi-cloud-sun text-success"></i> Всесезонні</div>
-                </div>
-            </div>
-
-            <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* Кнопка-шина */
     .tire-bot-btn { width: 50px; height: 50px; background: #1a1a1a; border: 2px dashed #666; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.4s; position: relative; z-index: 100; }
     .tire-bot-btn:hover { transform: rotate(180deg) scale(1.1); border-color: #999; }
     .tire-bot-btn::after { content: ''; position: absolute; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #444; }
     .floating-bot { position: fixed; bottom: 30px; right: 30px; z-index: 9999; width: 65px; height: 65px; }
     .floating-bot::after { width: 48px; height: 48px; }
 
-    /* Вікно чату */
     .chat-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .chat-window { width: 90%; max-width: 400px; height: auto; min-height: 500px; border-radius: 20px; background: rgba(255,255,255,0.95); box-shadow: 0 20px 50px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; animation: botPop 0.3s ease-out; }
     @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.8); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
     .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
-    
     .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; max-width: 85%; }
     .msg-bot { background: #f1f3f5; align-self: flex-start; border-bottom-left-radius: 2px; }
     .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
@@ -778,18 +188,18 @@
             <div id="stepBudget" style="display: none;">
                 <div class="msg msg-bot">Який у вас бюджет? 💰</div>
                 <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Хочу дешевше')">💸 Хочу дешевше</div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'medium', '⚖️ Ціна / Якість')">⚖️ Ціна / Якість</div>
-                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Топ Бренди')">💎 Топ Бренди</div>
+                    <div class="suggestion-btn" onclick="stepBudgetDone('cheap', '💸 Хочу дешевше')">💸 Хочу дешевше</div>
+                    <div class="suggestion-btn" onclick="stepBudgetDone('medium', '⚖️ Ціна / Якість')">⚖️ Ціна / Якість</div>
+                    <div class="suggestion-btn" onclick="stepBudgetDone('expensive', '💎 Топ Бренди')">💎 Топ Бренди</div>
                 </div>
             </div>
 
             <div id="stepSeason" style="display: none;">
                 <div class="msg msg-bot">На який сезон потрібні? 🚗</div>
                 <div class="chat-suggestions">
-                    <div class="suggestion-btn" onclick="finishBot('winter')">❄️ Зимові</div>
-                    <div class="suggestion-btn" onclick="finishBot('summer')">☀️ Літні</div>
-                    <div class="suggestion-btn" onclick="finishBot('all-season')">🌤 Всесезонні</div>
+                    <div class="suggestion-btn" onclick="stepSeasonDone('winter')">❄️ Зимові</div>
+                    <div class="suggestion-btn" onclick="stepSeasonDone('summer')">☀️ Літні</div>
+                    <div class="suggestion-btn" onclick="stepSeasonDone('all-season')">🌤 Всесезонні</div>
                 </div>
             </div>
 
@@ -803,12 +213,14 @@
     const chatBody = document.getElementById('chatBody');
     const typingDots = document.getElementById('typingDots');
     
+    // Стан бота
     let botState = { width: '', profile: '', diameter: '', budget: '', season: '' };
 
     function openChat() { chatOverlay.style.display = 'flex'; }
     function closeChat() { chatOverlay.style.display = 'none'; }
     chatOverlay.addEventListener('click', (e) => { if(e.target === chatOverlay) closeChat(); });
 
+    // 1. ПЕРЕВІРКА РОЗМІРУ
     function validateSize() {
         const w = document.getElementById('botW').value;
         const p = document.getElementById('botP').value;
@@ -821,27 +233,26 @@
         addUserMsg(`${w} / ${p} R${d}`);
         document.getElementById('stepSize').style.display = 'none';
         
-        showTypingAndNext('stepBudget');
+        // Показати наступний крок через анімацію
+        showTypingAndSwitch('stepBudget');
     }
 
-    function nextStep(step, value, text) {
-        // Ховаємо кнопки попереднього кроку
-        const currentStepDiv = document.getElementById(step === 'budget' ? 'stepBudget' : 'stepSeason');
-        currentStepDiv.style.display = 'none'; // Повністю ховаємо контейнер з кнопками
-
-        botState[step] = value;
+    // 2. ОБРОБКА БЮДЖЕТУ
+    function stepBudgetDone(value, text) {
+        botState.budget = value;
+        document.getElementById('stepBudget').style.display = 'none'; // Ховаємо блок з кнопками
         addUserMsg(text);
-
-        if (step === 'budget') {
-            showTypingAndNext('stepSeason');
-        }
+        
+        // Перехід до сезону
+        showTypingAndSwitch('stepSeason');
     }
 
-    function finishBot(season) {
+    // 3. ФІНІШ (СЕЗОН)
+    function stepSeasonDone(seasonValue) {
         document.getElementById('stepSeason').style.display = 'none';
-        botState.season = season;
+        botState.season = seasonValue;
         
-        let seasonText = season === 'winter' ? 'Зимові' : (season === 'summer' ? 'Літні' : 'Всесезонні');
+        let seasonText = seasonValue === 'winter' ? 'Зимові' : (seasonValue === 'summer' ? 'Літні' : 'Всесезонні');
         addUserMsg(seasonText);
 
         const botMsg = document.createElement('div');
@@ -849,13 +260,17 @@
         botMsg.innerHTML = 'Шукаю варіанти... 🔍';
         chatBody.appendChild(botMsg);
         
+        // ПЕРЕНАПРАВЛЕННЯ
         setTimeout(() => {
             let url = `{% url 'catalog' %}?width=${botState.width}&profile=${botState.profile}&diameter=${botState.diameter}&season=${botState.season}`;
-            if (botState.budget) url += `&ordering=${botState.budget}`;
+            if (botState.budget) {
+                url += `&ordering=${botState.budget}`;
+            }
             window.location.href = url;
         }, 1000);
     }
 
+    // Допоміжні функції
     function addUserMsg(text) {
         const msg = document.createElement('div');
         msg.className = 'msg msg-user';
@@ -863,7 +278,7 @@
         chatBody.insertBefore(msg, typingDots);
     }
 
-    function showTypingAndNext(nextId) {
+    function showTypingAndSwitch(nextId) {
         typingDots.style.display = 'block';
         chatBody.scrollTop = chatBody.scrollHeight;
         
@@ -874,5 +289,6 @@
         }, 600);
     }
 </script>
+
 </body>
 </html>

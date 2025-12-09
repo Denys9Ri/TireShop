@@ -5,119 +5,62 @@
 
 {% block content %}
 <style>
-    /* --- СТИЛІ ДЛЯ БАНЕРА --- */
-    .banner-wrapper {
-        margin-bottom: 40px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        position: relative;
-        background-color: transparent; 
-    }
-
-    .carousel-item {
-        transition: transform 0.6s ease-in-out;
-        height: auto; 
-        min-height: 100px;
-    }
-
-    .banner-img {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-
-    /* Кнопки каруселі */
-    .carousel-control-prev, .carousel-control-next { width: 8%; opacity: 1; align-items: center; }
+    /* БАНЕР */
+    .banner-wrapper { margin: 0 auto 40px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .banner-img { width: 100%; height: auto; display: block; }
     
-    .nav-circle {
-        width: 40px;
-        height: 40px;
-        background-color: rgba(0, 74, 153, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.3s, transform 0.2s;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
+    /* АВТО-ТЕГИ (Чіпси) */
+    .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
+    .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
+    
+    .badge-fresh { background: #20c997; } /* Свіжа */
+    .badge-top { background: #6610f2; }   /* Топ */
+    .badge-taxi { background: #fd7e14; }  /* Для таксі */
+    .badge-sale { background: #dc3545; }  /* Знижка */
 
-    .carousel-control-prev:hover .nav-circle,
-    .carousel-control-next:hover .nav-circle {
-        background-color: #004a99;
-        transform: scale(1.1);
+    /* КАЛЬКУЛЯТОР ВИГОДИ */
+    .set-price-calc {
+        font-size: 0.85rem; color: #555; background: #f8f9fa;
+        padding: 5px 10px; border-radius: 8px; margin-bottom: 10px;
+        border: 1px dashed #ccc; text-align: center;
     }
+    .set-price-calc strong { color: #0d6efd; }
 
-    .nav-icon { font-size: 1.2rem; color: white; font-weight: bold; }
-    .carousel-indicators [data-bs-target] { background-color: #004a99; height: 4px; border-radius: 2px; }
-
-    /* АДАПТАЦІЯ БАНЕРА */
-    @media (max-width: 991px) {
-        .banner-wrapper { width: 100%; }
-        .nav-circle { width: 32px; height: 32px; }
-    }
-
-    @media (min-width: 992px) {
-        .banner-wrapper { max-width: 1000px; margin-left: auto; margin-right: auto; }
-    }
-
-    /* --- СТИЛІ КАРТКИ ТОВАРУ --- */
-    .discount-badge {
-        position: absolute;
-        top: 10px; left: 10px; z-index: 20;
-        background: linear-gradient(45deg, #ff3547, #ff6b6b);
-        color: white; font-weight: 700; font-size: 0.85rem;
-        padding: 5px 10px; border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(255, 53, 71, 0.3);
-    }
-
-    .season-badge {
-        position: absolute; top: 10px; right: 10px; z-index: 20;
-        width: 34px; height: 34px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 1.1rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2px solid white;
-    }
+    /* КАРТКА */
+    .product-card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; overflow: hidden; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    .price-new { color: #dc3545; font-weight: 700; font-size: 1.8rem; }
+    .price-regular { color: #0d6efd; font-weight: 700; font-size: 1.8rem; }
+    .price-old { text-decoration: line-through; color: #888; font-size: 1rem; }
+    
+    /* СЕЗОН БЕЙДЖ */
+    .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2px solid white; }
     .season-badge.winter { background-color: #0dcaf0; }
     .season-badge.summer { background-color: #fd7e14; }
     .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
-    .product-card {
-        background: white; border-radius: 16px; padding: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        transition: transform 0.2s; height: 100%;
-        display: flex; flex-direction: column; overflow: hidden;
-        border: 1px solid #f0f0f0;
-    }
-    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    
-    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
-    
-    .product-name a { text-decoration: none; color: #333; font-weight: 700; font-size: 1.1rem; line-height: 1.3; }
-    .product-name { margin-bottom: 5px; min-height: 44px; }
-    
-    .product-price-block { margin-top: auto; margin-bottom: 15px; }
-    
-    .price-old { text-decoration: line-through; color: #999; font-size: 0.9rem; margin-right: 8px; }
-    .price-new { color: #dc3545; font-weight: 800; font-size: 1.3rem; }
-    .price-regular { color: #0d6efd; font-weight: 800; font-size: 1.3rem; }
-
-    /* Стилі для SEO блоку */
+    /* SEO БЛОК */
     .seo-text-block h2 { font-size: 1.5rem; }
     .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
-    .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
 </style>
 
 <div class="catalog-wrapper">
 
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
     <div id="filter-overlay" class="filter-overlay"></div>
-
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
             <input type="hidden" name="query" value="{{ search_query }}">
             
+            <label>Сортування:</label>
+            <select name="ordering">
+                <option value="">Замовчуванням</option>
+                <option value="cheap" {% if request.GET.ordering == 'cheap' %}selected{% endif %}>Від дешевих</option>
+                <option value="expensive" {% if request.GET.ordering == 'expensive' %}selected{% endif %}>Від дорогих</option>
+            </select>
+
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -161,12 +104,14 @@
     <div class="catalog-content">
         
         <div class="search-bar-container" style="margin-bottom: 30px;">
-            <form action="{% url 'catalog' %}" method="get" style="display: flex; gap: 10px;">
-                <input type="text" name="query" 
-                       style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" 
-                       placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." 
-                       value="{{ search_query }}">
-                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 30px; font-weight: bold; text-transform: uppercase;">
+            <form action="{% url 'catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" name="query" style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
+                
+                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
+                    <i class="bi bi-robot"></i>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;">
                     <i class="bi bi-search"></i>
                 </button>
             </form>
@@ -175,37 +120,13 @@
         {% if show_banner and banners %}
             <div class="banner-wrapper">
                 <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-                    {% if banners|length > 1 %}
-                    <div class="carousel-indicators">
-                        {% for banner in banners %}
-                            <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
-                                    class="{% if forloop.first %}active{% endif %}" aria-current="true" aria-label="Slide {{ forloop.counter }}"></button>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% else %}<div>{% endif %}
-                                    {% if banner.image_url %}
-                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" onerror="this.style.display='none'">
-                                    {% elif banner.image %}
-                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
-                                    {% endif %}
-                                {% if banner.link %}</a>{% else %}</div>{% endif %}
+                                {% if banner.image_url %}<img src="{{ banner.image_url }}" class="banner-img">{% elif banner.image %}<img src="{{ banner.image.url }}" class="banner-img">{% endif %}
                             </div>
                         {% endfor %}
                     </div>
-
-                    {% if banners|length > 1 %}
-                        <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
-                            <span class="nav-circle"><i class="bi bi-chevron-left nav-icon"></i></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="next">
-                            <span class="nav-circle"><i class="bi bi-chevron-right nav-icon"></i></span>
-                        </button>
-                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -218,9 +139,23 @@
             {% for product in page_obj %}
                 <div class="product-card position-relative">
                     
-                    {% if product.discount_percent > 0 %}
-                        <div class="discount-badge">-{{ product.discount_percent }}%</div>
-                    {% endif %}
+                    <div class="auto-badges-container">
+                        {% if product.discount_percent > 0 %}
+                            <span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>
+                        {% endif %}
+                        
+                        {% if product.year >= 2025 %}
+                            <span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>
+                        {% endif %}
+
+                        {% if "Michelin" in product.brand.name or "Continental" in product.brand.name or "Goodyear" in product.brand.name %}
+                            <span class="badge-tag badge-top">⭐ Топ Бренд</span>
+                        {% endif %}
+
+                        {% if "Aplus" in product.brand.name or "Powertrac" in product.brand.name %}
+                            <span class="badge-tag badge-taxi">🚕 Хіт Таксі</span>
+                        {% endif %}
+                    </div>
 
                     {% if product.seasonality == 'winter' %}
                         <div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
@@ -262,7 +197,11 @@
                         {% endif %}
                     </div>
 
-                    <p class="product-stock">Наявність: {{ product.stock_quantity }} шт.</p>
+                    <div class="set-price-calc">
+                        Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong>
+                    </div>
+
+                    <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
                         {% csrf_token %}
@@ -275,202 +214,36 @@
                     </form>
                 </div>
             {% empty %}
-                <p class="no-products-found">Товарів за вашим запитом не знайдено.</p>
+                <p class="no-products-found">Товарів не знайдено.</p>
             {% endfor %}
         </div>
 
         {% if page_obj.has_other_pages %}
-        <nav class="pagination">
-            <div class="step-links">
-                {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>
-                {% else %}
-                    <span class="disabled">Попередня</span>
-                {% endif %}
-                <span class="current">
-                    Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}
-                </span>
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
-                {% else %}
-                    <span class="disabled">Наступна</span>
-                {% endif %}
-            </div>
-        </nav>
+             <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Наступна</a>{% endif %}</div></nav>
         {% endif %}
         
-        <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
-            
-            {% if selected_season == 'winter' %}
-                <h2 class="fw-bold mb-3 text-primary">Як вибрати надійні зимові шини для українських доріг</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Зимова гума — це не просто вимога правил дорожнього руху, а головна гарантія вашої безпеки, коли температура опускається нижче +7°C. Головна відмінність зимових шин R16, R17 та інших розмірів — це спеціальний склад гумової суміші з додаванням силіки. Вона залишається м'якою та еластичною навіть у сильні морози, забезпечуючи надійне зчеплення зі снігом та льодом.
-                </p>
-                <p style="color: #555; line-height: 1.6;">
-                    При виборі зверніть увагу на тип протектора:
-                    <br>• <strong>Скандинавський тип:</strong> Має багато ламелей та гострі краї блоків ("зубастий"). Ідеальний для засніжених регіонів та нечищених дворів.
-                    <br>• <strong>Європейський тип:</strong> Більш округлий, з канавками для водовідведення. Найкращий вибір для Києва, де на дорогах часто "снігова каша" та мокрий асфальт.
-                </p>
-                
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Часті питання про зимову гуму</h4>
-                <div class="accordion" id="faqAccordionWinter">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">
-                                Коли перевзуватися на зиму?
-                            </button>
-                        </h2>
-                        <div id="qw1" class="accordion-collapse collapse" data-bs-parent="#faqAccordionWinter">
-                            <div class="accordion-body text-muted">
-                                Як тільки середньодобова температура опускається до +7°C. Зазвичай це кінець жовтня — початок листопада. Не чекайте першого снігу — літня гума "дубіє" і втрачає зчеплення вже при +5°C.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qw2">
-                                Що краще: шипи чи липучка?
-                            </button>
-                        </h2>
-                        <div id="qw2" class="accordion-collapse collapse" data-bs-parent="#faqAccordionWinter">
-                            <div class="accordion-body text-muted">
-                                Якщо 80% часу ви їздите по місту (Київ, Одеса, Львів) — обирайте якісну "липучку" (фрикційну шину). Вона тихіша і краще тримає на мокрому асфальті. Якщо часто виїжджаєте на траси або живете за містом, де лід не чистять — шипи будуть надійніші.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qw3">
-                                Чи можна ставити зимові шини тільки на ведучу вісь?
-                            </button>
-                        </h2>
-                        <div id="qw3" class="accordion-collapse collapse" data-bs-parent="#faqAccordionWinter">
-                            <div class="accordion-body text-muted">
-                                Категорично ні! Це призводить до неконтрольованого заносу автомобіля при гальмуванні. Завжди міняйте повний комплект з 4-х коліс.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-            {% elif selected_season == 'summer' %}
-                <h2 class="fw-bold mb-3 text-primary">Літні шини: Комфорт, швидкість та економія пального</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Літня гума розроблена для роботи при високих температурах. Вона твердіша за зимову, що дозволяє їй не "плисти" на розпеченому асфальті, тримати курсову стійкість та економити пальне завдяки низькому опору коченню.
-                </p>
-                <p style="color: #555; line-height: 1.6;">
-                    На що дивитись при виборі літніх шин на R16.com.ua:
-                    <br>• <strong>Малюнок протектора:</strong> Асиметричний дає найкращу керованість, а направлений ("ялинка") краще відводить воду в дощ.
-                    <br>• <strong>Канали водовідведення:</strong> Глибокі поздовжні канавки — запорука того, що ви не втратите керування, влетівши в калюжу (захист від аквапланування).
-                </p>
-
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про літню гуму</h4>
-                <div class="accordion" id="faqAccordionSummer">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qs1">
-                                Скільки служать літні шини?
-                            </button>
-                        </h2>
-                        <div id="qs1" class="accordion-collapse collapse" data-bs-parent="#faqAccordionSummer">
-                            <div class="accordion-body text-muted">
-                                У середньому — 3-5 сезонів або 50-80 тис. км пробігу. Це залежить від стилю водіння, якості доріг та бренду. Преміальні бренди (Michelin, Continental) зазвичай "ходять" довше за бюджетні.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qs2">
-                                Яка мінімальна глибина протектора дозволена?
-                            </button>
-                        </h2>
-                        <div id="qs2" class="accordion-collapse collapse" data-bs-parent="#faqAccordionSummer">
-                            <div class="accordion-body text-muted">
-                                За законом — 1.6 мм. Але експерти R16 рекомендують міняти гуму, коли залишається 3 мм, оскільки на мокрій дорозі сильно зношена шина вже не може ефективно відводити воду.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            {% elif selected_season == 'all-season' %}
-                <h2 class="fw-bold mb-3 text-primary">Всесезонні шини: Універсальне рішення чи компроміс?</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Всесезонка (All Season) стає все популярнішою в Україні завдяки м'яким зимам. Це гібрид, який поєднує характеристики літньої та зимової гуми. Вона має маркування M+S та часто піктограму "Сонце/Сніжинка". Головна перевага — економія грошей на шиномонтажі та відсутність проблеми зберігання другого комплекту.
-                </p>
-
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про всесезонку</h4>
-                <div class="accordion" id="faqAccordionAll">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qa1">
-                                Чи можна їздити на всесезонці взимку в Україні?
-                            </button>
-                        </h2>
-                        <div id="qa1" class="accordion-collapse collapse" data-bs-parent="#faqAccordionAll">
-                            <div class="accordion-body text-muted">
-                                Так, це законно і допустимо, особливо якщо зима м'яка (до -5...-10°C) і ви їздите розчищеними дорогами Києва. Але для поїздок у Карпати або під час ожеледиці краще мати повноцінну зимову гуму.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qa2">
-                                Як швидко зношується всесезонна гума?
-                            </button>
-                        </h2>
-                        <div id="qa2" class="accordion-collapse collapse" data-bs-parent="#faqAccordionAll">
-                            <div class="accordion-body text-muted">
-                                Оскільки вона працює цілий рік без відпочинку, її ресурс зазвичай менший, ніж у сезонних комплектів. Середній термін життя — 2-3 роки активної їзди.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-            {% else %}
-                <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин та дисків R16.com.ua</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Ласкаво просимо в R16 — ваш надійний партнер у виборі автомобільного "взуття". Ми пропонуємо широкий вибір шин для легкових авто, позашляховиків та мікроавтобусів. У нашому каталозі ви знайдете як преміальні бренди (Michelin, Continental, Goodyear), так і перевірені бюджетні варіанти з Китаю та Європи.
-                </p>
-                <p style="color: #555; line-height: 1.6;">
-                    <strong>Чому обирають нас:</strong>
-                    <ul class="list-unstyled mt-2">
-                        <li>✅ <strong class="text-dark">Можливість самовивозу в Києві:</strong> Гаражний кооператив "Палуба" вул. Володимира Качали, 3.</li>
-                        <li>✅ <strong class="text-dark">Чесні ціни:</strong> Ми працюємо без зайвих посередників.</li>
-                        <li>✅ <strong class="text-dark">Швидка доставка:</strong> Відправка Новою Поштою по всій Україні в день замовлення.</li>
-                        <li>✅ <strong class="text-dark">Професійна консультація:</strong> Допоможемо підібрати ідеальний розмір саме для вашого авто.</li>
-                    </ul>
-                </p>
+        {% if show_banner %}
             {% endif %}
-        </div>
-        </div>
+    </div>
 </div>
 
 <script>
   const filterBtn = document.getElementById('filter-toggle');
   const filterPanel = document.getElementById('filter-panel');
   const filterOverlay = document.getElementById('filter-overlay');
-
   if(filterBtn) {
-      filterBtn.addEventListener('click', () => {
-        filterPanel.classList.toggle('is-active');
-        filterOverlay.classList.toggle('is-active');
-      });
-      filterOverlay.addEventListener('click', () => {
-        filterPanel.classList.remove('is-active');
-        filterOverlay.classList.remove('is-active');
-      });
+      filterBtn.addEventListener('click', () => { filterPanel.classList.toggle('is-active'); filterOverlay.classList.toggle('is-active'); });
+      filterOverlay.addEventListener('click', () => { filterPanel.classList.remove('is-active'); filterOverlay.classList.remove('is-active'); });
   }
-
   document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
     const input = stepper.querySelector('input[name="quantity"]');
     const buttons = stepper.querySelectorAll('.quantity-btn');
     buttons.forEach((button) => {
       button.addEventListener('click', () => {
         const direction = button.dataset.direction;
-        const min = 1;
-        const max = 99;
         let current = parseInt(input.value, 10) || 1;
-        if (direction === 'increase' && current < max) input.value = current + 1;
-        if (direction === 'decrease' && current > min) input.value = current - 1;
+        if (direction === 'increase') input.value = current + 1;
+        if (direction === 'decrease' && current > 1) input.value = current - 1;
       });
     });
   });

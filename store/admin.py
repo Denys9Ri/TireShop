@@ -287,7 +287,10 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ['name', 'category', 'country'] 
+    list_editable = ['category'] # <--- Дозволить міняти категорію прямо в списку, дуже швидко!
+    list_filter = ['category']
+    search_fields = ['name']
 
 @admin.register(SiteBanner)
 class SiteBannerAdmin(admin.ModelAdmin):

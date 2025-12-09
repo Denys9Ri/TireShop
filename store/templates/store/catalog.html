@@ -5,40 +5,51 @@
 
 {% block content %}
 <style>
+    /* БАНЕР */
     .banner-wrapper { margin: 0 auto 40px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .banner-img { width: 100%; height: auto; display: block; }
     
+    /* АВТО-ТЕГИ (Чіпси) */
     .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
     .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
-    .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
+    
+    .badge-fresh { background: #20c997; } /* Свіжа */
+    .badge-top { background: #6610f2; }   /* Топ */
+    .badge-taxi { background: #fd7e14; }  /* Для таксі */
+    .badge-sale { background: #dc3545; }  /* Знижка */
 
-    .set-price-calc { font-size: 0.85rem; color: #555; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px dashed #ccc; text-align: center; }
+    /* КАЛЬКУЛЯТОР ВИГОДИ */
+    .set-price-calc {
+        font-size: 0.85rem; color: #555; background: #f8f9fa;
+        padding: 5px 10px; border-radius: 8px; margin-bottom: 10px;
+        border: 1px dashed #ccc; text-align: center;
+    }
     .set-price-calc strong { color: #0d6efd; }
 
+    /* КАРТКА */
     .product-card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; overflow: hidden; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    .price-new { color: #dc3545; font-weight: 700; font-size: 1.8rem; }
     .price-regular { color: #0d6efd; font-weight: 700; font-size: 1.8rem; }
     .price-old { text-decoration: line-through; color: #888; font-size: 1rem; }
     
+    /* СЕЗОН БЕЙДЖ */
     .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2px solid white; }
-    .season-badge.winter { background-color: #0dcaf0; } .season-badge.summer { background-color: #fd7e14; } .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
+    .season-badge.winter { background-color: #0dcaf0; }
+    .season-badge.summer { background-color: #fd7e14; }
+    .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
-    .seo-text-block h2 { font-size: 1.5rem; } .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
-    
-    /* Стилі пагінації */
-    .pagination { display: flex; justify-content: center; margin-top: 40px; }
-    .step-links { display: flex; gap: 10px; align-items: center; }
-    .step-links a, .step-links span { padding: 8px 15px; border-radius: 20px; background: white; text-decoration: none; color: #333; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .step-links a:hover { background: #0d6efd; color: white; }
-    .step-links .current { background: #0d6efd; color: white; cursor: default; }
-    .step-links .disabled { opacity: 0.5; cursor: not-allowed; }
+    /* SEO БЛОК */
+    .seo-text-block h2 { font-size: 1.5rem; }
+    .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
+    .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
 </style>
 
 <div class="catalog-wrapper">
+
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
     <div id="filter-overlay" class="filter-overlay"></div>
-    
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
@@ -90,9 +101,13 @@
             <form action="{% url 'catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" name="query" style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
                 
-                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота"><i class="bi bi-robot"></i></div>
+                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
+                    <i class="bi bi-robot"></i>
+                </div>
                 
-                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;"><i class="bi bi-search"></i></button>
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;">
+                    <i class="bi bi-search"></i>
+                </button>
             </form>
         </div>
 
@@ -117,9 +132,14 @@
                 <div class="product-card position-relative">
                     
                     <div class="auto-badges-container">
-                        {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
-                        {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
+                        {% if product.discount_percent > 0 %}
+                            <span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>
+                        {% endif %}
                         
+                        {% if product.year >= 2025 %}
+                            <span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>
+                        {% endif %}
+
                         {% if product.brand.category == 'top' %}
                             <span class="badge-tag badge-top">💎 Топ Бренд</span>
                         {% elif product.brand.category == 'medium' %}
@@ -129,22 +149,50 @@
                         {% endif %}
                     </div>
 
-                    {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-snow"></i></div>{% endif %}
+                    {% if product.seasonality == 'winter' %}
+                        <div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
+                    {% elif product.seasonality == 'summer' %}
+                        <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
+                    {% else %}
+                        <div class="season-badge all-season" title="Всесезонна">
+                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i>
+                            <i class="bi bi-snow" style="font-size: 0.8rem;"></i>
+                        </div>
+                    {% endif %}
 
-                    {% if product.photo_url %}<img src="{{ product.photo_url }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">{% elif product.photo %}<img src="{{ product.photo.url }}" class="product-image">{% else %}<img src="https://placehold.co/600x600?text=No+Photo" class="product-image">{% endif %}
+                    {% if product.photo_url %}
+                        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+                    {% elif product.photo %}
+                        <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
+                    {% else %}
+                        <img src="https://placehold.co/600x600?text=No+Photo" class="product-image">
+                    {% endif %}
                     
-                    <h3 class="product-name"><a href="{% url 'store:product_detail' product.id %}">{{ product.brand.name }} {{ product.name }}</a></h3>
-                    <p class="product-specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
+                    <h3 class="product-name">
+                        <a href="{% url 'store:product_detail' product.id %}">
+                            {{ product.brand.name }} {{ product.name }}
+                        </a>
+                    </h3>
+                    
+                    <p class="product-specs">
+                        {{ product.width }}/{{ product.profile }} R{{ product.diameter }}
+                    </p>
                     
                     <div class="product-price-block mb-2">
                         {% if product.discount_percent > 0 %}
-                            <div class="d-flex align-items-center gap-2"><span class="price-new">{{ product.price }} грн</span><small class="price-old">{{ product.old_price }} грн</small></div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="price-new">{{ product.price }} грн</span>
+                                <small class="price-old">{{ product.old_price }} грн</small>
+                            </div>
                         {% else %}
                             <p class="price-regular">{{ product.price }} грн</p>
                         {% endif %}
                     </div>
 
-                    <div class="set-price-calc">Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong></div>
+                    <div class="set-price-calc">
+                        Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong>
+                    </div>
+
                     <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
@@ -163,50 +211,5 @@
         </div>
 
         {% if page_obj.has_other_pages %}
-             <nav class="pagination">
-                <div class="step-links">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>
-                    {% else %}
-                        <span class="disabled">Попередня</span>
-                    {% endif %}
-                    
-                    <span class="current">
-                        Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}
-                    </span>
-                    
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
-                    {% else %}
-                        <span class="disabled">Наступна</span>
-                    {% endif %}
-                </div>
-            </nav>
+             <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>{% endif %}</div></nav>
         {% endif %}
-        
-        {% if show_banner %}{% include 'store/includes/seo_text.html' ignore missing %}{% endif %}
-    </div>
-</div>
-
-<script>
-  const filterBtn = document.getElementById('filter-toggle');
-  const filterPanel = document.getElementById('filter-panel');
-  const filterOverlay = document.getElementById('filter-overlay');
-  if(filterBtn) {
-      filterBtn.addEventListener('click', () => { filterPanel.classList.toggle('is-active'); filterOverlay.classList.toggle('is-active'); });
-      filterOverlay.addEventListener('click', () => { filterPanel.classList.remove('is-active'); filterOverlay.classList.remove('is-active'); });
-  }
-  document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
-    const input = stepper.querySelector('input[name="quantity"]');
-    const buttons = stepper.querySelectorAll('.quantity-btn');
-    buttons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const direction = button.dataset.direction;
-        let current = parseInt(input.value, 10) || 1;
-        if (direction === 'increase') input.value = current + 1;
-        if (direction === 'decrease' && current > 1) input.value = current - 1;
-      });
-    });
-  });
-</script>
-{% endblock %}

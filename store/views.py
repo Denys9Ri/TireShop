@@ -39,11 +39,12 @@ def catalog_view(request):
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
+    # Сортуємо: спочатку ті, що в наявності (stock_quantity > 0)
     products = Product.objects.annotate(
         status_order=Case(When(stock_quantity__gt=0, then=Value(0)), default=Value(1), output_field=IntegerField())
     )
 
-    # Пошук
+    # ПОШУК
     search_query = request.GET.get('query', '').strip()
     if search_query:
         clean_query = re.sub(r'[/\sR\-]', '', search_query, flags=re.IGNORECASE)
@@ -55,7 +56,7 @@ def catalog_view(request):
         else:
             products = products.filter(Q(name__icontains=search_query) | Q(brand__name__icontains=search_query))
 
-    # Фільтри
+    # ФІЛЬТРИ
     s_brand = request.GET.get('brand')
     s_width = request.GET.get('width')
     s_profile = request.GET.get('profile')
@@ -68,15 +69,34 @@ def catalog_view(request):
     if s_diameter: products = products.filter(diameter=s_diameter)
     if s_season: products = products.filter(seasonality=s_season)
     
-    # Сортування (стандартне, щоб не було помилок)
-    products = products.order_by('status_order', 'brand__name', 'name')
+    # === ЛОГІКА СОРТУВАННЯ (БОТ) ===
+    # Використовуємо 'cost_price', бо 'price' немає в базі
+    ordering = request.GET.get('ordering', '')
     
-    # Банер
+    if ordering == 'cheap':
+        # Економ: Спочатку дешеві
+        products = products.order_by('status_order', 'cost_price')
+        
+    elif ordering == 'medium':
+        # Ціна/Якість: Відсікаємо дешеві (наприклад, > 1500 грн собівартості, що десь > 2000 грн в продажу)
+        products = products.filter(cost_price__gte=1500)
+        products = products.order_by('status_order', 'cost_price')
+
+    elif ordering == 'expensive':
+        # ТОП: Фільтруємо по брендах
+        top_brands = ['Michelin', 'Continental', 'Goodyear', 'Bridgestone', 'Pirelli', 'Toyo', 'Hankook', 'Nokian']
+        products = products.filter(brand__name__in=top_brands)
+        products = products.order_by('status_order', '-cost_price') # Спочатку найдорожчі
+    else:
+        # Стандартне сортування
+        products = products.order_by('status_order', 'brand__name', 'name')
+    
+    # БАНЕР
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = not active_filters
     banners = SiteBanner.objects.filter(is_active=True).order_by('-created_at') if show_banner else []
 
-    # Пагінація
+    # ПАГІНАЦІЯ
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
     
@@ -140,7 +160,6 @@ def checkout_view(request):
         prefill = {'full_name': request.user.get_full_name(), 'phone': p.phone_primary, 'email': request.user.email, 'city': p.city, 'branch': p.nova_poshta_branch}
 
     if request.method == 'POST':
-        # (Логіка збереження замовлення - стандартна)
         is_pickup = request.POST.get('shipping_type') == 'pickup'
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,

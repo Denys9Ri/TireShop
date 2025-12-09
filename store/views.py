@@ -7,6 +7,7 @@ from django.conf import settings
 import requests 
 import re 
 
+# Імпорти моделей
 from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 from .cart import Cart
 from users.models import UserProfile
@@ -53,6 +54,7 @@ def catalog_view(request):
     diameters = Product.objects.values_list('diameter', flat=True).distinct().order_by('diameter')
     season_choices = Product.SEASON_CHOICES
     
+    # Базовий QuerySet зі статусом наявності
     products = Product.objects.annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)), 
@@ -61,6 +63,7 @@ def catalog_view(request):
         )
     )
 
+    # ПОШУК
     search_query = request.GET.get('query', '').strip()
     if search_query:
         clean_query = re.sub(r'[/\sR\-]', '', search_query, flags=re.IGNORECASE)
@@ -79,6 +82,7 @@ def catalog_view(request):
                 Q(description__icontains=search_query)
             )
 
+    # ФІЛЬТРИ
     selected_brand = request.GET.get('brand')
     selected_width = request.GET.get('width')
     selected_profile = request.GET.get('profile')
@@ -91,8 +95,32 @@ def catalog_view(request):
     if selected_diameter: products = products.filter(diameter=selected_diameter)
     if selected_season: products = products.filter(seasonality=selected_season)
     
-    products = products.order_by('status_order', 'brand__name', 'name')
+    # === СОРТУВАННЯ ТА ЛОГІКА БОТА ===
+    ordering = request.GET.get('ordering', '')
     
+    if ordering == 'cheap':
+        # 💸 ЕКОНОМ: Сортуємо від найдешевших (всі бренди)
+        products = products.order_by('status_order', 'price') 
+        
+    elif ordering == 'medium':
+        # ⚖️ ЦІНА / ЯКІСТЬ: Відсікаємо зовсім дешеві, показуємо від 1800 грн
+        products = products.filter(price__gte=1800)
+        products = products.order_by('status_order', 'price')
+
+    elif ordering == 'expensive':
+        # 💎 ТОП: Тільки преміум бренди + спочатку дорогі
+        top_brands = [
+            'Michelin', 'Continental', 'Goodyear', 'Bridgestone', 
+            'Pirelli', 'Toyo', 'Hankook', 'Nokian', 'Dunlop', 'Yokohama'
+        ]
+        products = products.filter(brand__name__in=top_brands)
+        products = products.order_by('status_order', '-price')
+        
+    else:
+        # Стандартне сортування (якщо нічого не вибрано)
+        products = products.order_by('status_order', 'brand__name', 'name')
+    
+    # БАНЕР (Показуємо тільки якщо немає фільтрів)
     active_filters = [k for k in request.GET if k != 'page']
     show_banner = False
     banners = []
@@ -101,6 +129,7 @@ def catalog_view(request):
         show_banner = True
         banners = SiteBanner.objects.filter(is_active=True).order_by('-created_at')
 
+    # ПАГІНАЦІЯ
     paginator = Paginator(products, 12) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number) 
@@ -133,7 +162,6 @@ def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
     # Шукаємо схожі товари (той самий розмір і сезон)
-    # exclude(id=product.id) - щоб не показувати цей самий товар у рекомендаціях
     similar_products = Product.objects.filter(
         width=product.width,
         profile=product.profile,
@@ -154,8 +182,13 @@ def contacts_view(request):
 def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
 
-def warranty_view(request): # <--- НОВА СТОРІНКА ГАРАНТІЇ
+def warranty_view(request):
     return render(request, 'store/warranty.html')
+
+def about_view(request):
+    # Беремо всі фото для сторінки "Про нас"
+    images = AboutImage.objects.all().order_by('-created_at')
+    return render(request, 'store/about.html', {'images': images})
 
 # --- КОШИК І ЗАМОВЛЕННЯ ---
 def cart_detail_view(request):
@@ -244,18 +277,7 @@ def checkout_view(request):
     
     return render(request, 'store/checkout.html', {'prefill': prefill})
 
-def about_view(request):
-    # Беремо всі фото для сторінки "Про нас"
-    images = AboutImage.objects.all().order_by('-created_at')
-    return render(request, 'store/about.html', {'images': images})
-
-def warranty_view(request):
-    return render(request, 'store/warranty.html')
-
-def contacts_view(request):
-    return render(request, 'store/contacts.html')
-    
-# --- АКВЕДУК ---
+# --- АКВЕДУК (Синхронізація Google Sheets) ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from django.contrib.admin.views.decorators import staff_member_required
@@ -263,5 +285,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 @staff_member_required
 @transaction.atomic
 def sync_google_sheet_view(request):
-    # ... (код синхронізації залишається без змін) ...
+    # Тут має бути ваш код синхронізації з минулих кроків.
+    # Я залишаю цей блок, щоб ви могли вставити туди свій робочий код з creds.json, 
+    # або він просто перенаправить назад, якщо коду немає.
     return redirect('admin:store_product_changelist')

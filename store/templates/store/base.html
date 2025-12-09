@@ -450,75 +450,236 @@
     </div>
 </div>
 
+<style>
+    /* КНОПКА-ШИНА */
+    .tire-bot-btn {
+        width: 50px; height: 50px;
+        background-color: #1a1a1a;
+        border: 2px dashed #666;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative; z-index: 100;
+    }
+    .tire-bot-btn:hover {
+        transform: rotate(180deg) scale(1.1);
+        border-color: #999;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    .tire-bot-btn::after {
+        content: ''; position: absolute;
+        width: 36px; height: 36px;
+        border-radius: 50%; border: 1px solid #444;
+    }
+
+    /* Плаваюча кнопка (Справа внизу) */
+    .floating-bot {
+        position: fixed; bottom: 30px; right: 30px;
+        width: 65px; height: 65px; z-index: 9999;
+    }
+    .floating-bot::after { width: 48px; height: 48px; }
+
+    /* ВІКНО ЧАТУ */
+    .chat-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000; display: none;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .chat-window {
+        width: 90%; max-width: 400px; height: auto; min-height: 480px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        display: flex; flex-direction: column; overflow: hidden;
+        animation: botPop 0.3s ease-out;
+    }
+    @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+    .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
+    
+    .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; }
+    .msg-bot { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+    /* Поля для розміру */
+    .size-inputs { display: flex; gap: 5px; align-items: center; margin-top: 10px; }
+    .size-input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+    .size-separator { font-weight: bold; color: #999; }
+
+    .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+    .suggestion-btn {
+        background: rgba(255,255,255,0.7); border: 1px solid #ccc;
+        padding: 12px; border-radius: 12px; text-align: left;
+        font-weight: 600; color: #444; cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
+    .suggestion-btn i { font-size: 1.2rem; }
+
+    .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
+    .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+</style>
+
+<div class="tire-bot-btn floating-bot" onclick="openChat()">
+    <i class="bi bi-robot"></i>
+</div>
+
+<div id="chatOverlay" class="chat-overlay">
+    <div class="chat-window">
+        <div class="chat-header">
+            <h6 class="mb-0 fw-bold">🤖 Експрес-підбір R16</h6>
+            <button onclick="closeChat()" class="btn-close"></button>
+        </div>
+
+        <div class="chat-body" id="chatBody">
+            <div class="msg msg-bot">Привіт! 👋 Я допоможу знайти шини за 3 кроки.</div>
+            
+            <div id="stepSize">
+                <div class="msg msg-bot">Введіть розмір шин:</div>
+                <div class="size-inputs">
+                    <input type="number" id="botWidth" class="size-input" placeholder="205">
+                    <span class="size-separator">/</span>
+                    <input type="number" id="botProfile" class="size-input" placeholder="55">
+                    <span class="size-separator">R</span>
+                    <input type="number" id="botDiameter" class="size-input" placeholder="16">
+                </div>
+                <button class="btn btn-primary w-100 mt-3 rounded-pill fw-bold" onclick="validateSize()">
+                    Далі <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+
+            <div id="stepBudget" style="display: none;">
+                <div class="msg msg-bot">Який у вас бюджет? 💰</div>
+                <div class="chat-suggestions">
+                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Економ (Найдешевші)')">
+                        <i class="bi bi-piggy-bank"></i> Економ (Найдешевші)
+                    </div>
+                    <div class="suggestion-btn" onclick="nextStep('budget', 'medium', '⚖️ Ціна / Якість (від 1800 грн)')">
+                        <i class="bi bi-check-circle"></i> Ціна / Якість
+                    </div>
+                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Топ Бренди (Michelin і т.д.)')">
+                        <i class="bi bi-star-fill text-warning"></i> Топ Бренди
+                    </div>
+                </div>
+            </div>
+
+            <div id="stepSeason" style="display: none;">
+                <div class="msg msg-bot">На який сезон потрібні? 🚗</div>
+                <div class="chat-suggestions">
+                    <div class="suggestion-btn" onclick="finishBot('winter')"><i class="bi bi-snow text-info"></i> Зимові</div>
+                    <div class="suggestion-btn" onclick="finishBot('summer')"><i class="bi bi-sun-fill text-warning"></i> Літні</div>
+                    <div class="suggestion-btn" onclick="finishBot('all-season')"><i class="bi bi-cloud-sun text-success"></i> Всесезонні</div>
+                </div>
+            </div>
+
+            <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        </div>
+    </div>
+</div>
+
 <script>
     const chatOverlay = document.getElementById('chatOverlay');
     const chatBody = document.getElementById('chatBody');
     const typingDots = document.getElementById('typingDots');
     
-    let botState = { budget: '', season: '' };
+    // Змінні для збереження вибору
+    let botState = { width: '', profile: '', diameter: '', budget: '', season: '' };
 
     function openChat() { chatOverlay.style.display = 'flex'; }
     function closeChat() { chatOverlay.style.display = 'none'; }
     chatOverlay.addEventListener('click', (e) => { if(e.target === chatOverlay) closeChat(); });
 
-    function nextStep(step, value, text) {
-        // 1. Ховаємо кнопки попереднього кроку
-        const buttons = document.querySelectorAll('.chat-suggestions');
-        buttons.forEach(el => el.style.display = 'none');
+    // КРОК 1: Валідація Розміру
+    function validateSize() {
+        const w = document.getElementById('botWidth').value;
+        const p = document.getElementById('botProfile').value;
+        const d = document.getElementById('botDiameter').value;
 
-        // 2. Показуємо вибір користувача
+        if (!w || !p || !d) {
+            alert("Будь ласка, заповніть всі поля розміру!");
+            return;
+        }
+
+        botState.width = w;
+        botState.profile = p;
+        botState.diameter = d;
+
+        // Показуємо вибір користувача
+        showUserMessage(`${w} / ${p} R${d}`);
+        document.getElementById('stepSize').style.display = 'none';
+
+        // Переходимо далі
+        showTypingAndNext('stepBudget');
+    }
+
+    // КРОК 2: Бюджет
+    function nextStep(step, value, text) {
+        // Ховаємо кнопки
+        const buttons = document.getElementById('stepBudget').querySelector('.chat-suggestions');
+        if(buttons) buttons.style.display = 'none';
+
+        botState.budget = value;
+        showUserMessage(text);
+        showTypingAndNext('stepSeason');
+    }
+
+    // КРОК 3: Фінал (Сезон)
+    function finishBot(seasonValue) {
+        const buttons = document.getElementById('stepSeason').querySelector('.chat-suggestions');
+        if(buttons) buttons.style.display = 'none';
+
+        botState.season = seasonValue;
+        
+        let seasonText = "Зимові";
+        if(seasonValue === 'summer') seasonText = "Літні";
+        if(seasonValue === 'all-season') seasonText = "Всесезонні";
+        
+        showUserMessage(seasonText);
+
+        // Фінальне повідомлення
+        const botMsg = document.createElement('div');
+        botMsg.className = 'msg msg-bot';
+        botMsg.innerHTML = 'Шукаю найкращі варіанти... <br> <strong>Це займе секунду! 🔍</strong>';
+        chatBody.appendChild(botMsg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // ПЕРЕНАПРАВЛЕННЯ
+        setTimeout(() => {
+            let url = `{% url 'catalog' %}?width=${botState.width}&profile=${botState.profile}&diameter=${botState.diameter}&season=${botState.season}`;
+            if (botState.budget) {
+                url += `&ordering=${botState.budget}`;
+            }
+            window.location.href = url;
+        }, 1200);
+    }
+
+    // Допоміжні функції
+    function showUserMessage(text) {
         const userMsg = document.createElement('div');
         userMsg.className = 'msg msg-user';
         userMsg.innerText = text;
         chatBody.insertBefore(userMsg, typingDots);
+    }
 
-        // 3. Імітуємо друк (думає)
+    function showTypingAndNext(nextStepId) {
         typingDots.style.display = 'block';
         chatBody.scrollTop = chatBody.scrollHeight;
 
         setTimeout(() => {
             typingDots.style.display = 'none';
-            
-            if (step === 'budget') {
-                botState.budget = value;
-                showSeasonStep();
-            } else if (step === 'season') {
-                botState.season = value;
-                finishBot();
-            }
+            document.getElementById(nextStepId).style.display = 'block';
+            chatBody.scrollTop = chatBody.scrollHeight;
         }, 600);
-    }
-
-    function showSeasonStep() {
-        const botMsg = document.createElement('div');
-        botMsg.className = 'msg msg-bot';
-        botMsg.innerText = 'Зрозумів. На який сезон потрібні? 🚗';
-        chatBody.appendChild(botMsg);
-
-        const options = document.createElement('div');
-        options.className = 'chat-suggestions';
-        options.innerHTML = `
-            <div class="suggestion-btn" onclick="nextStep('season', 'winter', '❄️ Зимові')"><i class="bi bi-snow text-info"></i> Зимові</div>
-            <div class="suggestion-btn" onclick="nextStep('season', 'summer', '☀️ Літні')"><i class="bi bi-sun-fill text-warning"></i> Літні</div>
-            <div class="suggestion-btn" onclick="nextStep('season', 'all-season', '🌤 Всесезонні')"><i class="bi bi-cloud-sun"></i> Всесезонні</div>
-        `;
-        chatBody.appendChild(options);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    function finishBot() {
-        const botMsg = document.createElement('div');
-        botMsg.className = 'msg msg-bot';
-        botMsg.innerText = 'Секунду, підбираю варіанти... 🔍';
-        chatBody.appendChild(botMsg);
-        
-        // Формуємо посилання
-        let url = "{% url 'catalog' %}?season=" + botState.season;
-        if (botState.budget) {
-            url += "&ordering=" + botState.budget;
-        }
-        
-        setTimeout(() => { window.location.href = url; }, 1000);
     }
 </script>
 </body>

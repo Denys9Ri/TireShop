@@ -211,5 +211,72 @@
         </div>
 
         {% if page_obj.has_other_pages %}
-             <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>{% endif %}</div></nav>
+             <nav class="pagination">
+                <div class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>
+                    {% else %}
+                        <span class="disabled">Попередня</span>
+                    {% endif %}
+                    <span class="current">Сторінка {{ page_obj.number }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
+                    {% else %}
+                        <span class="disabled">Наступна</span>
+                    {% endif %}
+                </div>
+            </nav>
         {% endif %}
+        
+        {% if show_banner %}
+        <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
+            {% if selected_season == 'winter' %}
+                <h2 class="fw-bold mb-3 text-primary">Зимові шини: Безпека понад усе</h2>
+                <p style="color: #555; line-height: 1.6;">
+                    Зимова гума — це гарантія вашої безпеки при температурі нижче +7°C. Спеціальний склад гуми залишається м'яким у мороз, забезпечуючи надійне зчеплення.
+                </p>
+                <h4 class="fw-bold mt-4 mb-3">FAQ: Часті питання</h4>
+                <div class="accordion" id="faqW">
+                    <div class="accordion-item border-0 mb-2">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">Коли міняти на зиму?</button></h2>
+                        <div id="qw1" class="accordion-collapse collapse"><div class="accordion-body text-muted">Як тільки температура стабільно опуститься до +7°C.</div></div>
+                    </div>
+                </div>
+            {% elif selected_season == 'summer' %}
+                <h2 class="fw-bold mb-3 text-primary">Літні шини для комфорту</h2>
+                <p style="color: #555;">Літня гума твердіша і забезпечує краще зчеплення на гарячому асфальті та в дощ.</p>
+            {% elif selected_season == 'all-season' %}
+                <h2 class="fw-bold mb-3 text-primary">Всесезонні шини: Універсальність</h2>
+                <p style="color: #555;">Ідеальний вибір для м'якої зими та міської їзди. Економія часу та грошей на шиномонтажі.</p>
+            {% else %}
+                <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин R16.com.ua</h2>
+                <p style="color: #555;">Ми пропонуємо широкий вибір шин. Склад у Києві, доставка по Україні. Чесні ціни та професійна консультація.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+  const filterBtn = document.getElementById('filter-toggle');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterOverlay = document.getElementById('filter-overlay');
+  if(filterBtn) {
+      filterBtn.addEventListener('click', () => { filterPanel.classList.toggle('is-active'); filterOverlay.classList.toggle('is-active'); });
+      filterOverlay.addEventListener('click', () => { filterPanel.classList.remove('is-active'); filterOverlay.classList.remove('is-active'); });
+  }
+  document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
+    const input = stepper.querySelector('input[name="quantity"]');
+    const buttons = stepper.querySelectorAll('.quantity-btn');
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const direction = button.dataset.direction;
+        let current = parseInt(input.value, 10) || 1;
+        if (direction === 'increase') input.value = current + 1;
+        if (direction === 'decrease' && current > 1) input.value = current - 1;
+      });
+    });
+  });
+</script>
+{% endblock %}

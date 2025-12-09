@@ -337,6 +337,189 @@
         }
     }
 </script>
+<style>
+    /* КНОПКА-ШИНА */
+    .tire-bot-btn {
+        width: 50px; height: 50px;
+        background-color: #1a1a1a;
+        border: 2px dashed #555; /* Протектор */
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative; z-index: 100;
+    }
+    .tire-bot-btn:hover {
+        transform: rotate(180deg) scale(1.1); /* Ефект кочення */
+        border-color: #777;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    .tire-bot-btn::after { /* Диск */
+        content: ''; position: absolute;
+        width: 36px; height: 36px;
+        border-radius: 50%; border: 1px solid #444;
+    }
 
+    /* Плаваюча кнопка (Справа внизу) */
+    .floating-bot {
+        position: fixed; bottom: 30px; right: 30px;
+        width: 65px; height: 65px; z-index: 9999;
+    }
+    .floating-bot::after { width: 48px; height: 48px; }
+
+    /* ВІКНО ЧАТУ (GLASSMORPHISM) */
+    .chat-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000; display: none;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .chat-window {
+        width: 90%; max-width: 400px; height: auto; min-height: 400px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.9); /* Скло */
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        display: flex; flex-direction: column; overflow: hidden;
+        animation: botPop 0.3s ease-out;
+    }
+    @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* Елементи чату */
+    .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+    .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
+    
+    .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; }
+    .msg-bot { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+    .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+    .suggestion-btn {
+        background: rgba(255,255,255,0.7); border: 1px solid #ccc;
+        padding: 12px; border-radius: 12px; text-align: left;
+        font-weight: 600; color: #444; cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
+    .suggestion-btn i { font-size: 1.2rem; }
+
+    /* Індикатор друку */
+    .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
+    .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+</style>
+
+<div class="tire-bot-btn floating-bot" onclick="openChat()">
+    <i class="bi bi-robot"></i>
+</div>
+
+<div id="chatOverlay" class="chat-overlay">
+    <div class="chat-window">
+        <div class="chat-header">
+            <h6 class="mb-0 fw-bold">🤖 R16 Експрес-підбір</h6>
+            <button onclick="closeChat()" class="btn-close"></button>
+        </div>
+
+        <div class="chat-body" id="chatBody">
+            <div class="msg msg-bot">
+                Привіт! 👋 Я допоможу підібрати шини за 10 секунд.
+            </div>
+            
+            <div id="stepBudget">
+                <div class="msg msg-bot">На яку суму розраховуєте? 💰</div>
+                <div class="chat-suggestions">
+                    <div class="suggestion-btn" onclick="nextStep('budget', 'cheap', '💸 Хочу дешевше (Економ)')">
+                        <i class="bi bi-piggy-bank"></i> Хочу дешевше (Економ)
+                    </div>
+                    <div class="suggestion-btn" onclick="nextStep('budget', '', '⚖️ Ціна / Якість')">
+                        <i class="bi bi-check-circle"></i> Ціна / Якість
+                    </div>
+                    <div class="suggestion-btn" onclick="nextStep('budget', 'expensive', '💎 Шукаю найкраще (Топ)')">
+                        <i class="bi bi-star-fill text-warning"></i> Шукаю найкраще (Топ)
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatOverlay = document.getElementById('chatOverlay');
+    const chatBody = document.getElementById('chatBody');
+    const typingDots = document.getElementById('typingDots');
+    
+    let botState = { budget: '', season: '' };
+
+    function openChat() { chatOverlay.style.display = 'flex'; }
+    function closeChat() { chatOverlay.style.display = 'none'; }
+    chatOverlay.addEventListener('click', (e) => { if(e.target === chatOverlay) closeChat(); });
+
+    function nextStep(step, value, text) {
+        // 1. Ховаємо кнопки попереднього кроку
+        const buttons = document.querySelectorAll('.chat-suggestions');
+        buttons.forEach(el => el.style.display = 'none');
+
+        // 2. Показуємо вибір користувача
+        const userMsg = document.createElement('div');
+        userMsg.className = 'msg msg-user';
+        userMsg.innerText = text;
+        chatBody.insertBefore(userMsg, typingDots);
+
+        // 3. Імітуємо друк (думає)
+        typingDots.style.display = 'block';
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        setTimeout(() => {
+            typingDots.style.display = 'none';
+            
+            if (step === 'budget') {
+                botState.budget = value;
+                showSeasonStep();
+            } else if (step === 'season') {
+                botState.season = value;
+                finishBot();
+            }
+        }, 600);
+    }
+
+    function showSeasonStep() {
+        const botMsg = document.createElement('div');
+        botMsg.className = 'msg msg-bot';
+        botMsg.innerText = 'Зрозумів. На який сезон потрібні? 🚗';
+        chatBody.appendChild(botMsg);
+
+        const options = document.createElement('div');
+        options.className = 'chat-suggestions';
+        options.innerHTML = `
+            <div class="suggestion-btn" onclick="nextStep('season', 'winter', '❄️ Зимові')"><i class="bi bi-snow text-info"></i> Зимові</div>
+            <div class="suggestion-btn" onclick="nextStep('season', 'summer', '☀️ Літні')"><i class="bi bi-sun-fill text-warning"></i> Літні</div>
+            <div class="suggestion-btn" onclick="nextStep('season', 'all-season', '🌤 Всесезонні')"><i class="bi bi-cloud-sun"></i> Всесезонні</div>
+        `;
+        chatBody.appendChild(options);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function finishBot() {
+        const botMsg = document.createElement('div');
+        botMsg.className = 'msg msg-bot';
+        botMsg.innerText = 'Секунду, підбираю варіанти... 🔍';
+        chatBody.appendChild(botMsg);
+        
+        // Формуємо посилання
+        let url = "{% url 'catalog' %}?season=" + botState.season;
+        if (botState.budget) {
+            url += "&ordering=" + botState.budget;
+        }
+        
+        setTimeout(() => { window.location.href = url; }, 1000);
+    }
+</script>
 </body>
 </html>

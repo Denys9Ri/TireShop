@@ -25,6 +25,14 @@
     .season-badge.winter { background-color: #0dcaf0; } .season-badge.summer { background-color: #fd7e14; } .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
     .seo-text-block h2 { font-size: 1.5rem; } .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
+    
+    /* Стилі пагінації */
+    .pagination { display: flex; justify-content: center; margin-top: 40px; }
+    .step-links { display: flex; gap: 10px; align-items: center; }
+    .step-links a, .step-links span { padding: 8px 15px; border-radius: 20px; background: white; text-decoration: none; color: #333; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .step-links a:hover { background: #0d6efd; color: white; }
+    .step-links .current { background: #0d6efd; color: white; cursor: default; }
+    .step-links .disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <div class="catalog-wrapper">
@@ -36,14 +44,6 @@
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
             <input type="hidden" name="query" value="{{ search_query }}">
             
-            <label>Сортування:</label>
-            <select name="ordering">
-                <option value="">Замовчуванням</option>
-                <option value="cheap" {% if request.GET.ordering == 'cheap' %}selected{% endif %}>Від дешевих</option>
-                <option value="medium" {% if request.GET.ordering == 'medium' %}selected{% endif %}>Ціна / Якість</option>
-                <option value="expensive" {% if request.GET.ordering == 'expensive' %}selected{% endif %}>Тільки ТОП бренди</option>
-            </select>
-
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -163,30 +163,28 @@
         </div>
 
         {% if page_obj.has_other_pages %}
-             <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Наступна</a>{% endif %}</div></nav>
+             <nav class="pagination">
+                <div class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>
+                    {% else %}
+                        <span class="disabled">Попередня</span>
+                    {% endif %}
+                    
+                    <span class="current">
+                        Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>
+                    {% else %}
+                        <span class="disabled">Наступна</span>
+                    {% endif %}
+                </div>
+            </nav>
         {% endif %}
         
-        <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
-            {% if selected_season == 'winter' %}
-                <h2 class="fw-bold mb-3 text-primary">Зимові шини: Безпека понад усе</h2>
-                <p>Зимова гума — це гарантія вашої безпеки при температурі нижче +7°C. Спеціальний склад гуми залишається м'яким у мороз.</p>
-                <h4 class="fw-bold mt-4 mb-3">FAQ</h4>
-                <div class="accordion" id="faqW"><div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">Коли міняти?</button></h2><div id="qw1" class="accordion-collapse collapse"><div class="accordion-body">Коли температура впаде до +7°C.</div></div></div></div>
-            
-            {% elif selected_season == 'summer' %}
-                <h2 class="fw-bold mb-3 text-primary">Літні шини для вашого авто</h2>
-                <p>Літня гума твердіша і забезпечує краще зчеплення на гарячому асфальті та в дощ.</p>
-            
-            {% elif selected_season == 'all-season' %}
-                <h2 class="fw-bold mb-3 text-primary">Всесезонні шини: Універсальний вибір</h2>
-                <p>Ідеально для м'якої зими та міської їзди. Економія на шиномонтажі.</p>
-            
-            {% else %}
-                <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин R16.com.ua</h2>
-                <p>Ми пропонуємо широкий вибір шин. Склад у Києві, доставка по Україні.</p>
-            {% endif %}
-        </div>
-
+        {% if show_banner %}{% include 'store/includes/seo_text.html' ignore missing %}{% endif %}
     </div>
 </div>
 

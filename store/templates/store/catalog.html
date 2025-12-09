@@ -5,64 +5,37 @@
 
 {% block content %}
 <style>
-    /* БАНЕР */
     .banner-wrapper { margin: 0 auto 40px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .banner-img { width: 100%; height: auto; display: block; }
     
-    /* АВТО-ТЕГИ (Чіпси) */
     .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
     .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
-    
-    .badge-fresh { background: #20c997; } /* Свіжа */
-    .badge-top { background: #6610f2; }   /* Топ */
-    .badge-taxi { background: #fd7e14; }  /* Для таксі */
-    .badge-sale { background: #dc3545; }  /* Знижка */
+    .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
 
-    /* КАЛЬКУЛЯТОР ВИГОДИ */
-    .set-price-calc {
-        font-size: 0.85rem; color: #555; background: #f8f9fa;
-        padding: 5px 10px; border-radius: 8px; margin-bottom: 10px;
-        border: 1px dashed #ccc; text-align: center;
-    }
+    .set-price-calc { font-size: 0.85rem; color: #555; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px dashed #ccc; text-align: center; }
     .set-price-calc strong { color: #0d6efd; }
 
-    /* КАРТКА */
     .product-card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; overflow: hidden; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
-    .price-new { color: #dc3545; font-weight: 700; font-size: 1.8rem; }
     .price-regular { color: #0d6efd; font-weight: 700; font-size: 1.8rem; }
     .price-old { text-decoration: line-through; color: #888; font-size: 1rem; }
     
-    /* СЕЗОН БЕЙДЖ */
     .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2px solid white; }
-    .season-badge.winter { background-color: #0dcaf0; }
-    .season-badge.summer { background-color: #fd7e14; }
-    .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
+    .season-badge.winter { background-color: #0dcaf0; } .season-badge.summer { background-color: #fd7e14; } .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
-    /* SEO БЛОК */
-    .seo-text-block h2 { font-size: 1.5rem; }
-    .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
-    .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
+    .seo-text-block h2 { font-size: 1.5rem; } .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
 </style>
 
 <div class="catalog-wrapper">
-
     <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
     <div id="filter-overlay" class="filter-overlay"></div>
+    
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'catalog' %}" class="filter-form">
             <input type="hidden" name="query" value="{{ search_query }}">
             
-            <label>Сортування:</label>
-            <select name="ordering">
-                <option value="">Замовчуванням</option>
-                <option value="cheap" {% if request.GET.ordering == 'cheap' %}selected{% endif %}>Від дешевих</option>
-                <option value="medium" {% if request.GET.ordering == 'medium' %}selected{% endif %}>Ціна / Якість (>1800)</option>
-                <option value="expensive" {% if request.GET.ordering == 'expensive' %}selected{% endif %}>Тільки ТОП бренди</option>
-            </select>
-
             <label>Бренд:</label>
             <select name="brand">
                 <option value="">Всі бренди</option>
@@ -109,13 +82,9 @@
             <form action="{% url 'catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" name="query" style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
                 
-                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
-                    <i class="bi bi-robot"></i>
-                </div>
+                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота"><i class="bi bi-robot"></i></div>
                 
-                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;">
-                    <i class="bi bi-search"></i>
-                </button>
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;"><i class="bi bi-search"></i></button>
             </form>
         </div>
 
@@ -133,76 +102,34 @@
             </div>
         {% endif %}
 
-        <h1 class="page-title">
-            {% if search_query %}Результати пошуку: "{{ search_query }}"{% else %}Каталог Товарів{% endif %}
-        </h1>
+        <h1 class="page-title">{% if search_query %}Результати пошуку: "{{ search_query }}"{% else %}Каталог Товарів{% endif %}</h1>
 
         <div class="product-grid">
             {% for product in page_obj %}
                 <div class="product-card position-relative">
                     
                     <div class="auto-badges-container">
-                        {% if product.discount_percent > 0 %}
-                            <span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>
-                        {% endif %}
-                        
-                        {% if product.year >= 2025 %}
-                            <span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>
-                        {% endif %}
-
-                        {% if "Michelin" in product.brand.name or "Continental" in product.brand.name or "Goodyear" in product.brand.name or "Bridgestone" in product.brand.name %}
-                            <span class="badge-tag badge-top">⭐ Топ Бренд</span>
-                        {% endif %}
-
-                        {% if "Aplus" in product.brand.name or "Powertrac" in product.brand.name %}
-                            <span class="badge-tag badge-taxi">🚕 Хіт Таксі</span>
-                        {% endif %}
+                        {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
+                        {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
+                        {% if "Michelin" in product.brand.name or "Continental" in product.brand.name %}<span class="badge-tag badge-top">⭐ Топ Бренд</span>{% endif %}
                     </div>
 
-                    {% if product.seasonality == 'winter' %}
-                        <div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
-                    {% elif product.seasonality == 'summer' %}
-                        <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
-                    {% else %}
-                        <div class="season-badge all-season" title="Всесезонна">
-                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i>
-                            <i class="bi bi-snow" style="font-size: 0.8rem;"></i>
-                        </div>
-                    {% endif %}
+                    {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-snow"></i></div>{% endif %}
 
-                    {% if product.photo_url %}
-                        <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
-                    {% elif product.photo %}
-                        <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
-                    {% else %}
-                        <img src="https://placehold.co/600x600?text=No+Photo" alt="Немає фото" class="product-image">
-                    {% endif %}
+                    {% if product.photo_url %}<img src="{{ product.photo_url }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">{% elif product.photo %}<img src="{{ product.photo.url }}" class="product-image">{% else %}<img src="https://placehold.co/600x600?text=No+Photo" class="product-image">{% endif %}
                     
-                    <h3 class="product-name">
-                        <a href="{% url 'store:product_detail' product.id %}">
-                            {{ product.brand.name }} {{ product.name }}
-                        </a>
-                    </h3>
-                    
-                    <p class="product-specs">
-                        {{ product.width }}/{{ product.profile }} R{{ product.diameter }} ({{ product.get_seasonality_display }})
-                    </p>
+                    <h3 class="product-name"><a href="{% url 'store:product_detail' product.id %}">{{ product.brand.name }} {{ product.name }}</a></h3>
+                    <p class="product-specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
                     
                     <div class="product-price-block mb-2">
                         {% if product.discount_percent > 0 %}
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="price-new">{{ product.price }} грн</span>
-                                <small class="price-old">{{ product.old_price }} грн</small>
-                            </div>
+                            <div class="d-flex align-items-center gap-2"><span class="price-new">{{ product.price }} грн</span><small class="price-old">{{ product.old_price }} грн</small></div>
                         {% else %}
                             <p class="price-regular">{{ product.price }} грн</p>
                         {% endif %}
                     </div>
 
-                    <div class="set-price-calc">
-                        Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong>
-                    </div>
-
+                    <div class="set-price-calc">Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong></div>
                     <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
@@ -224,62 +151,7 @@
              <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Наступна</a>{% endif %}</div></nav>
         {% endif %}
         
-        <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
-            
-            {% if selected_season == 'winter' %}
-                <h2 class="fw-bold mb-3 text-primary">Як вибрати надійні зимові шини для українських доріг</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Зимова гума — це не просто вимога правил дорожнього руху, а головна гарантія вашої безпеки, коли температура опускається нижче +7°C. Головна відмінність зимових шин R16, R17 та інших розмірів — це спеціальний склад гумової суміші з додаванням силіки. Вона залишається м'якою та еластичною навіть у сильні морози, забезпечуючи надійне зчеплення зі снігом та льодом.
-                </p>
-                <p style="color: #555; line-height: 1.6;">
-                    При виборі зверніть увагу на тип протектора:
-                    <br>• <strong>Скандинавський тип:</strong> Має багато ламелей та гострі краї блоків ("зубастий"). Ідеальний для засніжених регіонів та нечищених дворів.
-                    <br>• <strong>Європейський тип:</strong> Більш округлий, з канавками для водовідведення. Найкращий вибір для Києва, де на дорогах часто "снігова каша" та мокрий асфальт.
-                </p>
-                
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Часті питання про зимову гуму</h4>
-                <div class="accordion" id="faqAccordionWinter">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-light rounded-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">
-                                Коли перевзуватися на зиму?
-                            </button>
-                        </h2>
-                        <div id="qw1" class="accordion-collapse collapse" data-bs-parent="#faqAccordionWinter">
-                            <div class="accordion-body text-muted">
-                                Як тільки середньодобова температура опускається до +7°C. Зазвичай це кінець жовтня — початок листопада. Не чекайте першого снігу — літня гума "дубіє" і втрачає зчеплення вже при +5°C.
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-            
-            {% elif selected_season == 'summer' %}
-                <h2 class="fw-bold mb-3 text-primary">Літні шини: Комфорт, швидкість та економія пального</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Літня гума розроблена для роботи при високих температурах. Вона твердіша за зимову, що дозволяє їй не "плисти" на розпеченому асфальті, тримати курсову стійкість та економити пальне завдяки низькому опору коченню.
-                </p>
-                {% elif selected_season == 'all-season' %}
-                <h2 class="fw-bold mb-3 text-primary">Всесезонні шини: Універсальне рішення чи компроміс?</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Всесезонка (All Season) стає все популярнішою в Україні завдяки м'яким зимам. Це гібрид, який поєднує характеристики літньої та зимової гуми.
-                </p>
-                {% else %}
-                <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин та дисків R16.com.ua</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Ласкаво просимо в R16 — ваш надійний партнер у виборі автомобільного "взуття". Ми пропонуємо широкий вибір шин для легкових авто, позашляховиків та мікроавтобусів.
-                </p>
-                <p style="color: #555; line-height: 1.6;">
-                    <strong>Чому обирають нас:</strong>
-                    <ul class="list-unstyled mt-2">
-                        <li>✅ <strong class="text-dark">Власний склад у Києві:</strong> Можливість самовивозу з вул. Володимира Качали, 3.</li>
-                        <li>✅ <strong class="text-dark">Чесні ціни:</strong> Ми працюємо без зайвих посередників.</li>
-                        <li>✅ <strong class="text-dark">Швидка доставка:</strong> Відправка Новою Поштою по всій Україні в день замовлення.</li>
-                        <li>✅ <strong class="text-dark">Професійна консультація:</strong> Допоможемо підібрати ідеальний розмір саме для вашого авто.</li>
-                    </ul>
-                </p>
-            {% endif %}
-        </div>
-
+        {% if show_banner %}{% include 'store/includes/seo_text.html' ignore missing %}{% endif %}
     </div>
 </div>
 

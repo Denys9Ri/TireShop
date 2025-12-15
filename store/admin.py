@@ -5,8 +5,6 @@ from django.contrib import messages
 from django import forms
 from django.http import HttpResponse
 import openpyxl
-import csv
-import io
 import re
 import gc
 from django.utils.html import format_html
@@ -61,9 +59,11 @@ class ExcelImportForm(forms.Form):
 class PhotoImportForm(forms.Form):
     excel_file = forms.FileField(label="Файл з ФОТО")
 
-# 🔥 ОНОВЛЕНА ФОРМА ДЛЯ SEO (ПІДТРИМУЄ CSV) 🔥
+# 🔥 ОНОВЛЕНА ФОРМА ДЛЯ SEO (З ЛІМІТАМИ) 🔥
 class SeoImportForm(forms.Form):
-    excel_file = forms.FileField(label="SEO Файл (.csv або .xlsx)")
+    excel_file = forms.FileField(label="SEO Файл (.xlsx)")
+    start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
+    end_row = forms.IntegerField(initial=500, min_value=2, label="Закінчити рядком (рекомендовано по 500)")
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -80,7 +80,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {'fields': ('name', 'slug', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
-        ('SEO (Google)', {'fields': ('seo_title', 'seo_h1', 'seo_text')}), # 🔥 Додали поле SEO
+        ('SEO (Google)', {'fields': ('seo_title', 'seo_h1', 'seo_text')}), # 🔥 SEO поля
         ('Ціни та наявність', {'fields': ('cost_price', 'discount_percent', 'final_price_preview', 'stock_quantity')}),
         ('Головне фото', {'fields': ('photo', 'photo_url', 'photo_preview')}),
         ('Характеристики', {'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')}),
@@ -103,112 +103,101 @@ class ProductAdmin(admin.ModelAdmin):
         my_urls = [
             path('import-excel/', self.import_excel, name="import_excel"),
             path('import-photos/', self.import_photos, name="import_photos"),
-            path('import-seo/', self.import_seo, name="import_seo"), # 🔥 Новий шлях
+            path('import-seo/', self.import_seo, name="import_seo"),
             path('export-models/', self.export_unique_models, name="export_unique_models"),
         ]
         return my_urls + urls
 
-    # --- 🔥 ОНОВЛЕНИЙ ІМПОРТ SEO (CSV + EXCEL) 🔥 ---
+    # --- 🔥 ІМПОРТ SEO (ЧАСТИНАМИ, ЯК ПРАЙС) 🔥 ---
     def import_seo(self, request):
         if request.method == "POST":
-            file = request.FILES["excel_file"]
-            filename = file.name.lower()
-            updated_count = 0
-            not_found_count = 0
-            
-            try:
-                # ВАРІАНТ 1: CSV (Швидко, мало пам'яті)
-                if filename.endswith('.csv'):
-                    # Читаємо файл як текст
-                    decoded_file = file.read().decode('utf-8').splitlines()
-                    reader = csv.reader(decoded_file)
-                    
-                    try:
-                        header = next(reader) # Перший рядок - заголовки
-                        header = [str(h).lower().strip() for h in header]
-                        
-                        idx_brand = header.index('brand')
-                        idx_model = header.index('model')
-                        idx_title = header.index('title')
-                        idx_h1 = header.index('h1')
-                        idx_text = header.index('seo text')
-                    except ValueError as e:
-                        messages.error(request, f"Помилка заголовків CSV: {e}")
-                        return redirect("..")
+            form = SeoImportForm(request.POST, request.FILES)
+            if form.is_valid():
+                excel_file = form.cleaned_data["excel_file"]
+                start_row_limit = form.cleaned_data["start_row"]
+                end_row_limit = form.cleaned_data["end_row"]
 
-                    for row in reader:
-                        if not row or len(row) < 2: continue
-                        if self._update_product_seo(row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
-                            updated_count += 1
-                        else:
-                            not_found_count += 1
-
-                # ВАРІАНТ 2: EXCEL (Класичний)
-                else:
-                    wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
+                try:
+                    # Завантажуємо файл (read_only економить пам'ять)
+                    wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
                     sheet = wb.active
-                    rows = sheet.iter_rows(values_only=True)
+                    updated_count = 0
+                    not_found_count = 0
+                    
+                    # Отримуємо ітератор рядків
+                    rows_iter = sheet.iter_rows(values_only=True)
                     
                     try:
-                        header = [str(h).lower().strip() for h in next(rows)]
+                        # Читаємо заголовок (перший рядок)
+                        header_row = next(rows_iter)
+                        header = [str(h).lower().strip() for h in header_row]
+                    except:
+                        messages.error(request, "Файл пустий або пошкоджений")
+                        return redirect("..")
+
+                    # Знаходимо колонки
+                    try:
                         idx_brand = header.index('brand')
                         idx_model = header.index('model')
                         idx_title = header.index('title')
                         idx_h1 = header.index('h1')
                         idx_text = header.index('seo text')
                     except ValueError as e:
-                        messages.error(request, f"Помилка заголовків Excel: {e}")
+                        messages.error(request, f"Не знайдено колонку: {e}. Перевірте заголовки (Brand, Model, Title, H1, SEO Text).")
                         return redirect("..")
 
-                    for i, row in enumerate(rows):
-                        if i % 200 == 0: gc.collect() # Чистимо пам'ять
-                        if not row: continue
+                    # Проходимо по рядках
+                    for i, row in enumerate(rows_iter):
+                        current_excel_row = i + 2 # +2 бо пропустили header і enumerate з 0
                         
-                        if self._update_product_seo(row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
+                        # 🔥 ОБМЕЖЕННЯ (ЩОБ НЕ ВБИТИ СЕРВЕР)
+                        if current_excel_row < start_row_limit: continue
+                        if current_excel_row > end_row_limit: break
+                        
+                        # Чистимо пам'ять кожні 100 рядків
+                        if i % 100 == 0: gc.collect()
+
+                        if not row or len(row) < 2: continue
+                        
+                        brand_val = str(row[idx_brand]).strip()
+                        model_val = str(row[idx_model]).strip()
+                        
+                        if not brand_val or not model_val: continue
+
+                        seo_title = str(row[idx_title]).strip() if row[idx_title] else ""
+                        seo_h1 = str(row[idx_h1]).strip() if row[idx_h1] else ""
+                        seo_text = str(row[idx_text]).strip() if row[idx_text] else ""
+
+                        # Шукаємо товар
+                        product = Product.objects.filter(brand__name__iexact=brand_val, name__iexact=model_val).first()
+                        
+                        if not product:
+                            # М'який пошук
+                            candidates = Product.objects.filter(brand__name__iexact=brand_val)
+                            for p in candidates:
+                                if p.name.lower() in model_val.lower():
+                                    product = p
+                                    break
+                        
+                        if product:
+                            product.seo_title = seo_title
+                            product.seo_h1 = seo_h1
+                            product.seo_text = seo_text
+                            product.save()
                             updated_count += 1
                         else:
                             not_found_count += 1
 
-                messages.success(request, f"✅ Оновлено SEO: {updated_count}. ❌ Не знайдено: {not_found_count}.")
+                    messages.success(request, f"✅ Оновлено SEO: {updated_count} (рядки {start_row_limit}-{end_row_limit}). ❌ Не знайдено: {not_found_count}.")
 
-            except Exception as e:
-                messages.error(request, f"Критична помилка файлу: {e}")
-            return redirect("..")
-            
-        form = SeoImportForm()
-        return render(request, "store/admin_import_photos.html", {"form": form, "title": "Імпорт SEO (.csv або .xlsx)"})
-
-    # Допоміжна функція оновлення (щоб не дублювати код)
-    def _update_product_seo(self, row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
-        try:
-            brand_val = str(row[idx_brand]).strip()
-            model_val = str(row[idx_model]).strip()
-            if not brand_val or not model_val: return False
-
-            seo_title = str(row[idx_title]).strip() if len(row) > idx_title and row[idx_title] else ""
-            seo_h1 = str(row[idx_h1]).strip() if len(row) > idx_h1 and row[idx_h1] else ""
-            seo_text = str(row[idx_text]).strip() if len(row) > idx_text and row[idx_text] else ""
-
-            # Пошук товару
-            product = Product.objects.filter(brand__name__iexact=brand_val, name__iexact=model_val).first()
-            
-            if not product:
-                # М'який пошук (якщо модель у базі коротша, ніж у файлі)
-                candidates = Product.objects.filter(brand__name__iexact=brand_val)
-                for p in candidates:
-                    if p.name.lower() in model_val.lower():
-                        product = p
-                        break
-            
-            if product:
-                product.seo_title = seo_title
-                product.seo_h1 = seo_h1
-                product.seo_text = seo_text
-                product.save()
-                return True
-        except:
-            return False
-        return False
+                except Exception as e:
+                    messages.error(request, f"Помилка: {e}")
+                return redirect("..")
+        else:
+            form = SeoImportForm()
+        
+        # Використовуємо той самий шаблон імпорту, що і для товарів
+        return render(request, "store/admin_import.html", {"form": form, "title": "Імпорт SEO (частинами)"})
 
     # --- 1. РОЗУМНИЙ ЕКСПОРТ ---
     def export_unique_models(self, request):

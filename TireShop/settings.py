@@ -9,13 +9,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!
 # --- ЛОГІКА DEBUG ТА ДОМЕНІВ ---
 # Якщо ми на Render:
 if 'RENDER' in os.environ:
-    # На живому сайті вимикаємо DEBUG (безпека + швидкість)
-    DEBUG = True
+    # 🔥 НА ЖИВОМУ САЙТІ ВИМИКАЄМО DEBUG (Критично для швидкості та кешу)
+    DEBUG = False 
+    
     ALLOWED_HOSTS = [
-        os.environ.get('RENDER_EXTERNAL_HOSTNAME'), # Адреса від Render (tireshop...onrender.com)
-        'r16.com.ua',       # <--- ВАШ НОВИЙ ДОМЕН
-        'www.r16.com.ua',   # <--- ВЕРСІЯ З WWW
+        os.environ.get('RENDER_EXTERNAL_HOSTNAME'), # Адреса від Render
+        'r16.com.ua',        # ВАШ ДОМЕН
+        'www.r16.com.ua',    # WWW ВЕРСІЯ
     ]
+    
+    # 🔥 БЕЗПЕКА І HTTPS (Google це любить)
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 рік
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 else:
     # Вдома на комп'ютері
     DEBUG = True
@@ -33,10 +42,12 @@ INSTALLED_APPS = [
     
     'store.apps.StoreConfig', 
     'users.apps.UsersConfig', 
+    # 'whitenoise.runserver_nostatic', # Можна додати для тесту локально, але не обов'язково
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # 🔥 WHITENOISE (Має бути відразу після Security)
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware', 
     'django.middleware.common.CommonMiddleware',
@@ -70,7 +81,7 @@ WSGI_APPLICATION = 'TireShop.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=0 # Щоб база не "відвалювалася"
+        conn_max_age=600 # Тримати з'єднання 10 хв (швидше для PostgreSQL)
     )
 }
 
@@ -86,14 +97,17 @@ TIME_ZONE = 'Europe/Kyiv'
 USE_I18N = True
 USE_TZ = True
 
+# --- СТАТИКА (CSS, JS, IMAGES) ---
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Стабільна версія для статики
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# 🔥 МАКСИМАЛЬНА ОПТИМІЗАЦІЯ WHITENOISE 🔥
+# CompressedManifest... стискає файли (Gzip/Brotli) і додає хеш до імені.
+# Це дозволяє браузеру кешувати їх "назавжди" (вирішує проблему PageSpeed про кеш).
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -106,7 +120,6 @@ LOGOUT_REDIRECT_URL = 'catalog'
 
 GSPREAD_CREDENTIALS_PATH = '/etc/secrets/credentials.json'
 
-# --- НАЛАШТУВАННЯ TELEGRAM БОТА ---
-# Ці дані ми пропишемо на Render у вкладці Environment
+# --- ТЕЛЕГРАМ БОТ ---
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')

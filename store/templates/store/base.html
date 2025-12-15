@@ -154,17 +154,25 @@
 
     .chat-header { padding: 15px 20px; background: rgba(255,255,255,0.8); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
     .chat-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh; }
+    
     .msg { padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; max-width: 85%; }
     .msg-bot { background: #f1f3f5; align-self: flex-start; border-bottom-left-radius: 2px; }
     .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
 
-    .size-inputs { display: flex; gap: 5px; margin-top: 10px; }
+    /* ОНОВЛЕНІ ІНПУТИ (З ПІДПИСАМИ) */
+    .size-input-group { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .size-label { font-size: 0.75rem; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .size-inputs { display: flex; gap: 8px; margin-top: 10px; width: 100%; }
     .size-input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+    .size-input::placeholder { color: #ccc; font-weight: normal; font-size: 0.9rem; }
     
     .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
     .suggestion-btn { background: #fff; border: 1px solid #dee2e6; padding: 12px; border-radius: 12px; text-align: left; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     .suggestion-btn:hover { background: #0d6efd; color: white; border-color: #0d6efd; }
     
+    .btn-sos { background: #ffebeb; border: 1px solid #ffcccc; color: #d63384; text-align: center; justify-content: center; }
+    .btn-sos:hover { background: #d63384; color: white; border-color: #d63384; }
+
     .typing { display: none; align-self: flex-start; background: white; padding: 10px 15px; border-radius: 15px; }
     .dot { display: inline-block; width: 6px; height: 6px; background: #bbb; border-radius: 50%; margin: 0 2px; animation: jump 1.4s infinite; }
     .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
@@ -176,7 +184,7 @@
 <div id="chatOverlay" class="chat-overlay">
     <div class="chat-window">
         <div class="chat-header">
-            <h6 class="mb-0 fw-bold">🤖 R16 Експрес-підбір</h6>
+            <h6 class="mb-0 fw-bold">🤖 R16 Асистент</h6>
             <button onclick="closeChat()" class="btn-close"></button>
         </div>
 
@@ -184,13 +192,25 @@
             <div class="msg msg-bot">Привіт! 👋 Я допоможу знайти шини.</div>
             
             <div id="stepSize">
-                <div class="msg msg-bot">Спочатку введіть розмір:</div>
-                <div class="size-inputs">
-                    <input type="number" id="botW" class="size-input" placeholder="205">
-                    <input type="number" id="botP" class="size-input" placeholder="55">
-                    <input type="number" id="botD" class="size-input" placeholder="16">
+                <div class="msg msg-bot">Введіть розмір:</div>
+                
+                <div class="size-inputs mb-3">
+                    <div class="size-input-group">
+                        <span class="size-label">Ширина</span>
+                        <input type="number" id="botW" class="size-input" placeholder="205">
+                    </div>
+                    <div class="size-input-group">
+                        <span class="size-label">Профіль</span>
+                        <input type="number" id="botP" class="size-input" placeholder="55">
+                    </div>
+                    <div class="size-input-group">
+                        <span class="size-label">Діаметр</span>
+                        <input type="number" id="botD" class="size-input" placeholder="16">
+                    </div>
                 </div>
-                <button class="btn btn-primary w-100 mt-3 rounded-pill fw-bold" onclick="validateSize()">Далі <i class="bi bi-arrow-right"></i></button>
+                <button class="btn btn-primary w-100 rounded-pill fw-bold mb-3" onclick="validateSize()">Далі <i class="bi bi-arrow-right"></i></button>
+                
+                <div class="suggestion-btn btn-sos" onclick="startSosMode()">🤷 Я не знаю розмір / Допоможіть</div>
             </div>
 
             <div id="stepBudget" style="display: none;">
@@ -211,6 +231,14 @@
                 </div>
             </div>
 
+            <div id="stepSos" style="display: none;">
+                <div class="msg msg-bot">Зрозумів! 👌 <br>Залиште свій номер, і менеджер допоможе.</div>
+                <div class="mt-3">
+                    <input type="tel" id="sosPhone" class="form-control mb-2" placeholder="050 123 45 67" style="border-radius: 10px; padding: 12px;">
+                    <button class="btn btn-success w-100 rounded-pill fw-bold" onclick="sendSos()">📞 Чекаю дзвінка</button>
+                </div>
+            </div>
+
             <div class="typing" id="typingDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
         </div>
     </div>
@@ -221,64 +249,71 @@
     const chatBody = document.getElementById('chatBody');
     const typingDots = document.getElementById('typingDots');
     
-    // Стан бота
     let botState = { width: '', profile: '', diameter: '', budget: '', season: '' };
 
     function openChat() { chatOverlay.style.display = 'flex'; }
     function closeChat() { chatOverlay.style.display = 'none'; }
     chatOverlay.addEventListener('click', (e) => { if(e.target === chatOverlay) closeChat(); });
 
-    // 1. ПЕРЕВІРКА РОЗМІРУ
     function validateSize() {
         const w = document.getElementById('botW').value;
         const p = document.getElementById('botP').value;
         const d = document.getElementById('botD').value;
-
         if (!w || !p || !d) { alert("Введіть розмір!"); return; }
-
         botState.width = w; botState.profile = p; botState.diameter = d;
-
         addUserMsg(`${w} / ${p} R${d}`);
         document.getElementById('stepSize').style.display = 'none';
-        
-        // Показати наступний крок через анімацію
         showTypingAndSwitch('stepBudget');
     }
 
-    // 2. ОБРОБКА БЮДЖЕТУ
     function stepBudgetDone(value, text) {
         botState.budget = value;
-        document.getElementById('stepBudget').style.display = 'none'; // Ховаємо блок з кнопками
+        document.getElementById('stepBudget').style.display = 'none';
         addUserMsg(text);
-        
-        // Перехід до сезону
         showTypingAndSwitch('stepSeason');
     }
 
-    // 3. ФІНІШ (СЕЗОН)
     function stepSeasonDone(seasonValue) {
         document.getElementById('stepSeason').style.display = 'none';
         botState.season = seasonValue;
-        
         let seasonText = seasonValue === 'winter' ? 'Зимові' : (seasonValue === 'summer' ? 'Літні' : 'Всесезонні');
         addUserMsg(seasonText);
-
         const botMsg = document.createElement('div');
         botMsg.className = 'msg msg-bot';
         botMsg.innerHTML = 'Шукаю варіанти... 🔍';
         chatBody.appendChild(botMsg);
-        
-        // ПЕРЕНАПРАВЛЕННЯ
         setTimeout(() => {
-            let url = `{% url 'catalog' %}?width=${botState.width}&profile=${botState.profile}&diameter=${botState.diameter}&season=${botState.season}`;
-            if (botState.budget) {
-                url += `&ordering=${botState.budget}`;
-            }
+            let url = `{% url 'store:catalog' %}?width=${botState.width}&profile=${botState.profile}&diameter=${botState.diameter}&season=${botState.season}`;
+            if (botState.budget) url += `&ordering=${botState.budget}`;
             window.location.href = url;
         }, 1000);
     }
 
-    // Допоміжні функції
+    function startSosMode() {
+        document.getElementById('stepSize').style.display = 'none';
+        addUserMsg("Я не знаю розмір / Допоможіть");
+        showTypingAndSwitch('stepSos');
+    }
+
+    function sendSos() {
+        const phone = document.getElementById('sosPhone').value;
+        if (phone.length < 9) { alert('Введіть коректний номер!'); return; }
+        addUserMsg(phone);
+        document.getElementById('stepSos').style.display = 'none';
+        typingDots.style.display = 'block';
+        fetch('{% url "store:bot_callback" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ phone: phone })
+        }).then(response => {
+            typingDots.style.display = 'none';
+            const botMsg = document.createElement('div');
+            botMsg.className = 'msg msg-bot';
+            botMsg.innerText = 'Дякую! Заявку прийнято. 🫡';
+            chatBody.appendChild(botMsg);
+        });
+    }
+
     function addUserMsg(text) {
         const msg = document.createElement('div');
         msg.className = 'msg msg-user';
@@ -289,7 +324,6 @@
     function showTypingAndSwitch(nextId) {
         typingDots.style.display = 'block';
         chatBody.scrollTop = chatBody.scrollHeight;
-        
         setTimeout(() => {
             typingDots.style.display = 'none';
             document.getElementById(nextId).style.display = 'block';

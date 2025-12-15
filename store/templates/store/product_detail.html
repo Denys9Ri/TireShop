@@ -25,7 +25,7 @@
     "url": "https://r16.com.ua{{ request.path }}",
     "priceCurrency": "UAH",
     
-    /* 🔥 ВИПРАВЛЕНО ЦІНУ: Примусова крапка замість коми (1200.00) */
+    /* 🔥 ВАЛІДНА ЦІНА (з крапкою) */
     "price": "{{ product.price|stringformat:'.2f' }}",
     
     "priceValidUntil": "2026-12-31",
@@ -35,8 +35,8 @@
       "@type": "Organization",
       "name": "R16"
     },
-    
-    /* 🔥 ДОДАНО: Доставка (Shipping) */
+
+    /* 🔥 ДОДАНО: Інформація про доставку (Shipping) */
     "shippingDetails": {
       "@type": "OfferShippingDetails",
       "shippingRate": {
@@ -75,6 +75,7 @@
       "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
     }
   },
+  /* 🔥 РЕЙТИНГ (Щоб не було помилок review) */
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",

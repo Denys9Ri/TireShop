@@ -1,18 +1,27 @@
 {% extends 'admin/change_list.html' %}
+
 {% block object-tools %}
     <div style="margin-bottom: 20px;">
-        <a href="import-excel/" class="addlink" style="background: #28a745; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; margin-right: 10px; font-weight: bold;">
-            📥 Завантажити ПРАЙС
-        </a>
+        {{ block.super }}
+    </div>
+
+    <div class="custom-admin-buttons" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
         
-        <a href="export-models/" class="addlink" style="background: #ffc107; color: #333; padding: 10px 15px; border-radius: 5px; text-decoration: none; margin-right: 10px; font-weight: bold;">
-            📤 Скачати список моделей
+        <a href="import-excel/" class="button" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+            📥 Імпорт Товарів (Excel)
         </a>
 
-        <a href="import-photos/" class="addlink" style="background: #17a2b8; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
-            📷 Завантажити ФОТО
+        <a href="import-photos/" class="button" style="background-color: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+            📸 Імпорт Фото
         </a>
+
+        <a href="import-seo/" class="button" style="background-color: #6610f2; color: white; border: none; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            🚀 Імпорт SEO
+        </a>
+
+        <a href="export-models/" class="button" style="background-color: #ffc107; color: #212529; border: none; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+            📤 Експорт Назв (Excel)
+        </a>
+
     </div>
-    <br>
-    {{ block.super }}
 {% endblock %}

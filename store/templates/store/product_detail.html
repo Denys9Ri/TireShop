@@ -289,7 +289,7 @@
             <div class="col-lg-6 d-flex flex-column">
                 <div class="mb-3">
                     {% if product.stock_quantity > 0 %}
-                        <span class="badge bg-success bg-opacity-75 text-white rounded-pill px-3 py-2">✅ В наявності</span>
+                        <span class="badge bg-success bg-opacity-75 text-white rounded-pill px-3 py-2">✅ В наявності: {{ product.stock_quantity }} шт.</span>
                     {% else %}
                         <span class="badge bg-secondary rounded-pill px-3 py-2">❌ Немає в наявності</span>
                     {% endif %}
@@ -321,10 +321,10 @@
                     <div class="action-row">
                         <div class="quantity-selector">
                             <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
-                            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="99" class="qty-input" readonly>
+                            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="{{ product.stock_quantity }}" class="qty-input" readonly>
                             <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-buy-glass">
+                        <button type="submit" class="btn btn-primary btn-buy-glass" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
                             <i class="bi bi-cart2 me-2"></i> В кошик
                         </button>
                     </div>
@@ -443,11 +443,15 @@
 </div>
 
 <script>
+    // 🔥 ОНОВЛЕНИЙ СКРИПТ КІЛЬКОСТІ 🔥
     function updateQty(change) {
         const input = document.getElementById('qtyInput');
+        const maxVal = parseInt(input.getAttribute('max')) || 99; // Беремо ліміт з HTML атрибута max
         let newVal = parseInt(input.value) + change;
+        
         if (newVal < 1) newVal = 1;
-        if (newVal > 20) newVal = 20; 
+        if (newVal > maxVal) newVal = maxVal; // Не даємо більше ніж є на складі
+        
         input.value = newVal;
     }
     const mainCarouselEl = document.getElementById('productMainCarousel');

@@ -14,7 +14,7 @@
     </script>
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
-    <meta name="description" content="Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.">
+    <meta name="description" content="{% block meta_description %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.{% endblock %}">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -34,12 +34,11 @@
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; line-height: 0; }
         .logo-img { height: 55px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
         
-        .navbar-menu { display: flex; gap: 25px; align-items: center; }
+        .navbar-menu { display: flex; gap: 20px; align-items: center; }
         .navbar-item { color: rgba(255, 255, 255, 0.95); text-decoration: none; font-weight: 600; font-size: 1rem; padding: 8px 0; position: relative; transition: color 0.3s; display: flex; align-items: center; gap: 8px; }
         .navbar-item:hover { color: #fff; }
         
-        .btn-register { background-color: #ffc107; color: #004a99 !important; padding: 6px 20px; border-radius: 50px; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4); }
+        /* Видалено жовту кнопку реєстрації, тепер це звичайні посилання */
         
         .hamburger { display: none; width: 36px; height: 36px; background: transparent; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; padding: 7px; flex-direction: column; justify-content: space-between; }
         .hamburger span { display: block; width: 100%; height: 2px; background-color: #ffffff; transition: 0.3s; }
@@ -50,6 +49,8 @@
         .logout-button-mobile { color: #dc3545 !important; }
 
         main { flex: 1; }
+        
+        /* Чорний футер */
         .footer { background-color: #1a1a1a; color: #fff; padding: 40px 0 20px; text-align: center; margin-top: auto; }
         .schedule-block { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin: 20px auto; max-width: 500px; font-size: 0.9rem; line-height: 1.6; }
 
@@ -62,23 +63,30 @@
     <div class="navbar-brand">
         <a href="{% url 'catalog' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img"></a>
     </div>
+    
     <div class="navbar-menu">
+        <a href="tel:+380666881491" style="color: #fff; text-decoration: none; font-weight: bold; margin-right: 10px;"><i class="bi bi-phone"></i> (066) 688-14-91</a>
+        
         <a href="{% url 'about' %}" class="navbar-item">Про нас</a>
-        <a href="{% url 'contacts' %}" class="navbar-item">Контакти</a>
         <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка</a>
         <a href="{% url 'store:cart_detail' %}" class="navbar-item"><i class="bi bi-cart3" style="font-size: 1.3rem;"></i> Кошик ({{ cart|length }})</a>
+        
+        <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 20px; margin: 0 5px;"></div>
+
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}" class="navbar-item"><i class="bi bi-person-circle"></i> Кабінет</a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">{% csrf_token %}<button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer;">Вийти</button></form>
         {% else %}
-            <a href="{% url 'login' %}" class="navbar-item">Вхід</a>
-            <a href="{% url 'users:register' %}" class="navbar-item btn-register">Реєстрація</a>
+            <a href="{% url 'login' %}" class="navbar-item" style="font-weight: normal; font-size: 0.95rem; opacity: 0.9;">Вхід</a>
+            <a href="{% url 'users:register' %}" class="navbar-item" style="font-weight: normal; font-size: 0.95rem; opacity: 0.9;">Реєстрація</a>
         {% endif %}
     </div>
+    
     <button class="hamburger" id="hamburger-button"><span></span><span></span><span></span></button>
 </header>
 
 <div class="mobile-menu" id="mobile-menu">
+    <a href="{% url 'catalog' %}"><i class="bi bi-shop"></i> Каталог</a>
     <a href="{% url 'about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
     <a href="{% url 'contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
     <a href="{% url 'delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>

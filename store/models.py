@@ -105,11 +105,14 @@ class ProductImage(models.Model):
 
 class SiteBanner(models.Model):
     title = models.CharField(max_length=100)
-    image_url = models.URLField(max_length=1024, blank=True, null=True)
-    link = models.URLField(blank=True, null=True)
+    image = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name="Фото (Файл)")
+    image_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Фото (Посилання)")
+    link = models.URLField(blank=True, null=True, verbose_name="Куди вести при кліку")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self): return self.title
+        
 class AboutImage(models.Model):
     image = models.ImageField(upload_to='about_us/')
     image_url = models.URLField(max_length=1024, blank=True, null=True)

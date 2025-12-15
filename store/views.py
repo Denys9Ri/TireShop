@@ -12,6 +12,7 @@ import re
 from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 from .cart import Cart
 from users.models import UserProfile
+from django.contrib import messages
 
 # --- ТЕЛЕГРАМ ---
 def send_telegram(message):
@@ -153,9 +154,25 @@ def cart_add_view(request, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
 @require_POST
 def cart_update_quantity_view(request, product_id):
-    cart = Cart(request); product = get_object_or_404(Product, id=product_id)
-    qty = int(request.POST.get('quantity', 1)); 
-    cart.add(product, qty, update_quantity=True) if qty > 0 else cart.remove(product)
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    
+    try:
+        qty = int(request.POST.get('quantity', 1))
+        
+        # 🔥 ПЕРЕВІРКА НАЯВНОСТІ 🔥
+        if qty > product.stock_quantity:
+            qty = product.stock_quantity # Обмежуємо максимумом
+            messages.warning(request, f"Увага! Доступно лише {product.stock_quantity} шт. товару {product.brand.name} {product.name}.")
+        
+        if qty > 0:
+            cart.add(product, qty, update_quantity=True)
+        else:
+            cart.remove(product)
+            
+    except ValueError:
+        pass
+        
     return redirect('store:cart_detail')
 def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))

@@ -20,7 +20,7 @@
 
 <style>
     /* БАНЕР */
-    .banner-wrapper { margin: 0 auto 40px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .banner-img { width: 100%; height: auto; display: block; }
     
     /* АВТО-ТЕГИ */
@@ -53,15 +53,23 @@
     .seo-text-block h2 { font-size: 1.5rem; } 
     .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
     .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
+
+    /* ВІДСТУПИ */
+    .catalog-header-compact { margin-top: 10px; margin-bottom: 10px; }
 </style>
 
 <div class="catalog-wrapper">
 
-    <div class="container mt-2 mb-3">
+    <div class="container catalog-header-compact">
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb small" style="background: transparent; padding-left: 0;">
+            <ol class="breadcrumb small" style="background: transparent; padding-left: 0; margin-bottom: 0;">
                 <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
-                <li class="breadcrumb-item active" aria-current="page" style="font-weight: 600; color: #333;">{{ seo_h1 }}</li>
+                <li class="breadcrumb-item active" aria-current="page" style="font-weight: 600; color: #333;">
+                    {% if selected_season == 'winter' %}Зимові шини
+                    {% elif selected_season == 'summer' %}Літні шини
+                    {% elif selected_season == 'all-season' %}Всесезонні шини
+                    {% else %}{{ seo_h1 }}{% endif %}
+                </li>
             </ol>
         </nav>
     </div>
@@ -120,7 +128,7 @@
 
     <div class="catalog-content">
         
-        <div class="search-bar-container" style="margin-bottom: 30px;">
+        <div class="search-bar-container" style="margin-bottom: 20px;">
             <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" name="query" style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
                 
@@ -140,19 +148,15 @@
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.link %}
-                                    <a href="{{ banner.link }}" style="display: block;">
-                                {% endif %}
-                                
+                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
+                                    
                                     {% if banner.image %}
                                         <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% elif banner.image_url %}
                                         <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% endif %}
                                 
-                                {% if banner.link %}
-                                    </a>
-                                {% endif %}
+                                {% if banner.link %}</a>{% endif %}
                             </div>
                         {% endfor %}
                     </div>
@@ -160,76 +164,48 @@
             </div>
         {% endif %}
 
-        <h1 class="page-title">{% if seo_h1 %}{{ seo_h1 }}{% else %}Каталог Товарів{% endif %}</h1>
+        <h1 class="page-title mb-4" style="margin-top: 0;">
+            {% if search_query %}
+                Результати пошуку: "{{ search_query }}"
+            {% elif selected_season == 'winter' %}
+                ❄️ Зимові шини
+            {% elif selected_season == 'summer' %}
+                ☀️ Літні шини
+            {% elif selected_season == 'all-season' %}
+                🌤 Всесезонні шини
+            {% else %}
+                {{ seo_h1|default:"Каталог Товарів" }}
+            {% endif %}
+        </h1>
 
         <div class="product-grid">
             {% for product in page_obj %}
                 <div class="product-card position-relative">
                     
                     <div class="auto-badges-container">
-                        {% if product.discount_percent > 0 %}
-                            <span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>
-                        {% endif %}
-                        
-                        {% if product.year >= 2025 %}
-                            <span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>
-                        {% endif %}
-
-                        {% if product.brand.category == 'top' %}
-                            <span class="badge-tag badge-top">💎 Топ Бренд</span>
-                        {% elif product.brand.category == 'medium' %}
-                            <span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт Продажів</span>
-                        {% elif product.brand.category == 'budget' %}
-                            <span class="badge-tag badge-taxi">💰 Супер Ціна</span>
-                        {% endif %}
+                        {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
+                        {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
+                        {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ Бренд</span>{% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>{% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Супер Ціна</span>{% endif %}
                     </div>
 
-                    {% if product.seasonality == 'winter' %}
-                        <div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
-                    {% elif product.seasonality == 'summer' %}
-                        <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
-                    {% else %}
-                        <div class="season-badge all-season" title="Всесезонна">
-                            <i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i>
-                            <i class="bi bi-snow" style="font-size: 0.8rem;"></i>
-                        </div>
-                    {% endif %}
+                    {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i><i class="bi bi-snow" style="font-size: 0.8rem;"></i></div>{% endif %}
 
                     <a href="{% url 'store:product_detail' product.slug %}">
-                        {% if product.photo_url %}
-                            <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
-                        {% elif product.photo %}
-                            <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
-                        {% else %}
-                            <img src="https://placehold.co/600x600?text=No+Photo" class="product-image">
-                        {% endif %}
+                        {% if product.photo_url %}<img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">{% elif product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">{% else %}<img src="https://placehold.co/600x600?text=No+Photo" class="product-image">{% endif %}
                     </a>
                     
-                    <h3 class="product-name">
-                        <a href="{% url 'store:product_detail' product.slug %}">
-                            {{ product.brand.name }} {{ product.name }}
-                        </a>
-                    </h3>
-                    
-                    <p class="product-specs">
-                        {{ product.width }}/{{ product.profile }} R{{ product.diameter }}
-                    </p>
+                    <h3 class="product-name"><a href="{% url 'store:product_detail' product.slug %}">{{ product.brand.name }} {{ product.name }}</a></h3>
+                    <p class="product-specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
                     
                     <div class="product-price-block mb-2">
                         {% if product.discount_percent > 0 %}
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="price-new">{{ product.price }} грн</span>
-                                <small class="price-old">{{ product.old_price }} грн</small>
-                            </div>
+                            <div class="d-flex align-items-center gap-2"><span class="price-new">{{ product.price }} грн</span><small class="price-old">{{ product.old_price }} грн</small></div>
                         {% else %}
                             <p class="price-regular">{{ product.price }} грн</p>
                         {% endif %}
                     </div>
 
-                    <div class="set-price-calc">
-                        Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong>
-                    </div>
-
+                    <div class="set-price-calc">Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong></div>
                     <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
@@ -251,7 +227,6 @@
              <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>{% endif %}</div></nav>
         {% endif %}
         
-        {% if show_banner %}
         <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
             
             {% if selected_season == 'winter' %}
@@ -302,7 +277,6 @@
                 </ul>
             {% endif %}
         </div>
-        {% endif %}
 
     </div>
 </div>

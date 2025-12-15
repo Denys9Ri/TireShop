@@ -9,7 +9,6 @@ import re
 import gc
 from django.utils.html import format_html
 from django.db.models import Q 
-# Додали SiteSettings в імпорт
 from .models import Product, Brand, Order, OrderItem, SiteBanner, ProductImage, SiteSettings, AboutImage
 
 # --- ЗАМОВЛЕННЯ ---
@@ -49,7 +48,6 @@ class ProductImageInline(admin.TabularInline):
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ['global_markup']
     def has_add_permission(self, request):
-        # Забороняємо створювати більше одного запису
         return not SiteSettings.objects.exists()
 
 # --- ФОРМИ ---
@@ -63,17 +61,19 @@ class PhotoImportForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    # Додали знижку в таблицю
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'year', 'photo_preview']
+    # Додали slug в відображення
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'slug', 'photo_preview']
     list_filter = ['brand', 'seasonality', 'diameter', 'stud_type']
-    search_fields = ['name', 'width', 'brand__name']
+    search_fields = ['name', 'width', 'brand__name', 'slug']
     change_list_template = "store/admin_changelist.html"
     readonly_fields = ["photo_preview", "final_price_preview"]
     inlines = [ProductImageInline]
+    
+    # Автозаповнення SLUG
+    prepopulated_fields = {'slug': ('name',)}
 
     fieldsets = (
-        (None, {'fields': ('name', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
-        # Додали поля знижки
+        (None, {'fields': ('name', 'slug', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
         ('Ціни та наявність', {'fields': ('cost_price', 'discount_percent', 'final_price_preview', 'stock_quantity')}),
         ('Головне фото', {'fields': ('photo', 'photo_url', 'photo_preview')}),
         ('Характеристики', {'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')}),
@@ -82,7 +82,6 @@ class ProductAdmin(admin.ModelAdmin):
     def price_display(self, obj): return obj.price
     price_display.short_description = "Ціна на сайті"
 
-    # Показує фінальну ціну зі знижкою прямо в адмінці
     def final_price_preview(self, obj):
         return f"{obj.price} грн (Стара: {obj.old_price})"
     final_price_preview.short_description = "Ціна зі знижкою"
@@ -101,7 +100,7 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- 1. РОЗУМНИЙ ЕКСПОРТ (ОЧИЩЕННЯ ВІД РОЗМІРІВ) ---
+    # --- 1. РОЗУМНИЙ ЕКСПОРТ ---
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -115,7 +114,6 @@ class ProductAdmin(admin.ModelAdmin):
             brand_name = p.brand.name if p.brand else "Unknown"
             raw_name = p.name
             
-            # Чистимо назву від сміття
             clean = re.sub(r'шина', '', raw_name, flags=re.IGNORECASE)
             clean = re.sub(r'\b\d{3}/\d{2}R?\d{0,2}\b', '', clean) 
             clean = re.sub(r'\bR\d{2}C?\b', '', clean)
@@ -139,7 +137,7 @@ class ProductAdmin(admin.ModelAdmin):
         wb.save(response)
         return response
 
-    # --- 2. ІМПОРТ ФОТО (ВИПРАВЛЕНО) ---
+    # --- 2. ІМПОРТ ФОТО ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -149,7 +147,6 @@ class ProductAdmin(admin.ModelAdmin):
                 updated_products = 0
                 
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    # Захист від пустих рядків
                     if not row or len(row) < 3: continue
                     if not row[0] or not row[1] or not row[2]: continue
                     
@@ -175,7 +172,7 @@ class ProductAdmin(admin.ModelAdmin):
         form = PhotoImportForm()
         return render(request, "store/admin_import_photos.html", {"form": form})
 
-    # --- 3. ІМПОРТ ТОВАРІВ (Той самий, надійний) ---
+    # --- 3. ІМПОРТ ТОВАРІВ ---
     def import_excel(self, request):
         if request.method == "POST":
             form = ExcelImportForm(request.POST, request.FILES)
@@ -272,6 +269,7 @@ class ProductAdmin(admin.ModelAdmin):
                                 'description': f"Шини {brand_name} {model_name}. {size_raw}. {season_raw}."
                             }
                         )
+                        # Якщо фото ще немає, додаємо його
                         if photo_link and not obj.photo_url:
                             obj.photo_url = photo_link
                             obj.save(update_fields=['photo_url'])
@@ -288,7 +286,7 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'category', 'country'] 
-    list_editable = ['category'] # <--- Дозволить міняти категорію прямо в списку, дуже швидко!
+    list_editable = ['category'] 
     list_filter = ['category']
     search_fields = ['name']
 
@@ -298,7 +296,8 @@ class SiteBannerAdmin(admin.ModelAdmin):
 
 @admin.register(AboutImage)
 class AboutImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'description', 'image_preview']
+    # 🔥 ВИПРАВЛЕНО ТУТ: Видалено 'description', бо його більше немає в моделі
+    list_display = ['id', 'created_at', 'image_preview']
     
     def image_preview(self, obj):
         if obj.image_url:

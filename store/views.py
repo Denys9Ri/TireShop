@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField, Q
 from django.conf import settings
 from django.http import JsonResponse
+from django.db import transaction
 import json
 import requests
 import re
@@ -116,7 +117,7 @@ def seo_category_view(request, width, profile, diameter):
         'all_seasons': Product.SEASON_CHOICES,
         'selected_width': width, 'selected_profile': profile, 'selected_diameter': diameter,
         'seo_title': seo_title, 'seo_h1': seo_h1,
-        'is_seo_page': True # Мітка для шаблону
+        'is_seo_page': True 
     })
 
 # --- 3. ТОВАР (ПО SLUG) ---
@@ -159,6 +160,7 @@ def cart_update_quantity_view(request, product_id):
 def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
+
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
@@ -173,8 +175,16 @@ def checkout_view(request):
             city="Київ, вул. Володимира Качали, 3" if is_pickup else request.POST.get('city'),
             nova_poshta_branch=None if is_pickup else request.POST.get('nova_poshta_branch')
         )
-        for item in cart: OrderItem.objects.create(order=order, product=item['product'], quantity=item['quantity'], price_at_purchase=item['price'])
-        send_telegram(f"🔥 <b>ЗАМОВЛЕННЯ #{order.id}</b>\n👤 {order.full_name}\n📞 {order.phone}\n💰 {sum(i.get_cost() for i in order.items.all())} грн")
+        for item in cart: 
+            # get_cost тепер є в моделі OrderItem, тому це буде працювати
+            price = item['price']
+            qty = item['quantity']
+            OrderItem.objects.create(order=order, product=item['product'], quantity=qty, price_at_purchase=price)
+        
+        # Рахуємо суму для телеграма
+        total_sum = sum(item['price'] * item['quantity'] for item in cart)
+        
+        send_telegram(f"🔥 <b>ЗАМОВЛЕННЯ #{order.id}</b>\n👤 {order.full_name}\n📞 {order.phone}\n💰 {total_sum} грн")
         cart.clear()
         return redirect('users:profile' if request.user.is_authenticated else 'store:catalog')
     return render(request, 'store/checkout.html')
@@ -183,3 +193,8 @@ def about_view(request): return render(request, 'store/about.html')
 def contacts_view(request): return render(request, 'store/contacts.html')
 def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
 def warranty_view(request): return render(request, 'store/warranty.html')
+
+# 🔥 ОСЬ ВОНА - ПРОПУЩЕНА ФУНКЦІЯ! 🔥
+@transaction.atomic
+def sync_google_sheet_view(request):
+    return redirect('admin:store_product_changelist')

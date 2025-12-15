@@ -36,6 +36,11 @@ class Product(models.Model):
     profile = models.IntegerField(default=0)
     diameter = models.IntegerField(default=0)
     seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season')
+
+    # --- SEO ПОЛЯ (Нові) ---
+    seo_title = models.CharField(max_length=500, blank=True, null=True, verbose_name="SEO Title (Google)")
+    seo_h1 = models.CharField(max_length=255, blank=True, null=True, verbose_name="SEO H1 (Заголовок)")
+    seo_text = models.TextField(blank=True, null=True, verbose_name="SEO Текст")
     
     description = models.TextField(blank=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)

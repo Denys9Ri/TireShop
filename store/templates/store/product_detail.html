@@ -25,20 +25,56 @@
     "url": "https://r16.com.ua{{ request.path }}",
     "priceCurrency": "UAH",
     
-    /* 🔥 ВИПРАВЛЕНО ЦІНУ: Формат 1000.00 (через крапку) */
+    /* 🔥 ВИПРАВЛЕНО ЦІНУ: Примусова крапка замість коми (1200.00) */
     "price": "{{ product.price|stringformat:'.2f' }}",
     
-    /* 🔥 ДОДАНО ВАЛІДНІСТЬ ЦІНИ (Вимагає Google) */
     "priceValidUntil": "2026-12-31",
-    
     "itemCondition": "https://schema.org/NewCondition",
     "availability": "{% if product.stock_quantity > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
     "seller": {
       "@type": "Organization",
       "name": "R16"
+    },
+    
+    /* 🔥 ДОДАНО: Доставка (Shipping) */
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+        "@type": "MonetaryAmount",
+        "value": "0",
+        "currency": "UAH"
+      },
+      "shippingDestination": {
+        "@type": "DefinedRegion",
+        "addressCountry": "UA"
+      },
+      "deliveryTime": {
+        "@type": "ShippingDeliveryTime",
+        "handlingTime": {
+          "@type": "QuantitativeValue",
+          "minValue": 0,
+          "maxValue": 1,
+          "unitCode": "DAY"
+        },
+        "transitTime": {
+          "@type": "QuantitativeValue",
+          "minValue": 1,
+          "maxValue": 3,
+          "unitCode": "DAY"
+        }
+      }
+    },
+
+    /* 🔥 ДОДАНО: Політика повернення (Return Policy) */
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "applicableCountry": "UA",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      "merchantReturnDays": 14,
+      "returnMethod": "https://schema.org/ReturnByMail",
+      "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
     }
   },
-  /* 🔥 ДОДАНО РЕЙТИНГ (Щоб не було помилок review/aggregateRating) */
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",

@@ -57,6 +57,10 @@
     /* ВІДСТУПИ (ВИПРАВЛЕНО - ЗМЕНШЕНО) */
     .catalog-header-compact { margin-top: 5px; margin-bottom: 5px; padding-top: 0; }
     .search-bar-container { margin-bottom: 15px; margin-top: 5px; }
+    
+    /* Стиль для назви, щоб замінити h3 */
+    .product-name a { text-decoration: none; color: inherit; }
+    .product-name { font-size: 1.1rem; line-height: 1.3; }
 </style>
 
 <div class="catalog-wrapper">
@@ -151,9 +155,17 @@
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                 {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
                                     {% if banner.image %}
-                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
+                                        {% if forloop.first %}
+                                            <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" fetchpriority="high">
+                                        {% else %}
+                                            <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" loading="lazy">
+                                        {% endif %}
                                     {% elif banner.image_url %}
-                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}">
+                                        {% if forloop.first %}
+                                            <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" fetchpriority="high">
+                                        {% else %}
+                                            <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" loading="lazy">
+                                        {% endif %}
                                     {% endif %}
                                 {% if banner.link %}</a>{% endif %}
                             </div>
@@ -190,10 +202,19 @@
                     {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i><i class="bi bi-snow" style="font-size: 0.8rem;"></i></div>{% endif %}
 
                     <a href="{% url 'store:product_detail' product.slug %}">
-                        {% if product.photo_url %}<img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">{% elif product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">{% else %}<img src="https://placehold.co/600x600?text=No+Photo" class="product-image">{% endif %}
+                        {% if product.photo_url %}
+                            <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+                        {% elif product.photo %}
+                            <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                        {% else %}
+                            <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" loading="lazy">
+                        {% endif %}
                     </a>
                     
-                    <h3 class="product-name"><a href="{% url 'store:product_detail' product.slug %}">{{ product.brand.name }} {{ product.name }}</a></h3>
+                    <div class="product-name h6 fw-bold mb-2">
+                        <a href="{% url 'store:product_detail' product.slug %}">{{ product.brand.name }} {{ product.name }}</a>
+                    </div>
+                    
                     <p class="product-specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
                     
                     <div class="product-price-block mb-2">

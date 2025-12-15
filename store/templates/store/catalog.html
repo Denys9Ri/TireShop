@@ -54,8 +54,9 @@
     .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
     .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
 
-    /* ВІДСТУПИ */
-    .catalog-header-compact { margin-top: 10px; margin-bottom: 10px; }
+    /* ВІДСТУПИ (ВИПРАВЛЕНО - ЗМЕНШЕНО) */
+    .catalog-header-compact { margin-top: 5px; margin-bottom: 5px; padding-top: 0; }
+    .search-bar-container { margin-bottom: 15px; margin-top: 5px; }
 </style>
 
 <div class="catalog-wrapper">
@@ -128,15 +129,15 @@
 
     <div class="catalog-content">
         
-        <div class="search-bar-container" style="margin-bottom: 20px;">
+        <div class="search-bar-container">
             <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" name="query" style="flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
+                <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
                 
-                <div class="tire-bot-btn" onclick="openChat()" style="width: 48px; height: 48px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
+                <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
                     <i class="bi bi-robot"></i>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 25px; height: 48px; font-weight: bold;">
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;">
                     <i class="bi bi-search"></i>
                 </button>
             </form>
@@ -149,13 +150,11 @@
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                 {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
-                                    
                                     {% if banner.image %}
                                         <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% elif banner.image_url %}
                                         <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}">
                                     {% endif %}
-                                
                                 {% if banner.link %}</a>{% endif %}
                             </div>
                         {% endfor %}
@@ -164,7 +163,7 @@
             </div>
         {% endif %}
 
-        <h1 class="page-title mb-4" style="margin-top: 0;">
+        <h1 class="page-title mb-4" style="margin-top: 0; font-size: 1.5rem;">
             {% if search_query %}
                 Результати пошуку: "{{ search_query }}"
             {% elif selected_season == 'winter' %}
@@ -228,53 +227,29 @@
         {% endif %}
         
         <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
-            
             {% if selected_season == 'winter' %}
                 <h2 class="fw-bold mb-3 text-primary">Зимові шини: Безпека понад усе</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Зимова гума — це гарантія вашої безпеки при температурі нижче +7°C. Спеціальний склад гуми залишається м'яким у мороз, забезпечуючи надійне зчеплення.
-                </p>
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Часті питання про зимову гуму</h4>
+                <p style="color: #555; line-height: 1.6;">Зимова гума — це гарантія вашої безпеки при температурі нижче +7°C.</p>
+                <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про зиму</h4>
                 <div class="accordion" id="faqW">
                     <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">Коли міняти на зиму?</button></h2>
+                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">Коли міняти?</button></h2>
                         <div id="qw1" class="accordion-collapse collapse"><div class="accordion-body text-muted">Як тільки температура стабільно опуститься до +7°C.</div></div>
                     </div>
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qw2">Шипи чи липучка?</button></h2>
-                        <div id="qw2" class="accordion-collapse collapse"><div class="accordion-body text-muted">Для міста краще липучка, для траси і льоду - шипи.</div></div>
-                    </div>
                 </div>
-
             {% elif selected_season == 'summer' %}
                 <h2 class="fw-bold mb-3 text-primary">Літні шини для комфорту</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Літня гума твердіша і забезпечує краще зчеплення на гарячому асфальті та в дощ. Головне при виборі — водовідведення та індекс швидкості.
-                </p>
+                <p style="color: #555; line-height: 1.6;">Літня гума твердіша і забезпечує краще зчеплення.</p>
                 <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про літо</h4>
                 <div class="accordion" id="faqS">
                     <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qs1">Скільки служить гума?</button></h2>
-                        <div id="qs1" class="accordion-collapse collapse"><div class="accordion-body text-muted">В середньому 3-5 сезонів або 60 тис. км.</div></div>
+                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qs1">Скільки служить?</button></h2>
+                        <div id="qs1" class="accordion-collapse collapse"><div class="accordion-body text-muted">В середньому 3-5 сезонів.</div></div>
                     </div>
                 </div>
-
-            {% elif selected_season == 'all-season' %}
-                <h2 class="fw-bold mb-3 text-primary">Всесезонні шини: Універсальність</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Ідеальний вибір для м'якої зими та міської їзди. Економія часу та грошей на шиномонтажі. Пам'ятайте, що це компроміс.
-                </p>
-
             {% else %}
                 <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин R16.com.ua</h2>
-                <p style="color: #555; line-height: 1.6;">
-                    Ласкаво просимо в R16. Ми пропонуємо широкий вибір шин. Склад у Києві, доставка по Україні. Чесні ціни та професійна консультація.
-                </p>
-                <ul class="list-unstyled mt-2 text-muted">
-                    <li>✅ Склад у Києві</li>
-                    <li>✅ Швидка доставка</li>
-                    <li>✅ Гарантія</li>
-                </ul>
+                <p style="color: #555; line-height: 1.6;">Ласкаво просимо в R16. Ми пропонуємо широкий вибір шин. Склад у Києві, доставка по Україні.</p>
             {% endif %}
         </div>
 

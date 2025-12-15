@@ -5,9 +5,12 @@ import decimal
 
 # --- 0. НАЛАШТУВАННЯ ---
 class SiteSettings(models.Model):
-    global_markup = models.DecimalField(max_digits=5, decimal_places=2, default=1.30, verbose_name="Націнка")
+    # Змінив default=1.30 на default='1.30' (рядок), щоб уникнути float
+    global_markup = models.DecimalField(max_digits=5, decimal_places=2, default='1.30', verbose_name="Націнка")
+
     class Meta: verbose_name = "Налаштування"
     def __str__(self): return f"Націнка: {self.global_markup}"
+
     @classmethod
     def get_solo(cls):
         obj, _ = cls.objects.get_or_create(id=1)
@@ -26,7 +29,6 @@ class Product(models.Model):
     SEASON_CHOICES = [('winter', 'Зимові'), ('summer', 'Літні'), ('all-season', 'Всесезонні')]
     
     name = models.CharField(max_length=255)
-    # SLUG - для красивих посилань (напр. laufenn-lw31-205-55-16)
     slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name="URL-адреса")
     
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True)
@@ -39,6 +41,7 @@ class Product(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock_quantity = models.IntegerField(default=0)
     discount_percent = models.IntegerField(default=0)
+    
     photo_url = models.URLField(max_length=1024, blank=True, null=True)
     photo = models.ImageField(upload_to='products/', blank=True, null=True)
 
@@ -50,28 +53,48 @@ class Product(models.Model):
     stud_type = models.CharField(max_length=50, default="Не шип")
     vehicle_type = models.CharField(max_length=50, default="Легковий")
 
-    # Авто-генерація SLUG при збереженні
+    # Авто-генерація SLUG
     def save(self, *args, **kwargs):
         if not self.slug:
-            # Приклад: hankook-k125-205-55-16
             base_slug = f"{self.brand.name if self.brand else ''}-{self.name}-{self.width}-{self.profile}-{self.diameter}"
             self.slug = slugify(base_slug)[:250]
         super().save(*args, **kwargs)
 
-    @property
-    def price(self):
-        try: markup = SiteSettings.get_solo().global_markup
-        except: markup = decimal.Decimal('1.30')
-        price = self.cost_price * markup
-        if self.discount_percent > 0:
-            price = price * (decimal.Decimal(100 - self.discount_percent) / 100)
-        return price.quantize(decimal.Decimal('0.01'))
-    
+    # 🔥 ВИПРАВЛЕНА ЛОГІКА ЦІНИ (Decimal only) 🔥
     @property
     def old_price(self):
-        try: markup = SiteSettings.get_solo().global_markup
-        except: markup = decimal.Decimal('1.30')
-        return (self.cost_price * markup).quantize(decimal.Decimal('0.01'))
+        try:
+            settings = SiteSettings.get_solo()
+            markup = settings.global_markup
+            # Гарантуємо, що markup це Decimal
+            if not isinstance(markup, decimal.Decimal):
+                markup = decimal.Decimal(str(markup))
+        except:
+            markup = decimal.Decimal('1.30')
+            
+        # Гарантуємо, що cost_price це Decimal
+        cost = self.cost_price
+        if not isinstance(cost, decimal.Decimal):
+            cost = decimal.Decimal(str(cost))
+            
+        final_old = cost * markup
+        return final_old.quantize(decimal.Decimal('0.01'))
+
+    @property
+    def price(self):
+        base = self.old_price # Це вже Decimal (див. вище)
+        
+        if self.discount_percent > 0:
+            # Формула: base * ((100 - discount) / 100)
+            # Все переводимо в Decimal перед математикою
+            d_100 = decimal.Decimal('100')
+            d_percent = decimal.Decimal(self.discount_percent)
+            
+            factor = (d_100 - d_percent) / d_100
+            new_price = base * factor
+            return new_price.quantize(decimal.Decimal('0.01'))
+            
+        return base
 
     def __str__(self): return self.slug
 
@@ -101,6 +124,7 @@ class OrderItem(models.Model):
 # --- 4. ДОДАТКОВІ ---
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='product_gallery/', blank=True, null=True)
     image_url = models.URLField(max_length=1024, blank=True, null=True)
 
 class SiteBanner(models.Model):
@@ -110,9 +134,9 @@ class SiteBanner(models.Model):
     link = models.URLField(blank=True, null=True, verbose_name="Куди вести при кліку")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     def __str__(self): return self.title
-        
+
 class AboutImage(models.Model):
     image = models.ImageField(upload_to='about_us/')
     image_url = models.URLField(max_length=1024, blank=True, null=True)

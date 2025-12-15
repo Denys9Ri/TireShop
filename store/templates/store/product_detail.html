@@ -295,7 +295,13 @@
                     {% endif %}
                 </div>
 
-                <h1 class="fw-bold mb-2 lh-sm">{{ product.brand.name }} {{ product.name }}</h1>
+                <h1 class="fw-bold mb-2 lh-sm">
+    {% if product.seo_h1 %}
+        {{ product.seo_h1 }}
+    {% else %}
+        {{ product.brand.name }} {{ product.name }}
+    {% endif %}
+</h1>
                 <p class="text-muted fs-5 mb-4">{{ product.width }} / {{ product.profile }} R{{ product.diameter }}</p>
 
                 <div class="mb-4">
@@ -351,8 +357,13 @@
                     </ul>
                     {% if product.description %}
                         <div class="desc-box border-top pt-3 mt-3">
-                            <strong>Опис:</strong><br>{{ product.description }}
-                        </div>
+    <strong>Опис:</strong><br>
+    {% if product.seo_text %}
+        {{ product.seo_text|linebreaks }}
+    {% else %}
+        {{ product.description|default:"Якісна шина для вашого авто. Забезпечує надійне зчеплення та комфорт." }}
+    {% endif %}
+</div>
                     {% endif %}
                 </div>
             </div>

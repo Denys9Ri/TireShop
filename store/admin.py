@@ -59,10 +59,14 @@ class ExcelImportForm(forms.Form):
 class PhotoImportForm(forms.Form):
     excel_file = forms.FileField(label="Файл з ФОТО")
 
+# 🔥 НОВА ФОРМА ДЛЯ SEO 🔥
+class SeoImportForm(forms.Form):
+    excel_file = forms.FileField(label="SEO Файл (Brand, Model, ..., Title, H1, SEO Text)")
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    # Додали slug в відображення
-    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'slug', 'photo_preview']
+    # Додали seo_h1 в відображення
+    list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'slug', 'seo_h1', 'photo_preview']
     list_filter = ['brand', 'seasonality', 'diameter', 'stud_type']
     search_fields = ['name', 'width', 'brand__name', 'slug']
     change_list_template = "store/admin_changelist.html"
@@ -74,6 +78,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {'fields': ('name', 'slug', 'brand', 'width', 'profile', 'diameter', 'seasonality', 'description')}),
+        ('SEO (Google)', {'fields': ('seo_title', 'seo_h1', 'seo_text')}), # 🔥 Додали поле SEO
         ('Ціни та наявність', {'fields': ('cost_price', 'discount_percent', 'final_price_preview', 'stock_quantity')}),
         ('Головне фото', {'fields': ('photo', 'photo_url', 'photo_preview')}),
         ('Характеристики', {'fields': ('country', 'year', 'load_index', 'speed_index', 'stud_type', 'vehicle_type')}),
@@ -96,9 +101,79 @@ class ProductAdmin(admin.ModelAdmin):
         my_urls = [
             path('import-excel/', self.import_excel, name="import_excel"),
             path('import-photos/', self.import_photos, name="import_photos"),
+            path('import-seo/', self.import_seo, name="import_seo"), # 🔥 Новий шлях
             path('export-models/', self.export_unique_models, name="export_unique_models"),
         ]
         return my_urls + urls
+
+    # --- ІМПОРТ SEO (НОВА ФУНКЦІЯ) ---
+    def import_seo(self, request):
+        if request.method == "POST":
+            excel_file = request.FILES["excel_file"]
+            try:
+                wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
+                sheet = wb.active
+                updated_count = 0
+                not_found_count = 0
+                
+                # Отримуємо всі рядки
+                rows = list(sheet.iter_rows(values_only=True))
+                # Отримуємо заголовки (перший рядок) і переводимо в нижній регістр
+                header = [str(h).lower().strip() for h in rows[0]]
+                
+                try:
+                    # Шукаємо індекси колонок динамічно
+                    idx_brand = header.index('brand')
+                    idx_model = header.index('model')
+                    idx_title = header.index('title')
+                    idx_h1 = header.index('h1')
+                    idx_text = header.index('seo text')
+                except ValueError as e:
+                    messages.error(request, f"Помилка структури файлу. Не знайдено колонку: {e}. Перевірте заголовки (Brand, Model, Title, H1, SEO Text).")
+                    return redirect("..")
+
+                # Проходимо по рядках (починаючи з другого)
+                for row in rows[1:]:
+                    if not row[idx_brand] or not row[idx_model]: continue
+                    
+                    brand_val = str(row[idx_brand]).strip()
+                    model_val = str(row[idx_model]).strip() # Наприклад: "Шина 155/65R13..."
+                    
+                    seo_title = str(row[idx_title]).strip() if row[idx_title] else ""
+                    seo_h1 = str(row[idx_h1]).strip() if row[idx_h1] else ""
+                    seo_text = str(row[idx_text]).strip() if row[idx_text] else ""
+
+                    # Логіка пошуку товару:
+                    # 1. Шукаємо точне співпадіння Бренд + Назва
+                    product = Product.objects.filter(brand__name__iexact=brand_val, name__iexact=model_val).first()
+                    
+                    # 2. Якщо не знайшли, шукаємо "м'яко": чи є назва товару (з бази) всередині назви з файлу
+                    # (Бо у файлі "Шина 155/65...", а в базі може бути просто "LW71")
+                    if not product:
+                         products_candidates = Product.objects.filter(brand__name__iexact=brand_val)
+                         for p in products_candidates:
+                             # Перевіряємо, чи є p.name (наприклад "LW71") частиною model_val ("Шина... LW71 ...")
+                             if p.name.lower() in model_val.lower():
+                                 product = p
+                                 break
+                    
+                    if product:
+                        product.seo_title = seo_title
+                        product.seo_h1 = seo_h1
+                        product.seo_text = seo_text
+                        product.save()
+                        updated_count += 1
+                    else:
+                        not_found_count += 1
+
+                messages.success(request, f"SEO успішно оновлено для {updated_count} товарів. Не знайдено відповідників: {not_found_count}.")
+            except Exception as e:
+                messages.error(request, f"Критична помилка імпорту: {e}")
+            return redirect("..")
+            
+        form = SeoImportForm()
+        # Використовуємо той самий шаблон, що і для фото (там просто форма)
+        return render(request, "store/admin_import_photos.html", {"form": form, "title": "Імпорт SEO даних"})
 
     # --- 1. РОЗУМНИЙ ЕКСПОРТ ---
     def export_unique_models(self, request):
@@ -296,7 +371,6 @@ class SiteBannerAdmin(admin.ModelAdmin):
 
 @admin.register(AboutImage)
 class AboutImageAdmin(admin.ModelAdmin):
-    # 🔥 ВИПРАВЛЕНО ТУТ: Видалено 'description', бо його більше немає в моделі
     list_display = ['id', 'created_at', 'image_preview']
     
     def image_preview(self, obj):

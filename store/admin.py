@@ -5,6 +5,8 @@ from django.contrib import messages
 from django import forms
 from django.http import HttpResponse
 import openpyxl
+import csv
+import io
 import re
 import gc
 from django.utils.html import format_html
@@ -59,9 +61,9 @@ class ExcelImportForm(forms.Form):
 class PhotoImportForm(forms.Form):
     excel_file = forms.FileField(label="Файл з ФОТО")
 
-# 🔥 НОВА ФОРМА ДЛЯ SEO 🔥
+# 🔥 ОНОВЛЕНА ФОРМА ДЛЯ SEO (ПІДТРИМУЄ CSV) 🔥
 class SeoImportForm(forms.Form):
-    excel_file = forms.FileField(label="SEO Файл (Brand, Model, ..., Title, H1, SEO Text)")
+    excel_file = forms.FileField(label="SEO Файл (.csv або .xlsx)")
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -106,74 +108,107 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- ІМПОРТ SEO (НОВА ФУНКЦІЯ) ---
+    # --- 🔥 ОНОВЛЕНИЙ ІМПОРТ SEO (CSV + EXCEL) 🔥 ---
     def import_seo(self, request):
         if request.method == "POST":
-            excel_file = request.FILES["excel_file"]
+            file = request.FILES["excel_file"]
+            filename = file.name.lower()
+            updated_count = 0
+            not_found_count = 0
+            
             try:
-                wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
-                sheet = wb.active
-                updated_count = 0
-                not_found_count = 0
-                
-                # Отримуємо всі рядки
-                rows = list(sheet.iter_rows(values_only=True))
-                # Отримуємо заголовки (перший рядок) і переводимо в нижній регістр
-                header = [str(h).lower().strip() for h in rows[0]]
-                
-                try:
-                    # Шукаємо індекси колонок динамічно
-                    idx_brand = header.index('brand')
-                    idx_model = header.index('model')
-                    idx_title = header.index('title')
-                    idx_h1 = header.index('h1')
-                    idx_text = header.index('seo text')
-                except ValueError as e:
-                    messages.error(request, f"Помилка структури файлу. Не знайдено колонку: {e}. Перевірте заголовки (Brand, Model, Title, H1, SEO Text).")
-                    return redirect("..")
+                # ВАРІАНТ 1: CSV (Швидко, мало пам'яті)
+                if filename.endswith('.csv'):
+                    # Читаємо файл як текст
+                    decoded_file = file.read().decode('utf-8').splitlines()
+                    reader = csv.reader(decoded_file)
+                    
+                    try:
+                        header = next(reader) # Перший рядок - заголовки
+                        header = [str(h).lower().strip() for h in header]
+                        
+                        idx_brand = header.index('brand')
+                        idx_model = header.index('model')
+                        idx_title = header.index('title')
+                        idx_h1 = header.index('h1')
+                        idx_text = header.index('seo text')
+                    except ValueError as e:
+                        messages.error(request, f"Помилка заголовків CSV: {e}")
+                        return redirect("..")
 
-                # Проходимо по рядках (починаючи з другого)
-                for row in rows[1:]:
-                    if not row[idx_brand] or not row[idx_model]: continue
-                    
-                    brand_val = str(row[idx_brand]).strip()
-                    model_val = str(row[idx_model]).strip() # Наприклад: "Шина 155/65R13..."
-                    
-                    seo_title = str(row[idx_title]).strip() if row[idx_title] else ""
-                    seo_h1 = str(row[idx_h1]).strip() if row[idx_h1] else ""
-                    seo_text = str(row[idx_text]).strip() if row[idx_text] else ""
+                    for row in reader:
+                        if not row or len(row) < 2: continue
+                        if self._update_product_seo(row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
+                            updated_count += 1
+                        else:
+                            not_found_count += 1
 
-                    # Логіка пошуку товару:
-                    # 1. Шукаємо точне співпадіння Бренд + Назва
-                    product = Product.objects.filter(brand__name__iexact=brand_val, name__iexact=model_val).first()
+                # ВАРІАНТ 2: EXCEL (Класичний)
+                else:
+                    wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
+                    sheet = wb.active
+                    rows = sheet.iter_rows(values_only=True)
                     
-                    # 2. Якщо не знайшли, шукаємо "м'яко": чи є назва товару (з бази) всередині назви з файлу
-                    # (Бо у файлі "Шина 155/65...", а в базі може бути просто "LW71")
-                    if not product:
-                         products_candidates = Product.objects.filter(brand__name__iexact=brand_val)
-                         for p in products_candidates:
-                             # Перевіряємо, чи є p.name (наприклад "LW71") частиною model_val ("Шина... LW71 ...")
-                             if p.name.lower() in model_val.lower():
-                                 product = p
-                                 break
-                    
-                    if product:
-                        product.seo_title = seo_title
-                        product.seo_h1 = seo_h1
-                        product.seo_text = seo_text
-                        product.save()
-                        updated_count += 1
-                    else:
-                        not_found_count += 1
+                    try:
+                        header = [str(h).lower().strip() for h in next(rows)]
+                        idx_brand = header.index('brand')
+                        idx_model = header.index('model')
+                        idx_title = header.index('title')
+                        idx_h1 = header.index('h1')
+                        idx_text = header.index('seo text')
+                    except ValueError as e:
+                        messages.error(request, f"Помилка заголовків Excel: {e}")
+                        return redirect("..")
 
-                messages.success(request, f"SEO успішно оновлено для {updated_count} товарів. Не знайдено відповідників: {not_found_count}.")
+                    for i, row in enumerate(rows):
+                        if i % 200 == 0: gc.collect() # Чистимо пам'ять
+                        if not row: continue
+                        
+                        if self._update_product_seo(row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
+                            updated_count += 1
+                        else:
+                            not_found_count += 1
+
+                messages.success(request, f"✅ Оновлено SEO: {updated_count}. ❌ Не знайдено: {not_found_count}.")
+
             except Exception as e:
-                messages.error(request, f"Критична помилка імпорту: {e}")
+                messages.error(request, f"Критична помилка файлу: {e}")
             return redirect("..")
             
         form = SeoImportForm()
-        # Використовуємо той самий шаблон, що і для фото (там просто форма)
-        return render(request, "store/admin_import_photos.html", {"form": form, "title": "Імпорт SEO даних"})
+        return render(request, "store/admin_import_photos.html", {"form": form, "title": "Імпорт SEO (.csv або .xlsx)"})
+
+    # Допоміжна функція оновлення (щоб не дублювати код)
+    def _update_product_seo(self, row, idx_brand, idx_model, idx_title, idx_h1, idx_text):
+        try:
+            brand_val = str(row[idx_brand]).strip()
+            model_val = str(row[idx_model]).strip()
+            if not brand_val or not model_val: return False
+
+            seo_title = str(row[idx_title]).strip() if len(row) > idx_title and row[idx_title] else ""
+            seo_h1 = str(row[idx_h1]).strip() if len(row) > idx_h1 and row[idx_h1] else ""
+            seo_text = str(row[idx_text]).strip() if len(row) > idx_text and row[idx_text] else ""
+
+            # Пошук товару
+            product = Product.objects.filter(brand__name__iexact=brand_val, name__iexact=model_val).first()
+            
+            if not product:
+                # М'який пошук (якщо модель у базі коротша, ніж у файлі)
+                candidates = Product.objects.filter(brand__name__iexact=brand_val)
+                for p in candidates:
+                    if p.name.lower() in model_val.lower():
+                        product = p
+                        break
+            
+            if product:
+                product.seo_title = seo_title
+                product.seo_h1 = seo_h1
+                product.seo_text = seo_text
+                product.save()
+                return True
+        except:
+            return False
+        return False
 
     # --- 1. РОЗУМНИЙ ЕКСПОРТ ---
     def export_unique_models(self, request):

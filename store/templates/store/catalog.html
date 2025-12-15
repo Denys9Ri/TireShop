@@ -140,7 +140,19 @@
                     <div class="carousel-inner">
                         {% for banner in banners %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                {% if banner.image_url %}<img src="{{ banner.image_url }}" class="banner-img">{% elif banner.image %}<img src="{{ banner.image.url }}" class="banner-img">{% endif %}
+                                {% if banner.link %}
+                                    <a href="{{ banner.link }}" style="display: block;">
+                                {% endif %}
+                                
+                                    {% if banner.image %}
+                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}">
+                                    {% elif banner.image_url %}
+                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}">
+                                    {% endif %}
+                                
+                                {% if banner.link %}
+                                    </a>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>

@@ -21,7 +21,7 @@ class Brand(models.Model):
     CATEGORY_CHOICES = [('budget', '💸 Економ'), ('medium', '⚖️ Ціна/Якість'), ('top', '💎 Топ')]
 
     name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=120, unique=True, blank=True, db_index=True)
+    slug = models.SlugField(max_length=120, unique=True, null=True, blank=True, db_index=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='budget')
 

@@ -19,10 +19,27 @@ class SiteSettings(models.Model):
 # --- 1. БРЕНД ---
 class Brand(models.Model):
     CATEGORY_CHOICES = [('budget', '💸 Економ'), ('medium', '⚖️ Ціна/Якість'), ('top', '💎 Топ')]
+
     name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True, db_index=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='budget')
-    def __str__(self): return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:110] or "brand"
+            candidate = base
+            i = 2
+            while Brand.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                suffix = f"-{i}"
+                candidate = f"{base[:110 - len(suffix)]}{suffix}"
+                i += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
 
 # --- 2. ТОВАР ---
 class Product(models.Model):

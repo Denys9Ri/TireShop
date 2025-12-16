@@ -2,6 +2,11 @@
 {% load static %}
 
 {% block title %}{{ seo_title }}{% endblock %}
+{% block meta_description %}Купити шини {{ product.brand.name }} {{ product.name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Доставка по Україні. Самовивіз у Києві. Ціни на R16.com.ua{% endblock %}
+
+{% block extra_head %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% endblock %}
 
 {% block content %}
 
@@ -24,10 +29,7 @@
     "@type": "Offer",
     "url": "https://r16.com.ua{{ request.path }}",
     "priceCurrency": "UAH",
-    
-    /* 🔥 ВАЛІДНА ЦІНА (з крапкою) */
     "price": "{{ product.price|stringformat:'.2f' }}",
-    
     "priceValidUntil": "2026-12-31",
     "itemCondition": "https://schema.org/NewCondition",
     "availability": "{% if product.stock_quantity > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
@@ -35,8 +37,6 @@
       "@type": "Organization",
       "name": "R16"
     },
-
-    /* 🔥 ДОДАНО: Інформація про доставку (Shipping) */
     "shippingDetails": {
       "@type": "OfferShippingDetails",
       "shippingRate": {
@@ -64,8 +64,6 @@
         }
       }
     },
-
-    /* 🔥 ДОДАНО: Політика повернення (Return Policy) */
     "hasMerchantReturnPolicy": {
       "@type": "MerchantReturnPolicy",
       "applicableCountry": "UA",
@@ -75,7 +73,6 @@
       "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
     }
   },
-  /* 🔥 РЕЙТИНГ (Щоб не було помилок review) */
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",

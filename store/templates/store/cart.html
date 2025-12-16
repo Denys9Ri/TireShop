@@ -11,7 +11,7 @@
 
     {% if cart|length == 0 %}
         <div class="cart-empty glass-card">
-            <p>Ваш кошик порожній. Час повертатися до <a href="{% url 'catalog' %}">каталогу</a>!</p>
+            <p>Ваш кошик порожній. Час повертатися до <a href="{% url 'store:catalog' %}">каталогу</a>!</p>
         </div>
     {% else %}
         <div class="cart-layout">
@@ -55,7 +55,7 @@
                     <span class="cart-summary__total">{{ cart.get_total_price }} грн.</span>
                 </div>
                 <div class="cart-summary__actions">
-                    <a href="{% url 'catalog' %}" class="btn-secondary">Продовжити покупки</a>
+                    <a href="{% url 'store:catalog' %}" class="btn-secondary">Продовжити покупки</a>
                     <a href="{% url 'store:checkout' %}" class="btn-checkout">Перейти до оформлення</a>
                 </div>
             </aside>

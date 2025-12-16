@@ -236,30 +236,26 @@ def catalog_view(request):
     })
 
 # --- ТОВАР (PRODUCT DETAIL) ---
+# 🔥 ВИПРАВЛЕНО: Хлібні крихти тепер показують тільки "Зимові шини" (короткий шлях)
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     similar = Product.objects.filter(width=product.width, profile=product.profile, diameter=product.diameter).exclude(id=product.id)[:4]
     seo_title = f"{product.brand.name} {product.name} {product.width}/{product.profile} R{product.diameter} - Купити | R16"
     
     parent_category = None
+    
+    # 1. Знаходимо сезон (наприклад 'zymovi')
     season_slug = None
     for k, v in SEASONS_MAP.items():
         if v['db'] == product.seasonality:
             season_slug = k
             break
             
+    # 2. Формуємо коротку хлібну крихту: Головна -> Каталог -> [Зимові Шини] -> Товар
     if season_slug:
-        try:
-            url = reverse('store:seo_full', args=[product.brand.name, season_slug, product.width, product.profile, product.diameter])
-            name = f"{SEASONS_MAP[season_slug]['ua']} {product.brand.name} {product.width}/{product.profile} R{product.diameter}"
-            parent_category = {'name': name, 'url': url}
-        except:
-            try:
-                url = reverse('store:seo_brand_season', args=[product.brand.name, season_slug])
-                name = f"{SEASONS_MAP[season_slug]['ua']} {product.brand.name}"
-                parent_category = {'name': name, 'url': url}
-            except:
-                parent_category = {'name': SEASONS_MAP[season_slug]['ua'], 'url': reverse('store:seo_season', args=[season_slug])}
+        url = reverse('store:seo_season', args=[season_slug])
+        name = SEASONS_MAP[season_slug]['ua'] # "Зимові шини"
+        parent_category = {'name': name, 'url': url}
 
     return render(request, 'store/product_detail.html', {
         'product': product, 'similar_products': similar, 'seo_title': seo_title, 'parent_category': parent_category
@@ -294,7 +290,7 @@ def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
 
-# 🔥 ВИПРАВЛЕНА ФУНКЦІЯ CHECKOUT (ДЕТАЛЬНЕ ЗАМОВЛЕННЯ В TELEGRAM) 🔥
+# 🔥 ФУНКЦІЯ CHECKOUT (ДЕТАЛЬНЕ ЗАМОВЛЕННЯ В TELEGRAM) 🔥
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
@@ -354,7 +350,7 @@ def contacts_view(request): return render(request, 'store/contacts.html')
 def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
 def warranty_view(request): return render(request, 'store/warranty.html')
 
-# 🔥 ВИПРАВЛЕНА ФУНКЦІЯ ЧАТ-БОТА (SOS ЗАПИТ) 🔥
+# 🔥 ФУНКЦІЯ ЧАТ-БОТА (SOS ЗАПИТ) 🔥
 @require_POST
 def bot_callback_view(request):
     try:

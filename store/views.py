@@ -10,7 +10,7 @@ import json
 import requests
 import re
 
-# 🔥 ОСЬ ЦІ РЯДКИ БУЛИ ПРОПУЩЕНІ 🔥
+# Імпорти
 from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 
@@ -168,7 +168,6 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         'all_diameters': Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter'),
         'all_seasons': Product.SEASON_CHOICES,
         
-        # Використовуємо UNIFIED назви змінних
         'selected_brand_id': brand_obj.id if brand_obj else None,
         'selected_season': season_db,
         'selected_width': width, 'selected_profile': profile, 'selected_diameter': diameter,
@@ -181,7 +180,7 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         'is_seo_page': True
     })
 
-# --- ЗВИЧАЙНИЙ КАТАЛОГ (ВИПРАВЛЕНО 500 ПОМИЛКУ) ---
+# --- ЗВИЧАЙНИЙ КАТАЛОГ ---
 def catalog_view(request):
     products = get_base_products()
     
@@ -227,7 +226,6 @@ def catalog_view(request):
         'page_obj': page_obj, 'filter_query_string': q_params.urlencode(),
         'all_brands': brands, 'all_widths': widths, 'all_profiles': profiles, 'all_diameters': diameters, 'all_seasons': Product.SEASON_CHOICES,
         
-        # 🔥 ВИПРАВЛЕНО: Було 'selected_brand', а шаблон чекає 'selected_brand_id' 🔥
         'selected_brand_id': int(s_brand) if s_brand else None,
         'selected_season': s_season, 'selected_width': int(s_width) if s_width else None,
         'selected_profile': int(s_profile) if s_profile else None,
@@ -267,19 +265,20 @@ def product_detail_view(request, slug):
         'product': product, 'similar_products': similar, 'seo_title': seo_title, 'parent_category': parent_category
     })
 
-# --- 🔥 НОВА ФУНКЦІЯ: РЕДИРЕКТ СТАРИХ ID -> SLUG 🔥 ---
+# --- РЕДИРЕКТ СТАРИХ ID -> SLUG ---
 def redirect_old_product_urls(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    # 301 Redirect = "Переїхав назавжди". Google це любить.
     return redirect('store:product_detail', slug=product.slug, permanent=True)
 
 # --- ІНШІ ФУНКЦІЇ ---
 def cart_detail_view(request): return render(request, 'store/cart.html', {'cart': Cart(request)})
+
 @require_POST
 def cart_add_view(request, product_id):
     cart = Cart(request); product = get_object_or_404(Product, id=product_id)
     cart.add(product=product, quantity=int(request.POST.get('quantity', 1)))
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
+
 @require_POST
 def cart_update_quantity_view(request, product_id):
     cart = Cart(request); product = get_object_or_404(Product, id=product_id)
@@ -290,33 +289,91 @@ def cart_update_quantity_view(request, product_id):
         else: cart.remove(product)
     except: pass
     return redirect('store:cart_detail')
+
 def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
+
+# 🔥 ВИПРАВЛЕНА ФУНКЦІЯ CHECKOUT (ДЕТАЛЬНЕ ЗАМОВЛЕННЯ В TELEGRAM) 🔥
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
+    
     if request.method == 'POST':
-        is_pickup = request.POST.get('shipping_type') == 'pickup'
+        shipping_type = request.POST.get('shipping_type')
+        is_pickup = shipping_type == 'pickup'
+        
+        # Створюємо замовлення
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,
-            shipping_type=request.POST.get('shipping_type'),
+            shipping_type=shipping_type,
             full_name=request.POST.get('pickup_name' if is_pickup else 'full_name'),
             phone=request.POST.get('pickup_phone' if is_pickup else 'phone'),
             email=None if is_pickup else request.POST.get('email'),
-            city="Київ, вул. Володимира Качали, 3" if is_pickup else request.POST.get('city'),
+            city="Київ, Самовивіз" if is_pickup else request.POST.get('city'),
             nova_poshta_branch=None if is_pickup else request.POST.get('nova_poshta_branch')
         )
-        for item in cart: OrderItem.objects.create(order=order, product=item['product'], quantity=item['quantity'], price_at_purchase=item['price'])
-        send_telegram(f"🔥 <b>ЗАМОВЛЕННЯ #{order.id}</b>\n👤 {order.full_name}\n📞 {order.phone}")
+
+        # Формуємо список товарів для повідомлення
+        items_text = ""
+        for item in cart:
+            p = item['product']
+            # Зберігаємо в базу
+            OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
+            # Додаємо в текст
+            items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
+
+        # Формуємо інформацію про доставку
+        delivery_info = "🏃 <b>САМОВИВІЗ</b> (Київ)"
+        if not is_pickup:
+            city = request.POST.get('city', '-')
+            branch = request.POST.get('nova_poshta_branch', '-')
+            delivery_info = f"🚚 <b>НОВА ПОШТА</b>\n📍 Місто: {city}\n🏢 Відділення: {branch}"
+
+        # Збираємо повне повідомлення
+        telegram_msg = (
+            f"🔥 <b>НОВЕ ЗАМОВЛЕННЯ #{order.id}</b>\n"
+            f"👤 {order.full_name}\n"
+            f"📞 {order.phone}\n"
+            f"------------------------------\n"
+            f"{delivery_info}\n"
+            f"------------------------------\n"
+            f"🛒 <b>ТОВАРИ:</b>{items_text}\n"
+            f"------------------------------\n"
+            f"💰 <b>СУМА: {cart.get_total_price()} грн</b>"
+        )
+        
+        send_telegram(telegram_msg)
         cart.clear()
         return redirect('users:profile' if request.user.is_authenticated else 'store:catalog')
+        
     return render(request, 'store/checkout.html')
+
 def about_view(request): return render(request, 'store/about.html')
 def contacts_view(request): return render(request, 'store/contacts.html')
 def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
 def warranty_view(request): return render(request, 'store/warranty.html')
+
+# 🔥 ВИПРАВЛЕНА ФУНКЦІЯ ЧАТ-БОТА (SOS ЗАПИТ) 🔥
 @require_POST
-def bot_callback_view(request): return JsonResponse({'status': 'ok'})
+def bot_callback_view(request):
+    try:
+        data = json.loads(request.body)
+        phone = data.get('phone')
+        
+        if phone:
+            message = (
+                f"🆘 <b>SOS ЗАПИТ (ЧАТ-БОТ)</b>\n"
+                f"📞 Телефон: {phone}\n"
+                f"⚠️ Клієнт просить допомоги з підбором!"
+            )
+            send_telegram(message)
+            return JsonResponse({'status': 'ok'})
+            
+    except Exception as e:
+        print(f"Bot Error: {e}")
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
 @transaction.atomic
 def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')

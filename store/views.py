@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.db.models import Case, When, Value, IntegerField, Min, Count, Q
+from django.db.models import Case, When, Value, IntegerField, Min, Max, Count, Q
 from django.conf import settings
 from django.http import JsonResponse, Http404
 from django.db import transaction
@@ -14,7 +14,61 @@ import re
 from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 
-# --- CONFIG ---
+# --- 🧠 SEO КОНСТРУКТОР (УНІКАЛЬНИЙ КОНТЕНТ) ---
+
+SEO_TEMPLATES = {
+    'winter': {
+        'h2': "Чому варто купити зимові шини {brand} {size}?",
+        'text': """
+            <p>Зимова гума <b>{brand}</b> {size} розроблена спеціально для складних погодних умов України. 
+            Завдяки особливому складу компаунду, ці шини залишаються еластичними навіть при сильних морозах.</p>
+            <ul>
+                <li>✅ <b>Відмінне зчеплення:</b> Глибокий протектор та ламелі забезпечують контроль на снігу та льоду.</li>
+                <li>✅ <b>Безпека:</b> Скорочений гальмівний шлях на слизькій дорозі.</li>
+                <li>✅ <b>Комфорт:</b> {brand} гарантує м'якість ходу та низький рівень шуму.</li>
+            </ul>
+            <p>Якщо ви шукаєте надійні зимові колеса, модельний ряд {brand} — це ідеальний вибір для вашого авто.</p>
+        """,
+        'faq_best': "Які зимові шини {brand} найкращі?",
+        'faq_best_ans': "Найпопулярніші зимові моделі {brand} забезпечують максимальну безпеку. Рекомендуємо звернути увагу на шини з направленим малюнком протектора для кращого відведення снігу."
+    },
+    'summer': {
+        'h2': "Літні шини {brand} {size}: Швидкість та контроль",
+        'text': """
+            <p>Літня гума <b>{brand}</b> {size} створена для динамічної їзди та максимального комфорту в теплу пору року.
+            Жорсткі боковини та продумана дренажна система захищають від аквапланування.</p>
+            <ul>
+                <li>☀️ <b>Термостійкість:</b> Гума не «пливе» на розпеченому асфальті.</li>
+                <li>🌧 <b>Захист від дощу:</b> Ефективні канавки миттєво відводять воду з плями контакту.</li>
+                <li>🚀 <b>Економічність:</b> Знижений опір коченню допомагає економити пальне.</li>
+            </ul>
+            <p>Обираючи літні шини {brand}, ви отримуєте керованість спортивного рівня та довговічність.</p>
+        """,
+        'faq_best': "Які літні моделі {brand} найтіхіші?",
+        'faq_best_ans': "Лінійка літніх шин {brand} вирізняється акустичним комфортом. Спеціальний малюнок протектора мінімізує шум навіть на високих швидкостях."
+    },
+    'all_season': {
+        'h2': "Всесезонні шини {brand} {size}: Універсальність на весь рік",
+        'text': """
+            <p>Бажаєте заощадити на перевзуванні? Всесезонна гума <b>{brand}</b> {size} — це компроміс, який працює.
+            Вона поєднує характеристики зимових та літніх шин, забезпечуючи стабільність у міжсезоння.</p>
+            <p>Це ідеальний варіант для м'якої зими та міського циклу їзди. Шини {brand} мають маркування M+S, що дозволяє впевнено почуватися на легкому снігу.</p>
+        """,
+        'faq_best': "Чи підходять всесезонні шини {brand} для зими?",
+        'faq_best_ans': "Так, всесезонні моделі {brand} розраховані на м'яку європейську зиму. Проте для глибокого снігу та ожеледиці ми рекомендуємо повноцінну зимову гуму."
+    },
+    'default': {
+        'h2': "Купити шини {brand} {size} в Києві",
+        'text': """
+            <p>Інтернет-магазин R16 пропонує широкий вибір шин <b>{brand}</b>. 
+            Ми є офіційним партнером багатьох брендів, тому гарантуємо якість та найнижчі ціни.</p>
+            <p>Замовляйте гуму {size} з доставкою Новою Поштою або забирайте самовивозом у Києві (вул. Володимира Качали, 3).</p>
+        """,
+        'faq_best': "Який бренд шин обрати?",
+        'faq_best_ans': "Вибір залежить від вашого бюджету та стилю їзди. {brand} — це чудовий вибір у категорії 'ціна/якість'."
+    }
+}
+
 SEASONS_MAP = {
     'zymovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
     'litni': {'db': 'summer', 'ua': 'Літні шини', 'adj': 'літні'},
@@ -36,61 +90,77 @@ def get_base_products():
         status_order=Case(When(stock_quantity__gt=0, then=Value(0)), default=Value(1), output_field=IntegerField())
     )
 
-def generate_seo_meta(brand_obj=None, season_slug=None, w=None, p=None, d=None, min_price=0):
-    parts = []
-    season_info = SEASONS_MAP.get(season_slug)
-    
-    if season_info: parts.append(season_info['ua'])
-    else: parts.append("Шини")
-    
-    if brand_obj: parts.append(brand_obj.name)
-    
-    size_str = ""
-    if w and p and d:
-        size_str = f"{w}/{p} R{d}"
-        parts.append(size_str)
-    
-    h1 = " ".join(parts)
-    title = f"Купити {h1} — ціна від {min_price} грн | Київ, Україна | R16"
-    
-    season_adj = season_info['adj'] if season_info else "якісні"
+def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None, min_price=0, max_price=0):
+    # 1. Підготовка змінних
     brand_name = brand_obj.name if brand_obj else "світових брендів"
-    desc = (
-        f"✅ {h1} в наявності! 💰 Ціна від {min_price} грн. "
-        f"🚚 Доставка по Україні. Великий вибір {season_adj} гуми {brand_name} {size_str}. "
-        f"Гарантія якості, знижки, професійний підбір."
-    )
+    size_str = f"{w}/{p} R{d}" if (w and p and d) else ""
+    
+    # 2. Вибір шаблону (зима/літо/всесезон)
+    key = season_db if season_db in SEO_TEMPLATES else 'default'
+    template = SEO_TEMPLATES[key]
 
-    return {'title': title, 'h1': h1, 'description': desc}
+    # 3. Формування заголовків
+    h1_parts = []
+    if season_db == 'winter': h1_parts.append("Зимові шини")
+    elif season_db == 'summer': h1_parts.append("Літні шини")
+    elif season_db == 'all_season': h1_parts.append("Всесезонні шини")
+    else: h1_parts.append("Купити шини")
+    
+    if brand_obj: h1_parts.append(brand_obj.name)
+    if size_str: h1_parts.append(size_str)
+    
+    h1_final = " ".join(h1_parts)
+    title_final = f"{h1_final} — Ціна від {min_price} грн | R16.com.ua"
+    
+    # 4. Формування тексту (підставляємо змінні)
+    description_html = template['text'].format(brand=brand_name, size=size_str)
+    seo_h2 = template['h2'].format(brand=brand_name, size=size_str)
 
-def get_faq_schema(h1_title, min_price, count):
-    if count == 0: return None
+    # 5. Опис для мета-тегу description (короткий, без HTML)
+    meta_desc = f"{h1_final} в наявності! 💰 Ціна: {min_price}-{max_price} грн. 🚚 Доставка по Україні. Гарантія якості."
+
+    return {
+        'title': title_final,
+        'h1': h1_final,
+        'seo_h2': seo_h2,
+        'description_html': description_html,
+        'meta_description': meta_desc,
+        'faq_key': key,
+        'brand_name': brand_name
+    }
+
+def get_faq_schema(seo_data, min_price):
+    key = seo_data['faq_key']
+    template = SEO_TEMPLATES[key]
+    brand = seo_data['brand_name']
+    h1 = seo_data['h1']
+
     faq = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
             {
                 "@type": "Question",
-                "name": f"Яка ціна на {h1_title}?",
+                "name": f"💰 Яка ціна на {h1}?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": f"Ціна на {h1_title} в нашому магазині починається від {min_price} грн. Актуальні ціни та наявність перевіряйте в каталозі."
+                    "text": f"Ціни починаються від {min_price} грн. Актуальна вартість залежить від розміру та моделі."
                 }
             },
             {
                 "@type": "Question",
-                "name": "Чи є доставка по Україні?",
+                "name": template['faq_best'].format(brand=brand),
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Так, ми здійснюємо доставку Новою Поштою в Київ, Харків, Одесу, Львів, Дніпро та інші міста України."
+                    "text": template['faq_best_ans'].format(brand=brand)
                 }
             },
             {
                 "@type": "Question",
-                "name": "Чи надаєте ви гарантію?",
+                "name": "🚚 Чи є доставка та самовивіз?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Так, на всі шини діє заводська гарантія. Також можливе повернення або обмін протягом 14 днів."
+                    "text": "Так! Самовивіз у Києві (Відрадний). Доставка Новою Поштою по всій Україні."
                 }
             }
         ]
@@ -149,12 +219,14 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
     if width and profile and diameter:
         products = products.filter(width=width, profile=profile, diameter=diameter)
 
-    stats = products.aggregate(min_price=Min('price'), count=Count('id'))
+    stats = products.aggregate(min_price=Min('price'), max_price=Max('price'), count=Count('id'))
     min_price = stats['min_price'] if stats['min_price'] else 0
+    max_price = stats['max_price'] if stats['max_price'] else 0
     prod_count = stats['count']
 
-    seo_data = generate_seo_meta(brand_obj, season_slug, width, profile, diameter, int(min_price))
-    faq_schema = get_faq_schema(seo_data['h1'], int(min_price), prod_count)
+    # ГЕНЕРУЄМО РОЗУМНИЙ КОНТЕНТ
+    seo_data = generate_seo_content(brand_obj, season_db, width, profile, diameter, int(min_price), int(max_price))
+    faq_schema = get_faq_schema(seo_data, int(min_price))
     cross_links = get_cross_links(season_slug, brand_obj, width, profile, diameter)
 
     brands = Brand.objects.all().order_by('name')
@@ -174,7 +246,9 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         
         'seo_title': seo_data['title'],
         'seo_h1': seo_data['h1'],
-        'seo_description': seo_data['description'],
+        'seo_h2': seo_data['seo_h2'], # Додав H2 для контенту
+        'seo_description': seo_data['meta_description'], # Для мета-тегу
+        'seo_text_html': seo_data['description_html'], # Для тексту на сторінці
         'faq_schema': faq_schema,
         'cross_links': cross_links,
         'is_seo_page': True
@@ -232,41 +306,39 @@ def catalog_view(request):
         'selected_diameter': int(s_diameter) if s_diameter else None,
         
         'search_query': query, 'banners': SiteBanner.objects.filter(is_active=True), 'show_banner': not (q_params or query),
-        'seo_title': "Каталог шин | R16.com.ua", 'seo_h1': "Всі шини"
+        'seo_title': "Каталог шин | R16.com.ua", 
+        'seo_h1': "Всі шини",
+        'seo_text_html': "<p>Ласкаво просимо в R16! Використовуйте фільтри для підбору шин.</p>"
     })
 
 # --- ТОВАР (PRODUCT DETAIL) ---
-# 🔥 ВИПРАВЛЕНО: Хлібні крихти тепер показують тільки "Зимові шини" (короткий шлях)
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     similar = Product.objects.filter(width=product.width, profile=product.profile, diameter=product.diameter).exclude(id=product.id)[:4]
     seo_title = f"{product.brand.name} {product.name} {product.width}/{product.profile} R{product.diameter} - Купити | R16"
     
     parent_category = None
-    
-    # 1. Знаходимо сезон (наприклад 'zymovi')
     season_slug = None
     for k, v in SEASONS_MAP.items():
         if v['db'] == product.seasonality:
             season_slug = k
             break
             
-    # 2. Формуємо коротку хлібну крихту: Головна -> Каталог -> [Зимові Шини] -> Товар
     if season_slug:
         url = reverse('store:seo_season', args=[season_slug])
-        name = SEASONS_MAP[season_slug]['ua'] # "Зимові шини"
+        name = SEASONS_MAP[season_slug]['ua'] 
         parent_category = {'name': name, 'url': url}
 
     return render(request, 'store/product_detail.html', {
         'product': product, 'similar_products': similar, 'seo_title': seo_title, 'parent_category': parent_category
     })
 
-# --- РЕДИРЕКТ СТАРИХ ID -> SLUG ---
+# --- РЕДИРЕКТ ---
 def redirect_old_product_urls(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return redirect('store:product_detail', slug=product.slug, permanent=True)
 
-# --- ІНШІ ФУНКЦІЇ ---
+# --- ІНШІ ФУНКЦІЇ (Кошик, Checkout, Info) ---
 def cart_detail_view(request): return render(request, 'store/cart.html', {'cart': Cart(request)})
 
 @require_POST
@@ -290,7 +362,6 @@ def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
 
-# 🔥 ФУНКЦІЯ CHECKOUT (ДЕТАЛЬНЕ ЗАМОВЛЕННЯ В TELEGRAM) 🔥
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
@@ -299,7 +370,6 @@ def checkout_view(request):
         shipping_type = request.POST.get('shipping_type')
         is_pickup = shipping_type == 'pickup'
         
-        # Створюємо замовлення
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,
             shipping_type=shipping_type,
@@ -310,23 +380,18 @@ def checkout_view(request):
             nova_poshta_branch=None if is_pickup else request.POST.get('nova_poshta_branch')
         )
 
-        # Формуємо список товарів для повідомлення
         items_text = ""
         for item in cart:
             p = item['product']
-            # Зберігаємо в базу
             OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
-            # Додаємо в текст
             items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
 
-        # Формуємо інформацію про доставку
         delivery_info = "🏃 <b>САМОВИВІЗ</b> (Київ)"
         if not is_pickup:
             city = request.POST.get('city', '-')
             branch = request.POST.get('nova_poshta_branch', '-')
             delivery_info = f"🚚 <b>НОВА ПОШТА</b>\n📍 Місто: {city}\n🏢 Відділення: {branch}"
 
-        # Збираємо повне повідомлення
         telegram_msg = (
             f"🔥 <b>НОВЕ ЗАМОВЛЕННЯ #{order.id}</b>\n"
             f"👤 {order.full_name}\n"
@@ -350,7 +415,6 @@ def contacts_view(request): return render(request, 'store/contacts.html')
 def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
 def warranty_view(request): return render(request, 'store/warranty.html')
 
-# 🔥 ФУНКЦІЯ ЧАТ-БОТА (SOS ЗАПИТ) 🔥
 @require_POST
 def bot_callback_view(request):
     try:

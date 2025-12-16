@@ -10,6 +10,8 @@ import json
 import requests
 import re
 
+# 🔥 ОСЬ ЦІ РЯДКИ БУЛИ ПРОПУЩЕНІ 🔥
+from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 
 # --- CONFIG ---

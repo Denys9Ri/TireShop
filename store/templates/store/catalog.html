@@ -4,7 +4,9 @@
 {% block title %}{{ seo_title }}{% endblock %}
 {% block meta_description %}{{ seo_description|default:"Купити шини в інтернет-магазині R16. Великий вибір, низькі ціни, доставка по Україні." }}{% endblock %}
 
-{% block content %}
+{% block extra_head %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+<meta name="robots" content="index,follow">
 
 <script type="application/ld+json">
 {
@@ -20,9 +22,12 @@
 
 {% if faq_schema %}
 <script type="application/ld+json">
-    {{ faq_schema|safe }}
+{{ faq_schema|safe }}
 </script>
 {% endif %}
+{% endblock %}
+
+{% block content %}
 
 <style>
     /* БАНЕР */

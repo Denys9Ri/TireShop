@@ -20,22 +20,23 @@ def robots_txt(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # 1. СЕРВІСНІ СТОРІНКИ (SEO)
+    # 1. SEO СТОРІНКИ
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', robots_txt),
 
-    # 2. КОРИСТУВАЧІ ТА АВТОРИЗАЦІЯ
-    # Важливо: users має бути перед store, щоб не перекриватись
+    # 2. КОРИСТУВАЧІ (ВХІД/РЕЄСТРАЦІЯ)
+    # Підключаємо наш оновлений users/urls.py
     path('users/', include('users.urls')), 
+    
+    # Якщо потрібно скидання паролю, залишаємо accounts, але users перекриє логін/логаут
     path('accounts/', include('django.contrib.auth.urls')), 
 
     # 3. МАГАЗИН (ГОЛОВНИЙ ДОДАТОК)
-    # Ми підключаємо його в корінь (''), а не в 'store/'
-    # Тепер store:catalog буде вести на головну сторінку "/"
+    # Підключаємо в корінь (''). Тепер store:catalog відповідає за Головну.
     path('', include('store.urls')),
 ]
 
-# Медіа файли (для локальної розробки та Render, якщо налаштовано whiteoise/serve)
+# Медіа файли
 urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {
         'document_root': settings.MEDIA_ROOT,

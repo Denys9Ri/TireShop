@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}{{ seo_title }}{% endblock %}
-{% block meta_description %}Купити {{ seo_h1 }} в інтернет-магазині R16. Великий вибір шин, низькі ціни, доставка по Україні, склад у Києві.{% endblock %}
+{% block meta_description %}{{ seo_description|default:"Купити шини в інтернет-магазині R16. Великий вибір, низькі ціни, доставка по Україні." }}{% endblock %}
 
 {% block content %}
 
@@ -18,6 +18,12 @@
 }
 </script>
 
+{% if faq_schema %}
+<script type="application/ld+json">
+    {{ faq_schema|safe }}
+</script>
+{% endif %}
+
 <style>
     /* БАНЕР */
     .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
@@ -27,7 +33,7 @@
     .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
     .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
     .badge-fresh { background: #20c997; } 
-    .badge-top { background: #6610f2; }   
+    .badge-top { background: #6610f2; }    
     .badge-taxi { background: #fd7e14; }  
     .badge-sale { background: #dc3545; }  
 
@@ -50,17 +56,22 @@
     .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     
     /* SEO БЛОК */
+    .seo-block-container { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
     .seo-text-block h2 { font-size: 1.5rem; } 
     .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
     .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
 
-    /* ВІДСТУПИ (ВИПРАВЛЕНО - ЗМЕНШЕНО) */
+    /* ВІДСТУПИ */
     .catalog-header-compact { margin-top: 5px; margin-bottom: 5px; padding-top: 0; }
     .search-bar-container { margin-bottom: 15px; margin-top: 5px; }
     
-    /* Стиль для назви, щоб замінити h3 */
+    /* Стиль для назви */
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.1rem; line-height: 1.3; }
+
+    /* TAG CLOUD (NEW) */
+    .tag-cloud-btn { transition: all 0.2s; font-size: 0.85rem; }
+    .tag-cloud-btn:hover { background-color: #0d6efd; color: white; border-color: #0d6efd; }
 </style>
 
 <div class="catalog-wrapper">
@@ -70,10 +81,7 @@
             <ol class="breadcrumb small" style="background: transparent; padding-left: 0; margin-bottom: 0;">
                 <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
                 <li class="breadcrumb-item active" aria-current="page" style="font-weight: 600; color: #333;">
-                    {% if selected_season == 'winter' %}Зимові шини
-                    {% elif selected_season == 'summer' %}Літні шини
-                    {% elif selected_season == 'all-season' %}Всесезонні шини
-                    {% else %}{{ seo_h1 }}{% endif %}
+                    {{ seo_h1 }}
                 </li>
             </ol>
         </nav>
@@ -84,7 +92,7 @@
     <div id="filter-panel" class="filter-panel">
         <h2>Пошук шин</h2>
         <form method="get" action="{% url 'store:catalog' %}" class="filter-form">
-            <input type="hidden" name="query" value="{{ search_query }}">
+            {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
             
             <label>Сезон:</label>
             <select name="season">
@@ -122,7 +130,7 @@
             <select name="brand">
                 <option value="">Всі бренди</option>
                 {% for brand in all_brands %}
-                    <option value="{{ brand.id }}" {% if brand.id == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
+                    <option value="{{ brand.id }}" {% if brand.id == selected_brand_id %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
             
@@ -155,17 +163,9 @@
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                 {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
                                     {% if banner.image %}
-                                        {% if forloop.first %}
-                                            <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" fetchpriority="high">
-                                        {% else %}
-                                            <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" loading="lazy">
-                                        {% endif %}
+                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
                                     {% elif banner.image_url %}
-                                        {% if forloop.first %}
-                                            <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" fetchpriority="high">
-                                        {% else %}
-                                            <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" loading="lazy">
-                                        {% endif %}
+                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
                                     {% endif %}
                                 {% if banner.link %}</a>{% endif %}
                             </div>
@@ -176,17 +176,7 @@
         {% endif %}
 
         <h1 class="page-title mb-4" style="margin-top: 0; font-size: 1.5rem;">
-            {% if search_query %}
-                Результати пошуку: "{{ search_query }}"
-            {% elif selected_season == 'winter' %}
-                ❄️ Зимові шини
-            {% elif selected_season == 'summer' %}
-                ☀️ Літні шини
-            {% elif selected_season == 'all-season' %}
-                🌤 Всесезонні шини
-            {% else %}
-                {{ seo_h1|default:"Каталог Товарів" }}
-            {% endif %}
+            {{ seo_h1 }}
         </h1>
 
         <div class="product-grid">
@@ -239,7 +229,9 @@
                     </form>
                 </div>
             {% empty %}
-                <p class="no-products-found">Товарів не знайдено.</p>
+                <div class="col-12 py-5 text-center w-100">
+                    <p class="text-muted fs-4">Товарів за цим запитом не знайдено.</p>
+                </div>
             {% endfor %}
         </div>
 
@@ -247,30 +239,43 @@
              <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>{% endif %}</div></nav>
         {% endif %}
         
-        <div class="seo-text-block mt-5 p-4 rounded-4" style="background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
-            {% if selected_season == 'winter' %}
-                <h2 class="fw-bold mb-3 text-primary">Зимові шини: Безпека понад усе</h2>
-                <p style="color: #555; line-height: 1.6;">Зимова гума — це гарантія вашої безпеки при температурі нижче +7°C.</p>
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про зиму</h4>
-                <div class="accordion" id="faqW">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qw1">Коли міняти?</button></h2>
-                        <div id="qw1" class="accordion-collapse collapse"><div class="accordion-body text-muted">Як тільки температура стабільно опуститься до +7°C.</div></div>
-                    </div>
+        {% if cross_links %}
+        <div class="mt-5 p-4 bg-light rounded-4 border">
+            {% for group in cross_links %}
+                <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {% for link in group.items %}
+                        <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white">
+                            {{ link.text }}
+                        </a>
+                    {% endfor %}
                 </div>
-            {% elif selected_season == 'summer' %}
-                <h2 class="fw-bold mb-3 text-primary">Літні шини для комфорту</h2>
-                <p style="color: #555; line-height: 1.6;">Літня гума твердіша і забезпечує краще зчеплення.</p>
-                <h4 class="fw-bold mt-4 mb-3">FAQ: Питання про літо</h4>
-                <div class="accordion" id="faqS">
-                    <div class="accordion-item border-0 mb-2">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#qs1">Скільки служить?</button></h2>
-                        <div id="qs1" class="accordion-collapse collapse"><div class="accordion-body text-muted">В середньому 3-5 сезонів.</div></div>
-                    </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="seo-text-block mt-5 p-4 rounded-4 seo-block-container">
+            <h2 class="fw-bold mb-3 text-primary">{{ seo_h1 }}</h2>
+            <div class="text-muted mb-4">
+               {{ seo_description|linebreaks }}
+            </div>
+
+            {% if faq_schema %}
+            <h4 class="fw-bold mt-4 mb-3">Часті питання (FAQ)</h4>
+            <div class="accordion" id="dynamicFaq">
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q1">💰 Яка ціна на {{ seo_h1 }}?</button></h2>
+                    <div id="q1" class="accordion-collapse collapse"><div class="accordion-body text-muted">Ми пропонуємо конкурентні ціни на ринку. Перевірте каталог вище для актуальних пропозицій.</div></div>
                 </div>
-            {% else %}
-                <h2 class="fw-bold mb-3 text-primary">Інтернет-магазин шин R16.com.ua</h2>
-                <p style="color: #555; line-height: 1.6;">Ласкаво просимо в R16. Ми пропонуємо широкий вибір шин. Склад у Києві, доставка по Україні.</p>
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q2">🚚 Чи є доставка?</button></h2>
+                    <div id="q2" class="accordion-collapse collapse"><div class="accordion-body text-muted">Так, ми доставляємо Новою Поштою по всій Україні (Київ, Харків, Одеса, Дніпро, Львів та інші міста).</div></div>
+                </div>
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q3">🛡 Чи є гарантія?</button></h2>
+                    <div id="q3" class="accordion-collapse collapse"><div class="accordion-body text-muted">Так, ми надаємо гарантію на заводський брак, а також можливість повернення протягом 14 днів.</div></div>
+                </div>
+            </div>
             {% endif %}
         </div>
 

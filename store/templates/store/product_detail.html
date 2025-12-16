@@ -270,10 +270,16 @@
         <ol class="breadcrumb small">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
             <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-decoration-none text-muted">Каталог</a></li>
+            
+            {% if parent_category %}
+                <li class="breadcrumb-item">
+                    <a href="{{ parent_category.url }}" class="text-decoration-none text-muted">{{ parent_category.name }}</a>
+                </li>
+            {% endif %}
+
             <li class="breadcrumb-item active" aria-current="page" style="color: #333; font-weight: 600;">{{ product.brand.name }} {{ product.name }}</li>
         </ol>
     </nav>
-
     <div class="glass-product-card">
         <div class="row g-4 g-lg-5">
             

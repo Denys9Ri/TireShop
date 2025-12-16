@@ -5,7 +5,6 @@ import decimal
 
 # --- 0. НАЛАШТУВАННЯ ---
 class SiteSettings(models.Model):
-    # Змінив default=1.30 на default='1.30' (рядок), щоб уникнути float
     global_markup = models.DecimalField(max_digits=5, decimal_places=2, default='1.30', verbose_name="Націнка")
 
     class Meta: verbose_name = "Налаштування"
@@ -22,19 +21,13 @@ class Brand(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, null=True, blank=True)
+    image = models.ImageField("Логотип", upload_to='brands/', blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='budget')
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base = slugify(self.name)[:110] or "brand"
-            candidate = base
-            i = 2
-            while Brand.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
-                suffix = f"-{i}"
-                candidate = f"{base[:110 - len(suffix)]}{suffix}"
-                i += 1
-            self.slug = candidate
+            self.slug = slugify(self.name)[:110]
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -54,13 +47,19 @@ class Product(models.Model):
     diameter = models.IntegerField(default=0)
     seasonality = models.CharField(max_length=20, choices=SEASON_CHOICES, default='all-season')
 
-    # --- SEO ПОЛЯ (Нові) ---
-    seo_title = models.CharField(max_length=500, blank=True, null=True, verbose_name="SEO Title (Google)")
-    seo_h1 = models.CharField(max_length=255, blank=True, null=True, verbose_name="SEO H1 (Заголовок)")
+    # --- SEO ПОЛЯ ---
+    seo_title = models.CharField(max_length=500, blank=True, null=True, verbose_name="SEO Title")
+    seo_h1 = models.CharField(max_length=255, blank=True, null=True, verbose_name="SEO H1")
     seo_text = models.TextField(blank=True, null=True, verbose_name="SEO Текст")
     
     description = models.TextField(blank=True)
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # ЦІНИ
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Собівартість")
+    
+    # 🔥 ВАЖЛИВО: price тепер реальне поле, щоб працювали фільтри Min/Max 🔥
+    price = models.DecimalField("Ціна продажу", max_digits=10, decimal_places=0, default=0)
+    
     stock_quantity = models.IntegerField(default=0)
     discount_percent = models.IntegerField(default=0)
     
@@ -70,53 +69,51 @@ class Product(models.Model):
     # Технічні характеристики
     country = models.CharField(max_length=50, blank=True, null=True)
     year = models.IntegerField(default=2024)
-    load_index = models.CharField(max_length=10, blank=True, null=True, verbose_name="Індекс навантаження")
-    speed_index = models.CharField(max_length=10, blank=True, null=True, verbose_name="Індекс швидкості")
+    load_index = models.CharField(max_length=10, blank=True, null=True)
+    speed_index = models.CharField(max_length=10, blank=True, null=True)
     stud_type = models.CharField(max_length=50, default="Не шип")
     vehicle_type = models.CharField(max_length=50, default="Легковий")
 
-    # Авто-генерація SLUG
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = f"{self.brand.name if self.brand else ''}-{self.name}-{self.width}-{self.profile}-{self.diameter}"
-            self.slug = slugify(base_slug)[:250]
-        super().save(*args, **kwargs)
-
-    # 🔥 ВИПРАВЛЕНА ЛОГІКА ЦІНИ (Decimal only) 🔥
+    # Властивість для "Старої ціни" (щоб показувати закреслену ціну)
     @property
     def old_price(self):
+        if self.discount_percent > 0:
+            # Якщо є знижка, то price - це вже знижена ціна.
+            # Нам треба повернути ціну ДО знижки.
+            return int(self.price * 100 / (100 - self.discount_percent))
+        return None
+
+    # Авто-генерація SLUG та ЦІНИ при збереженні
+    def save(self, *args, **kwargs):
+        # 1. Генерація SLUG
+        if not self.slug:
+            b_name = self.brand.name if self.brand else 'no-brand'
+            base_slug = f"{b_name}-{self.name}-{self.width}-{self.profile}-{self.diameter}"
+            self.slug = slugify(base_slug)[:250]
+
+        # 2. Розрахунок ЦІНИ (Фіксуємо в базу)
         try:
             settings = SiteSettings.get_solo()
-            markup = settings.global_markup
-            # Гарантуємо, що markup це Decimal
-            if not isinstance(markup, decimal.Decimal):
-                markup = decimal.Decimal(str(markup))
+            markup = decimal.Decimal(str(settings.global_markup))
         except:
             markup = decimal.Decimal('1.30')
-            
-        # Гарантуємо, що cost_price це Decimal
-        cost = self.cost_price
-        if not isinstance(cost, decimal.Decimal):
-            cost = decimal.Decimal(str(cost))
-            
-        final_old = cost * markup
-        return final_old.quantize(decimal.Decimal('0.01'))
-
-    @property
-    def price(self):
-        base = self.old_price # Це вже Decimal (див. вище)
         
+        cost = decimal.Decimal(str(self.cost_price))
+        
+        # Базова ціна = Собівартість * Націнка
+        base_price = cost * markup
+        
+        # Якщо є знижка - віднімаємо її
         if self.discount_percent > 0:
-            # Формула: base * ((100 - discount) / 100)
-            # Все переводимо в Decimal перед математикою
-            d_100 = decimal.Decimal('100')
-            d_percent = decimal.Decimal(self.discount_percent)
+            factor = (decimal.Decimal('100') - decimal.Decimal(self.discount_percent)) / decimal.Decimal('100')
+            final_price = base_price * factor
+        else:
+            final_price = base_price
             
-            factor = (d_100 - d_percent) / d_100
-            new_price = base * factor
-            return new_price.quantize(decimal.Decimal('0.01'))
-            
-        return base
+        # Записуємо в реальне поле price (округлюємо до цілого)
+        self.price = int(final_price)
+
+        super().save(*args, **kwargs)
 
     def __str__(self): return self.slug
 
@@ -153,7 +150,7 @@ class SiteBanner(models.Model):
     title = models.CharField(max_length=100)
     image = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name="Фото (Файл)")
     image_url = models.URLField(max_length=1024, blank=True, null=True, verbose_name="Фото (Посилання)")
-    link = models.URLField(blank=True, null=True, verbose_name="Куди вести при кліку")
+    link = models.CharField(max_length=500, blank=True, null=True, verbose_name="Куди вести при кліку")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

@@ -1,111 +1,306 @@
 {% extends 'store/base.html' %}
 {% load static %}
 
-{% block title %}{{ seo_title|default:"Каталог шин | R16" }}{% endblock %}
-{% block meta_description %}
-{{ seo_description|default:"Купити шини в інтернет-магазині R16. Великий вибір, доставка по Україні." }}
-{% endblock %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block meta_description %}{{ seo_description|default:"Купити шини в інтернет-магазині R16. Великий вибір, низькі ціни, доставка по Україні." }}{% endblock %}
 
-{% block extra_head %}
-<link rel="canonical" href="{{ canonical_url|default:request.build_absolute_uri }}">
-<meta name="robots" content="{{ robots_meta|default:'index,follow' }}">
+{% block content %}
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [{
-    "@type": "ListItem",
-    "position": 1,
-    "name": "Головна",
-    "item": "https://r16.com.ua/"
+    "@type": "ListItem", "position": 1, "name": "Головна", "item": "https://r16.com.ua/"
   },{
-    "@type": "ListItem",
-    "position": 2,
-    "name": "{{ seo_h1|default:'Каталог шин' }}",
-    "item": "https://r16.com.ua{{ request.path }}"
+    "@type": "ListItem", "position": 2, "name": "{{ seo_h1 }}", "item": "https://r16.com.ua{{ request.path }}"
   }]
 }
 </script>
 
 {% if faq_schema %}
 <script type="application/ld+json">
-{{ faq_schema|safe }}
+    {{ faq_schema|safe }}
 </script>
 {% endif %}
-{% endblock %}
 
-{% block content %}
+<style>
+    /* БАНЕР */
+    .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .banner-img { width: 100%; height: auto; display: block; }
+    
+    /* АВТО-ТЕГИ */
+    .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
+    .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
+    .badge-fresh { background: #20c997; } 
+    .badge-top { background: #6610f2; }    
+    .badge-taxi { background: #fd7e14; }  
+    .badge-sale { background: #dc3545; }  
 
-<h1 class="page-title mb-4">
-    {{ seo_h1|default:"Всі шини" }}
-</h1>
+    /* КАЛЬКУЛЯТОР */
+    .set-price-calc { font-size: 0.85rem; color: #555; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px dashed #ccc; text-align: center; }
+    .set-price-calc strong { color: #0d6efd; }
 
-<div class="product-grid">
-    {% for product in page_obj %}
-        <div class="product-card">
+    /* КАРТКА */
+    .product-card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; overflow: hidden; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    .price-new { color: #dc3545; font-weight: 700; font-size: 1.8rem; }
+    .price-regular { color: #0d6efd; font-weight: 700; font-size: 1.8rem; }
+    .price-old { text-decoration: line-through; color: #888; font-size: 1rem; }
+    
+    /* СЕЗОН */
+    .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 2px solid white; }
+    .season-badge.winter { background-color: #0dcaf0; } 
+    .season-badge.summer { background-color: #fd7e14; } 
+    .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
+    
+    /* SEO БЛОК */
+    .seo-block-container { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
+    .seo-text-block h2 { font-size: 1.5rem; } 
+    .seo-text-block p { margin-bottom: 15px; font-size: 0.95rem; }
+    .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #e7f1ff; }
 
-            <a href="{% url 'store:product_detail' product.slug %}">
-                {% if product.photo_url %}
-                    <img src="{{ product.photo_url }}" alt="{{ product.name }}" loading="lazy">
-                {% elif product.photo %}
-                    <img src="{{ product.photo.url }}" alt="{{ product.name }}" loading="lazy">
-                {% else %}
-                    <img src="https://placehold.co/600x600?text=No+Photo" alt="{{ product.name }}">
-                {% endif %}
-            </a>
+    /* ВІДСТУПИ */
+    .catalog-header-compact { margin-top: 5px; margin-bottom: 5px; padding-top: 0; }
+    .search-bar-container { margin-bottom: 15px; margin-top: 5px; }
+    
+    /* Стиль для назви */
+    .product-name a { text-decoration: none; color: inherit; }
+    .product-name { font-size: 1.1rem; line-height: 1.3; }
 
-            <h3>
-                <a href="{% url 'store:product_detail' product.slug %}">
-                    {{ product.brand.name }} {{ product.name }}
-                </a>
-            </h3>
+    /* TAG CLOUD (NEW) */
+    .tag-cloud-btn { transition: all 0.2s; font-size: 0.85rem; }
+    .tag-cloud-btn:hover { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+</style>
 
-            <p>{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
+<div class="catalog-wrapper">
 
-            {% if product.discount_percent > 0 %}
-                <strong>{{ product.price }} грн</strong>
-                <del>{{ product.old_price }} грн</del>
-            {% else %}
-                <strong>{{ product.price }} грн</strong>
-            {% endif %}
+    <div class="container catalog-header-compact">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small" style="background: transparent; padding-left: 0; margin-bottom: 0;">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
+                <li class="breadcrumb-item active" aria-current="page" style="font-weight: 600; color: #333;">
+                    {{ seo_h1 }}
+                </li>
+            </ol>
+        </nav>
+    </div>
 
-            <form action="{% url 'store:cart_add' product.id %}" method="post">
-                {% csrf_token %}
-                <input type="number" name="quantity" value="1" min="1">
-                <button type="submit">В кошик</button>
+    <button id="filter-toggle" class="filter-toggle-btn">Фільтри</button>
+    <div id="filter-overlay" class="filter-overlay"></div>
+    <div id="filter-panel" class="filter-panel">
+        <h2>Пошук шин</h2>
+        <form method="get" action="{% url 'store:catalog' %}" class="filter-form">
+            {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
+            
+            <label>Сезон:</label>
+            <select name="season">
+                <option value="">Будь-який</option>
+                {% for value, display in all_seasons %}
+                    <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+            </select>
+            
+            <label>Ширина:</label>
+            <select name="width">
+                <option value="">Всі</option>
+                {% for width in all_widths %}
+                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
+                {% endfor %}
+            </select>
+            
+            <label>Профіль:</label>
+            <select name="profile">
+                <option value="">Всі</option>
+                {% for profile in all_profiles %}
+                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
+                {% endfor %}
+            </select>
+            
+            <label>Діаметр:</label>
+            <select name="diameter">
+                <option value="">Всі</option>
+                {% for diameter in all_diameters %}
+                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Бренд:</label>
+            <select name="brand">
+                <option value="">Всі бренди</option>
+                {% for brand in all_brands %}
+                    <option value="{{ brand.id }}" {% if brand.id == selected_brand_id %}selected{% endif %}>{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="filter-submit-btn">Фільтрувати</button>
+            <a href="{% url 'store:catalog' %}" class="filter-reset-btn">Скинути</a>
+        </form>
+    </div>
+
+    <div class="catalog-content">
+        
+        <div class="search-bar-container">
+            <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
+                
+                <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
+                    <i class="bi bi-robot"></i>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;">
+                    <i class="bi bi-search"></i>
+                </button>
             </form>
         </div>
-    {% empty %}
-        <p>Товарів не знайдено</p>
-    {% endfor %}
+
+        {% if show_banner and banners %}
+            <div class="banner-wrapper">
+                <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div class="carousel-inner">
+                        {% for banner in banners %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
+                                    {% if banner.image %}
+                                        <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
+                                    {% elif banner.image_url %}
+                                        <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
+                                    {% endif %}
+                                {% if banner.link %}</a>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <h1 class="page-title mb-4" style="margin-top: 0; font-size: 1.5rem;">
+            {{ seo_h1 }}
+        </h1>
+
+        <div class="product-grid">
+            {% for product in page_obj %}
+                <div class="product-card position-relative">
+                    
+                    <div class="auto-badges-container">
+                        {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
+                        {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
+                        {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ Бренд</span>{% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>{% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Супер Ціна</span>{% endif %}
+                    </div>
+
+                    {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem; margin-right: 2px;"></i><i class="bi bi-snow" style="font-size: 0.8rem;"></i></div>{% endif %}
+
+                    <a href="{% url 'store:product_detail' product.slug %}">
+                        {% if product.photo_url %}
+                            <img src="{{ product.photo_url }}" alt="{{ product.name }}" class="product-image" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+Image';">
+                        {% elif product.photo %}
+                            <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                        {% else %}
+                            <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" loading="lazy">
+                        {% endif %}
+                    </a>
+                    
+                    <div class="product-name h6 fw-bold mb-2">
+                        <a href="{% url 'store:product_detail' product.slug %}">{{ product.brand.name }} {{ product.name }}</a>
+                    </div>
+                    
+                    <p class="product-specs">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
+                    
+                    <div class="product-price-block mb-2">
+                        {% if product.discount_percent > 0 %}
+                            <div class="d-flex align-items-center gap-2"><span class="price-new">{{ product.price }} грн</span><small class="price-old">{{ product.old_price }} грн</small></div>
+                        {% else %}
+                            <p class="price-regular">{{ product.price }} грн</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="set-price-calc">Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong></div>
+                    <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
+                    
+                    <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
+                        {% csrf_token %}
+                        <div class="quantity-stepper">
+                            <button type="button" class="quantity-btn" data-direction="decrease">−</button>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                            <button type="button" class="quantity-btn" data-direction="increase">+</button>
+                        </div>
+                        <button type="submit" class="add-to-cart-btn">В кошик</button>
+                    </form>
+                </div>
+            {% empty %}
+                <div class="col-12 py-5 text-center w-100">
+                    <p class="text-muted fs-4">Товарів за цим запитом не знайдено.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+             <nav class="pagination"><div class="step-links">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">Попередня</a>{% endif %}<span class="current">Сторінка {{ page_obj.number }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">Наступна</a>{% endif %}</div></nav>
+        {% endif %}
+        
+        {% if cross_links %}
+        <div class="mt-5 p-4 bg-light rounded-4 border">
+            {% for group in cross_links %}
+                <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {% for link in group.items %}
+                        <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white">
+                            {{ link.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="seo-text-block mt-5 p-4 rounded-4 seo-block-container">
+            <h2 class="fw-bold mb-3 text-primary">{{ seo_h1 }}</h2>
+            <div class="text-muted mb-4">
+               {{ seo_description|linebreaks }}
+            </div>
+
+            {% if faq_schema %}
+            <h4 class="fw-bold mt-4 mb-3">Часті питання (FAQ)</h4>
+            <div class="accordion" id="dynamicFaq">
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q1">💰 Яка ціна на {{ seo_h1 }}?</button></h2>
+                    <div id="q1" class="accordion-collapse collapse"><div class="accordion-body text-muted">Ми пропонуємо конкурентні ціни на ринку. Перевірте каталог вище для актуальних пропозицій.</div></div>
+                </div>
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q2">🚚 Чи є доставка?</button></h2>
+                    <div id="q2" class="accordion-collapse collapse"><div class="accordion-body text-muted">Так, ми доставляємо Новою Поштою по всій Україні (Київ, Харків, Одеса, Дніпро, Львів та інші міста).</div></div>
+                </div>
+                <div class="accordion-item border-0 mb-2">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q3">🛡 Чи є гарантія?</button></h2>
+                    <div id="q3" class="accordion-collapse collapse"><div class="accordion-body text-muted">Так, ми надаємо гарантію на заводський брак, а також можливість повернення протягом 14 днів.</div></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
 </div>
 
-{% if page_obj.has_other_pages %}
-<nav>
-    {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">←</a>
-    {% endif %}
-    <span>Сторінка {{ page_obj.number }}</span>
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">→</a>
-    {% endif %}
-</nav>
-{% endif %}
-
-{% if cross_links %}
-<div class="seo-links">
-    {% for group in cross_links %}
-        <h4>{{ group.title }}</h4>
-        {% for link in group.items %}
-            <a href="{{ link.url }}">{{ link.text }}</a>
-        {% endfor %}
-    {% endfor %}
-</div>
-{% endif %}
-
-<div class="seo-text">
-    <p>{{ seo_description|default:"Купити шини в R16 з доставкою по Україні." }}</p>
-</div>
-
+<script>
+  const filterBtn = document.getElementById('filter-toggle');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterOverlay = document.getElementById('filter-overlay');
+  if(filterBtn) {
+      filterBtn.addEventListener('click', () => { filterPanel.classList.toggle('is-active'); filterOverlay.classList.toggle('is-active'); });
+      filterOverlay.addEventListener('click', () => { filterPanel.classList.remove('is-active'); filterOverlay.classList.remove('is-active'); });
+  }
+  document.querySelectorAll('.product-card__cart-form .quantity-stepper').forEach((stepper) => {
+    const input = stepper.querySelector('input[name="quantity"]');
+    const buttons = stepper.querySelectorAll('.quantity-btn');
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const direction = button.dataset.direction;
+        let current = parseInt(input.value, 10) || 1;
+        if (direction === 'increase') input.value = current + 1;
+        if (direction === 'decrease' && current > 1) input.value = current - 1;
+      });
+    });
+  });
+</script>
 {% endblock %}

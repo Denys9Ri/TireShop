@@ -5,9 +5,8 @@ from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 
-# Імпорти для головних сторінок
+# Імпортуємо Sitemap класи
 from store.sitemaps import ProductSitemap, StaticViewSitemap
-from store.views import catalog_view, contacts_view, delivery_payment_view, warranty_view, about_view
 
 sitemaps = {
     'products': ProductSitemap,
@@ -21,27 +20,27 @@ def robots_txt(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # Головні сторінки
-    path('', catalog_view, name='catalog'),
-    path('contacts/', contacts_view, name='contacts'),
-    path('delivery-and-payment/', delivery_payment_view, name='delivery_payment'),
-    path('warranty-and-returns/', warranty_view, name='warranty'),
-
-    # Підключення додатків (ТУТ БУЛА ПОМИЛКА, ТЕПЕР ВИПРАВЛЕНО)
-    path('store/', include('store.urls')),
-    path('users/', include('users.urls')),
-    path('accounts/', include('django.contrib.auth.urls')), 
-    
-    # SEO
+    # 1. СЕРВІСНІ СТОРІНКИ (SEO)
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', robots_txt),
 
-    path('about-us/', about_view, name='about'),
+    # 2. КОРИСТУВАЧІ ТА АВТОРИЗАЦІЯ
+    # Важливо: users має бути перед store, щоб не перекриватись
+    path('users/', include('users.urls')), 
+    path('accounts/', include('django.contrib.auth.urls')), 
+
+    # 3. МАГАЗИН (ГОЛОВНИЙ ДОДАТОК)
+    # Ми підключаємо його в корінь (''), а не в 'store/'
+    # Тепер store:catalog буде вести на головну сторінку "/"
+    path('', include('store.urls')),
 ]
 
-# Медіа файли на сервері
+# Медіа файли (для локальної розробки та Render, якщо налаштовано whiteoise/serve)
 urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {
         'document_root': settings.MEDIA_ROOT,
+    }),
+    re_path(r'^static/(?P<path>.*)$', serve, {
+        'document_root': settings.STATIC_ROOT,
     }),
 ]

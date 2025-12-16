@@ -7,7 +7,7 @@
     
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            var gtmId = 'G-F63L5ESNN8'; // Ваш ID
+            var gtmId = 'G-F63L5ESNN8'; 
             var gtmLoaded = false;
 
             function loadGTM() {
@@ -25,7 +25,6 @@
                 gtag('config', gtmId);
             }
 
-            // Завантажуємо при русі миші, скролі, кліку або через 4 секунди
             window.addEventListener('mousemove', loadGTM, {once: true});
             window.addEventListener('scroll', loadGTM, {once: true});
             window.addEventListener('touchstart', loadGTM, {once: true});
@@ -35,15 +34,13 @@
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
 
-    <meta name="description" content="{% block meta_description %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.{% endblock %}">
+    <title>{% block title %}R16.com.ua - Шини Літні, Зимові та Всесезонні{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні.{% endblock %}">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
 
-    <title>{% block title %}R16.com.ua - Шини Літні, Зимові та Всесезонні{% endblock %}</title>
-
-    {# ✅ SEO/Schema блок для сторінок (catalog/product/seo-matrix) #}
     {% block extra_head %}{% endblock %}
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,23 +87,23 @@
 
 <header class="navbar">
     <div class="navbar-brand">
-        <a href="{% url 'catalog' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img"></a>
+        <a href="{% url 'store:catalog' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img"></a>
     </div>
     
     <div class="navbar-menu">
         <a href="tel:+380666881491" style="color: #fff; text-decoration: none; font-weight: bold; margin-right: 10px;"><i class="bi bi-phone"></i> (066) 688-14-91</a>
         
-        <a href="{% url 'about' %}" class="navbar-item">Про нас</a>
-        <a href="{% url 'delivery_payment' %}" class="navbar-item">Доставка</a>
+        <a href="{% url 'store:about' %}" class="navbar-item">Про нас</a>
+        <a href="{% url 'store:delivery_payment' %}" class="navbar-item">Доставка</a>
         <a href="{% url 'store:cart_detail' %}" class="navbar-item"><i class="bi bi-cart3" style="font-size: 1.3rem;"></i> Кошик ({{ cart|length }})</a>
         
         <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 20px; margin: 0 5px;"></div>
 
         {% if user.is_authenticated %}
             <a href="{% url 'users:profile' %}" class="navbar-item"><i class="bi bi-person-circle"></i> Кабінет</a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">{% csrf_token %}<button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer;">Вийти</button></form>
+            <form action="{% url 'users:logout' %}" method="post" style="display:inline;">{% csrf_token %}<button type="submit" class="navbar-item" style="background:none; border:none; cursor:pointer;">Вийти</button></form>
         {% else %}
-            <a href="{% url 'login' %}" class="navbar-item" style="font-weight: normal; font-size: 0.95rem; opacity: 0.9;">Вхід</a>
+            <a href="{% url 'users:login' %}" class="navbar-item" style="font-weight: normal; font-size: 0.95rem; opacity: 0.9;">Вхід</a>
             <a href="{% url 'users:register' %}" class="navbar-item" style="font-weight: normal; font-size: 0.95rem; opacity: 0.9;">Реєстрація</a>
         {% endif %}
     </div>
@@ -115,16 +112,16 @@
 </header>
 
 <div class="mobile-menu" id="mobile-menu">
-    <a href="{% url 'catalog' %}"><i class="bi bi-shop"></i> Каталог</a>
-    <a href="{% url 'about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
-    <a href="{% url 'contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
-    <a href="{% url 'delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
+    <a href="{% url 'store:catalog' %}"><i class="bi bi-shop"></i> Каталог</a>
+    <a href="{% url 'store:about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
+    <a href="{% url 'store:contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
+    <a href="{% url 'store:delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
     <a href="{% url 'store:cart_detail' %}"><i class="bi bi-cart3"></i> Кошик ({{ cart|length }})</a>
     {% if user.is_authenticated %}
         <a href="{% url 'users:profile' %}"><i class="bi bi-person"></i> Мій Кабінет</a>
-        <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-button-mobile"><i class="bi bi-box-arrow-right"></i> Вийти</button></form>
+        <form action="{% url 'users:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-button-mobile"><i class="bi bi-box-arrow-right"></i> Вийти</button></form>
     {% else %}
-        <a href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i> Увійти</a>
+        <a href="{% url 'users:login' %}"><i class="bi bi-box-arrow-in-right"></i> Увійти</a>
         <a href="{% url 'users:register' %}"><i class="bi bi-person-plus"></i> Реєстрація</a>
     {% endif %}
 </div>
@@ -145,10 +142,10 @@
             <div class="d-flex justify-content-center gap-3 flex-wrap"><span>Пн–Пт: 09:00 – 19:00</span><span>Сб: 10:00 – 16:00</span><span style="color: #ff6b6b;">Нд: Вихідний</span></div>
         </div>
         <div class="mt-4" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; font-size: 0.9rem;">
-            <a href="{% url 'about' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Про нас</a>
-            <a href="{% url 'delivery_payment' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Доставка</a>
-            <a href="{% url 'warranty' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Гарантія</a>
-            <a href="{% url 'contacts' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Контакти</a>
+            <a href="{% url 'store:about' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Про нас</a>
+            <a href="{% url 'store:delivery_payment' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Доставка</a>
+            <a href="{% url 'store:warranty' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Гарантія</a>
+            <a href="{% url 'store:contacts' %}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Контакти</a>
         </div>
     </div>
     <hr style="opacity: 0.2; margin: 20px auto; max-width: 200px;">

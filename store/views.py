@@ -40,6 +40,7 @@ def send_telegram(message):
 
 
 def get_base_products():
+    # IMPORTANT: в Product немає price, є cost_price
     return Product.objects.filter(width__gt=0, diameter__gt=0).annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)),
@@ -61,7 +62,6 @@ def find_brand_by_slug(brand_slug: str):
     if not target:
         return None
 
-    # швидкий варіант без OCR/SQL трюків: по всіх брендах
     for b in Brand.objects.all().only("id", "name"):
         if slugify(b.name).lower() == target:
             return b
@@ -69,14 +69,10 @@ def find_brand_by_slug(brand_slug: str):
 
 
 def build_canonical(request):
-    # канонікал без параметрів (?page=...)
     return request.build_absolute_uri(request.path)
 
 
 def robots_policy(prod_count: int, deep: bool):
-    """
-    Контроль індексації, щоб не плодити тисячі тонких сторінок.
-    """
     if prod_count <= 0:
         return "noindex,follow"
     if deep and prod_count < 3:
@@ -88,22 +84,15 @@ def generate_seo_meta(brand_obj=None, season_slug=None, w=None, p=None, d=None, 
     parts = []
     season_info = SEASONS_MAP.get(season_slug)
 
-    # H1
     parts.append(season_info['ua'] if season_info else "Шини")
     if brand_obj:
         parts.append(brand_obj.name)
 
-    size_str = ""
     if w and p and d:
-        size_str = f"{w}/{p} R{d}"
-        parts.append(size_str)
+        parts.append(f"{w}/{p} R{d}")
 
     h1 = " ".join(parts)
-
-    # Title (без переспаму; ціна в Title не обовʼязкова)
     title = f"Купити {h1} — ціни та наявність | R16"
-
-    # Description (без емодзі — краще для серйозного CTR і якості)
     desc = f"{h1}: ціни від {min_price} грн, доставка по Україні, гарантія та підбір шин. R16.com.ua"
 
     return {'title': title, 'h1': h1, 'description': desc}
@@ -146,13 +135,8 @@ def get_faq_schema(h1_title, min_price, count):
 
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
-    """
-    Генерує 'Хмару тегів' для перелінковки (SEO)
-    ВАЖЛИВО: у URL передаємо slugify(name), не name
-    """
     links = []
 
-    # 1) Якщо ми в Сезоні -> показати популярні розміри
     if current_season_slug and not (w and p and d):
         top_sizes = [(175, 70, 13), (185, 65, 14), (195, 65, 15), (205, 55, 16), (215, 60, 16), (225, 45, 17), (235, 55, 18)]
         group = {'title': 'Популярні розміри:', 'items': []}
@@ -166,7 +150,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
                 pass
         links.append(group)
 
-    # 2) Якщо ми вибрали розмір -> показати ТОП бренди
     if w and p and d:
         brands_qs = Brand.objects.filter(
             product__width=w, product__profile=p, product__diameter=d
@@ -190,7 +173,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
                     pass
             links.append(group)
 
-    # 3) Якщо ми в Бренді -> показати інші сезони
     if current_brand:
         group = {'title': f'Інші сезони {current_brand.name}:', 'items': []}
         for slug, info in SEASONS_MAP.items():
@@ -208,19 +190,17 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
     return links
 
 
-# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO MATRIX) 🔥 ---
+# --- 🔥 SEO MATRIX ---
 def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     products = get_base_products()
     brand_obj = None
 
-    # 1) Бренд (по slugify(name))
     if brand_slug:
         brand_obj = find_brand_by_slug(brand_slug)
         if not brand_obj:
             raise Http404
         products = products.filter(brand=brand_obj)
 
-    # 2) Сезон
     season_db = None
     if season_slug:
         if season_slug not in SEASONS_MAP:
@@ -228,28 +208,24 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         season_db = SEASONS_MAP[season_slug]['db']
         products = products.filter(seasonality=season_db)
 
-    # 3) Розмір
     if width and profile and diameter:
         products = products.filter(width=width, profile=profile, diameter=diameter)
 
-    # 4) Статистика
-    stats = products.aggregate(min_price=Min('price'), count=Count('id'))
+    # IMPORTANT: price -> cost_price
+    stats = products.aggregate(min_price=Min('cost_price'), count=Count('id'))
     min_price = int(stats['min_price'] or 0)
     prod_count = int(stats['count'] or 0)
 
-    # 5) SEO meta + schema + перелінковка
     seo_data = generate_seo_meta(brand_obj, season_slug, width, profile, diameter, min_price)
     faq_schema = get_faq_schema(seo_data['h1'], min_price, prod_count)
     cross_links = get_cross_links(season_slug, brand_obj, width, profile, diameter)
 
-    # 6) Technical SEO
     canonical_url = build_canonical(request)
-    deep_page = bool((brand_obj and season_slug) or (width and profile and diameter) or (brand_obj and width))
+    deep_page = bool((brand_obj and season_slug) or (width and profile and diameter))
     robots_meta = robots_policy(prod_count, deep_page)
 
-    # 7) Пагінація
     brands = Brand.objects.all().order_by('name')
-    paginator = Paginator(products.order_by('status_order', 'price'), 12)
+    paginator = Paginator(products.order_by('status_order', 'cost_price'), 12)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     return render(request, 'store/catalog.html', {
@@ -260,12 +236,10 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         'all_diameters': Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter'),
         'all_seasons': Product.SEASON_CHOICES,
 
-        # Selected filters
         'selected_brand_id': brand_obj.id if brand_obj else None,
         'selected_season': season_db,
         'selected_width': width, 'selected_profile': profile, 'selected_diameter': diameter,
 
-        # SEO
         'seo_title': seo_data['title'],
         'seo_h1': seo_data['h1'],
         'seo_description': seo_data['description'],
@@ -273,13 +247,12 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         'cross_links': cross_links,
         'is_seo_page': True,
 
-        # NEW SEO tech
         'canonical_url': canonical_url,
         'robots_meta': robots_meta,
     })
 
 
-# --- ЗВИЧАЙНИЙ КАТАЛОГ (Для ?filter=...) ---
+# --- ЗВИЧАЙНИЙ КАТАЛОГ ---
 def catalog_view(request):
     products = get_base_products()
 
@@ -315,7 +288,7 @@ def catalog_view(request):
     if s_diameter:
         products = products.filter(diameter=s_diameter)
 
-    paginator = Paginator(products.order_by('status_order', 'price'), 12)
+    paginator = Paginator(products.order_by('status_order', 'cost_price'), 12)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     q_params = request.GET.copy()
@@ -347,7 +320,7 @@ def catalog_view(request):
     })
 
 
-# --- PRODUCT DETAIL (SMART BREADCRUMBS) ---
+# --- PRODUCT DETAIL ---
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
 
@@ -355,35 +328,33 @@ def product_detail_view(request, slug):
         width=product.width, profile=product.profile, diameter=product.diameter
     ).exclude(id=product.id)[:4]
 
-    seo_title = f"{product.brand.name} {product.name} {product.width}/{product.profile} R{product.diameter} — Купити | R16"
+    # IMPORTANT: не чіпаємо Brand.slug взагалі, тільки product.brand.name
+    brand_name = product.brand.name if product.brand else ""
+    seo_title = f"{brand_name} {product.name} {product.width}/{product.profile} R{product.diameter} — Купити | R16"
 
     parent_category = None
     season_slug = None
-
     for k, v in SEASONS_MAP.items():
         if v['db'] == product.seasonality:
             season_slug = k
             break
 
-    b_slug = slugify(product.brand.name) if product.brand else None
+    b_slug = slugify(brand_name) if brand_name else None
 
     if season_slug and b_slug:
-        # 1: Brand + Season + Size
         try:
             url = reverse('store:seo_full', kwargs={
                 'brand_slug': b_slug, 'season_slug': season_slug,
                 'width': product.width, 'profile': product.profile, 'diameter': product.diameter
             })
-            name = f"{SEASONS_MAP[season_slug]['ua']} {product.brand.name} {product.width}/{product.profile} R{product.diameter}"
+            name = f"{SEASONS_MAP[season_slug]['ua']} {brand_name} {product.width}/{product.profile} R{product.diameter}"
             parent_category = {'name': name, 'url': url}
         except:
-            # 2: Brand + Season
             try:
                 url = reverse('store:seo_brand_season', kwargs={'brand_slug': b_slug, 'season_slug': season_slug})
-                name = f"{SEASONS_MAP[season_slug]['ua']} {product.brand.name}"
+                name = f"{SEASONS_MAP[season_slug]['ua']} {brand_name}"
                 parent_category = {'name': name, 'url': url}
             except:
-                # 3: Season
                 parent_category = {'name': SEASONS_MAP[season_slug]['ua'], 'url': reverse('store:seo_season', kwargs={'season_slug': season_slug})}
 
     return render(request, 'store/product_detail.html', {
@@ -411,7 +382,7 @@ def cart_update_quantity_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     try:
         qty = int(request.POST.get('quantity', 1))
-        if qty > product.stock_quantity:
+        if product.stock_quantity is not None and qty > product.stock_quantity:
             qty = product.stock_quantity
         if qty > 0:
             cart.add(product, qty, update_quantity=True)

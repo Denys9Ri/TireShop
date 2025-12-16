@@ -7,6 +7,7 @@ from django.http import JsonResponse, Http404
 from django.db import transaction
 from django.urls import reverse
 from django.utils.text import slugify
+
 import json
 import requests
 import re
@@ -25,7 +26,7 @@ SEASONS_MAP = {
 
 # --- 🧠 ДОПОМІЖНІ ФУНКЦІЇ ---
 
-def send_telegram(message):
+def send_telegram(message: str):
     try:
         token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
         chat_id = getattr(settings, "TELEGRAM_CHAT_ID", None)
@@ -35,12 +36,12 @@ def send_telegram(message):
                 data={'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'},
                 timeout=5
             )
-    except:
+    except Exception:
         pass
 
 
 def get_base_products():
-    # IMPORTANT: в Product немає price, є cost_price
+    # IMPORTANT: в Product немає DB-поля price, є cost_price і property price.
     return Product.objects.filter(width__gt=0, diameter__gt=0).annotate(
         status_order=Case(
             When(stock_quantity__gt=0, then=Value(0)),
@@ -48,24 +49,6 @@ def get_base_products():
             output_field=IntegerField()
         )
     )
-
-
-def brand_slug_from_obj(brand_obj: Brand) -> str:
-    return slugify(brand_obj.name) if brand_obj else ""
-
-
-def find_brand_by_slug(brand_slug: str):
-    """
-    Ми НЕ маємо Brand.slug в БД. Тому робимо slugify(name) на льоту.
-    """
-    target = (brand_slug or "").strip().lower()
-    if not target:
-        return None
-
-    for b in Brand.objects.all().only("id", "name"):
-        if slugify(b.name).lower() == target:
-            return b
-    return None
 
 
 def build_canonical(request):
@@ -78,6 +61,28 @@ def robots_policy(prod_count: int, deep: bool):
     if deep and prod_count < 3:
         return "noindex,follow"
     return "index,follow"
+
+
+def find_brand_by_slug(brand_slug: str):
+    """
+    У тебе є Brand.slug в models.py.
+    Тому шукаємо по ньому. Якщо раптом slug порожній у якихось записів —
+    fallback: slugify(name).
+    """
+    target = (brand_slug or "").strip().lower()
+    if not target:
+        return None
+
+    # 1) Нормальний шлях: по Brand.slug
+    b = Brand.objects.filter(slug=target).only("id", "name", "slug").first()
+    if b:
+        return b
+
+    # 2) Fallback: slugify(name) (на випадок, якщо slug не заповнений)
+    for b in Brand.objects.all().only("id", "name"):
+        if slugify(b.name).lower() == target:
+            return b
+    return None
 
 
 def generate_seo_meta(brand_obj=None, season_slug=None, w=None, p=None, d=None, min_price=0):
@@ -94,13 +99,13 @@ def generate_seo_meta(brand_obj=None, season_slug=None, w=None, p=None, d=None, 
     h1 = " ".join(parts)
     title = f"Купити {h1} — ціни та наявність | R16"
     desc = f"{h1}: ціни від {min_price} грн, доставка по Україні, гарантія та підбір шин. R16.com.ua"
-
     return {'title': title, 'h1': h1, 'description': desc}
 
 
 def get_faq_schema(h1_title, min_price, count):
     if count == 0:
         return None
+
     faq = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -135,8 +140,13 @@ def get_faq_schema(h1_title, min_price, count):
 
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
+    """
+    Генерує "хмару тегів" для перелінковки (SEO).
+    Використовуємо brand.slug якщо є.
+    """
     links = []
 
+    # 1) Якщо ми в Сезоні -> показати популярні розміри
     if current_season_slug and not (w and p and d):
         top_sizes = [(175, 70, 13), (185, 65, 14), (195, 65, 15), (205, 55, 16), (215, 60, 16), (225, 45, 17), (235, 55, 18)]
         group = {'title': 'Популярні розміри:', 'items': []}
@@ -146,10 +156,11 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
                     'season_slug': current_season_slug, 'width': sw, 'profile': sp, 'diameter': sd
                 })
                 group['items'].append({'text': f"{sw}/{sp} R{sd}", 'url': url})
-            except:
+            except Exception:
                 pass
         links.append(group)
 
+    # 2) Якщо ми вибрали розмір -> показати ТОП бренди
     if w and p and d:
         brands_qs = Brand.objects.filter(
             product__width=w, product__profile=p, product__diameter=d
@@ -159,7 +170,7 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
             group = {'title': 'Популярні бренди в цьому розмірі:', 'items': []}
             for b in brands_qs:
                 try:
-                    b_slug = slugify(b.name)
+                    b_slug = b.slug if getattr(b, "slug", None) else slugify(b.name)
                     if current_season_slug:
                         url = reverse('store:seo_full', kwargs={
                             'brand_slug': b_slug,
@@ -169,21 +180,23 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
                     else:
                         url = reverse('store:seo_brand', kwargs={'brand_slug': b_slug})
                     group['items'].append({'text': b.name, 'url': url})
-                except:
+                except Exception:
                     pass
             links.append(group)
 
+    # 3) Якщо ми в Бренді -> показати інші сезони
     if current_brand:
         group = {'title': f'Інші сезони {current_brand.name}:', 'items': []}
         for slug, info in SEASONS_MAP.items():
             if slug != current_season_slug:
                 try:
+                    b_slug = current_brand.slug if getattr(current_brand, "slug", None) else slugify(current_brand.name)
                     url = reverse('store:seo_brand_season', kwargs={
-                        'brand_slug': slugify(current_brand.name),
+                        'brand_slug': b_slug,
                         'season_slug': slug
                     })
                     group['items'].append({'text': info['ua'], 'url': url})
-                except:
+                except Exception:
                     pass
         links.append(group)
 
@@ -195,12 +208,14 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
     products = get_base_products()
     brand_obj = None
 
+    # Brand
     if brand_slug:
         brand_obj = find_brand_by_slug(brand_slug)
         if not brand_obj:
             raise Http404
         products = products.filter(brand=brand_obj)
 
+    # Season
     season_db = None
     if season_slug:
         if season_slug not in SEASONS_MAP:
@@ -208,10 +223,11 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
         season_db = SEASONS_MAP[season_slug]['db']
         products = products.filter(seasonality=season_db)
 
+    # Size
     if width and profile and diameter:
         products = products.filter(width=width, profile=profile, diameter=diameter)
 
-    # IMPORTANT: price -> cost_price
+    # IMPORTANT: price -> cost_price (бо price це @property)
     stats = products.aggregate(min_price=Min('cost_price'), count=Count('id'))
     min_price = int(stats['min_price'] or 0)
     prod_count = int(stats['count'] or 0)
@@ -225,11 +241,19 @@ def seo_matrix_view(request, brand_slug=None, season_slug=None, width=None, prof
     robots_meta = robots_policy(prod_count, deep_page)
 
     brands = Brand.objects.all().order_by('name')
+
     paginator = Paginator(products.order_by('status_order', 'cost_price'), 12)
     page_obj = paginator.get_page(request.GET.get('page'))
 
+    # Для пагінації в шаблоні (якщо ти його використовуєш)
+    q_params = request.GET.copy()
+    if 'page' in q_params:
+        del q_params['page']
+
     return render(request, 'store/catalog.html', {
         'page_obj': page_obj,
+        'filter_query_string': q_params.urlencode(),
+
         'all_brands': brands,
         'all_widths': Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width'),
         'all_profiles': Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile'),
@@ -298,6 +322,7 @@ def catalog_view(request):
     return render(request, 'store/catalog.html', {
         'page_obj': page_obj,
         'filter_query_string': q_params.urlencode(),
+
         'all_brands': brands,
         'all_widths': widths,
         'all_profiles': profiles,
@@ -328,7 +353,6 @@ def product_detail_view(request, slug):
         width=product.width, profile=product.profile, diameter=product.diameter
     ).exclude(id=product.id)[:4]
 
-    # IMPORTANT: не чіпаємо Brand.slug взагалі, тільки product.brand.name
     brand_name = product.brand.name if product.brand else ""
     seo_title = f"{brand_name} {product.name} {product.width}/{product.profile} R{product.diameter} — Купити | R16"
 
@@ -339,7 +363,10 @@ def product_detail_view(request, slug):
             season_slug = k
             break
 
-    b_slug = slugify(brand_name) if brand_name else None
+    # В SEO-url беремо brand.slug якщо є
+    b_slug = None
+    if product.brand:
+        b_slug = product.brand.slug if getattr(product.brand, "slug", None) else slugify(product.brand.name)
 
     if season_slug and b_slug:
         try:
@@ -349,13 +376,16 @@ def product_detail_view(request, slug):
             })
             name = f"{SEASONS_MAP[season_slug]['ua']} {brand_name} {product.width}/{product.profile} R{product.diameter}"
             parent_category = {'name': name, 'url': url}
-        except:
+        except Exception:
             try:
                 url = reverse('store:seo_brand_season', kwargs={'brand_slug': b_slug, 'season_slug': season_slug})
                 name = f"{SEASONS_MAP[season_slug]['ua']} {brand_name}"
                 parent_category = {'name': name, 'url': url}
-            except:
-                parent_category = {'name': SEASONS_MAP[season_slug]['ua'], 'url': reverse('store:seo_season', kwargs={'season_slug': season_slug})}
+            except Exception:
+                parent_category = {
+                    'name': SEASONS_MAP[season_slug]['ua'],
+                    'url': reverse('store:seo_season', kwargs={'season_slug': season_slug})
+                }
 
     return render(request, 'store/product_detail.html', {
         'product': product,
@@ -365,9 +395,10 @@ def product_detail_view(request, slug):
     })
 
 
-# --- ІНШІ ФУНКЦІЇ ---
+# --- CART / ORDER ---
 def cart_detail_view(request):
     return render(request, 'store/cart.html', {'cart': Cart(request)})
+
 
 @require_POST
 def cart_add_view(request, product_id):
@@ -375,6 +406,7 @@ def cart_add_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     cart.add(product=product, quantity=int(request.POST.get('quantity', 1)))
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
+
 
 @require_POST
 def cart_update_quantity_view(request, product_id):
@@ -388,14 +420,16 @@ def cart_update_quantity_view(request, product_id):
             cart.add(product, qty, update_quantity=True)
         else:
             cart.remove(product)
-    except:
+    except Exception:
         pass
     return redirect('store:cart_detail')
+
 
 def cart_remove_view(request, product_id):
     cart = Cart(request)
     cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
+
 
 def checkout_view(request):
     cart = Cart(request)
@@ -413,6 +447,7 @@ def checkout_view(request):
             city="Київ, вул. Володимира Качали, 3" if is_pickup else request.POST.get('city'),
             nova_poshta_branch=None if is_pickup else request.POST.get('nova_poshta_branch')
         )
+
         for item in cart:
             OrderItem.objects.create(
                 order=order,
@@ -427,21 +462,27 @@ def checkout_view(request):
 
     return render(request, 'store/checkout.html')
 
+
 def about_view(request):
     return render(request, 'store/about.html')
+
 
 def contacts_view(request):
     return render(request, 'store/contacts.html')
 
+
 def delivery_payment_view(request):
     return render(request, 'store/delivery_payment.html')
+
 
 def warranty_view(request):
     return render(request, 'store/warranty.html')
 
+
 @require_POST
 def bot_callback_view(request):
     return JsonResponse({'status': 'ok'})
+
 
 @transaction.atomic
 def sync_google_sheet_view(request):

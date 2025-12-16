@@ -262,8 +262,15 @@
         <div class="seo-text-block mt-5 p-4 rounded-4 seo-block-container">
             <h2 class="fw-bold mb-3 text-primary">{{ seo_h1 }}</h2>
             <div class="text-muted mb-4">
-               {{ seo_description|linebreaks }}
-            </div>
+   <p>{{ seo_description }}</p>
+
+   <p>
+     Інтернет-магазин R16 пропонує {{ seo_h1|lower }} з доставкою по Україні.
+     У каталозі представлені популярні бренди шин, актуальні розміри та сезонні моделі
+     для легкових автомобілів. Наші спеціалісти допоможуть підібрати оптимальний варіант
+     під ваш автомобіль та бюджет.
+   </p>
+</div>
 
             {% if faq_schema %}
             <h4 class="fw-bold mt-4 mb-3">Часті питання (FAQ)</h4>

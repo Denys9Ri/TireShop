@@ -210,54 +210,80 @@
         mobileMenu.classList.toggle('is-active');
     });
 
-    // 🔥 JS ДЛЯ ШВИДКОГО КОШИКА (AJAX) 🔥
+    // --- ОНОВЛЕНИЙ JS ДЛЯ ШВИДКОГО КОШИКА ---
     document.addEventListener('DOMContentLoaded', function() {
         document.body.addEventListener('submit', function(e) {
             const form = e.target;
             
-            // Перевіряємо, чи це форма додавання в кошик (по URL або класу)
-            if (form.action && form.action.includes('/cart/add/')) {
-                e.preventDefault(); // Зупиняємо перезавантаження сторінки
+            // 1. Перевіряємо, чи має форма наш спеціальний клас
+            // АБО чи веде вона на сторінку додавання (для страховки)
+            const isCartForm = form.classList.contains('ajax-cart-form') || 
+                               (form.action && form.action.includes('/add/'));
+
+            if (isCartForm) {
+                e.preventDefault(); // 🛑 СТОП! Не перезавантажуй сторінку!
                 
-                // Пробуємо знайти ID товару з атрибута data-product-id або з URL
-                const productId = form.getAttribute('data-product-id') || form.action.split('/').slice(-2)[0];
-                
-                if (!productId) {
-                    form.submit(); // Якщо не знайшли ID, просто відправляємо як раніше
-                    return;
+                // 2. Шукаємо кнопку і додаємо анімацію "Завантаження"
+                const btn = form.querySelector('button[type="submit"]');
+                const originalBtnContent = btn ? btn.innerHTML : '';
+                if(btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
                 }
+
+                // 3. Беремо ID товару
+                // Скрипт тепер розумний: бере або з атрибута, або витягує з посилання
+                let productId = form.getAttribute('data-product-id');
+                if (!productId && form.action) {
+                    // Якщо action="/add/42/", то split дасть масив, беремо передостанній елемент
+                    const parts = form.action.split('/'); 
+                    // видаляємо пусті елементи і беремо останній значущий
+                    productId = parts.filter(part => part).pop();
+                }
+
+                console.log("Adding product ID:", productId); // Для перевірки в консолі (F12)
 
                 const url = `/cart/add-ajax/${productId}/`;
                 
-                // Відкриваємо шторку (використовуємо Bootstrap API)
-                const offcanvasEl = document.getElementById('quickCart');
-                const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
-                bsOffcanvas.show();
-
-                // Відправляємо запит на сервер
+                // 4. Відправляємо запит
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
-                    // 1. Оновлюємо вміст шторки
+                    // 5. Відкриваємо шторку
+                    const offcanvasEl = document.getElementById('quickCart');
+                    const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
+                    
+                    // Оновлюємо HTML всередині
                     document.getElementById('quickCartBody').innerHTML = data.html;
                     
-                    // 2. Оновлюємо лічильник в шапці (Desktop)
+                    // Оновлюємо лічильники
                     const badge = document.getElementById('cart-badge');
                     if (badge) badge.innerText = `(${data.cart_len})`;
                     
-                    // 3. Оновлюємо лічильник в мобільному меню (Mobile)
                     const badgeMobile = document.getElementById('cart-badge-mobile');
                     if (badgeMobile) badgeMobile.innerText = `(${data.cart_len})`;
+
+                    bsOffcanvas.show(); // Показуємо шторку
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    // Якщо помилка - просто перезавантажимо сторінку
-                    // window.location.reload(); 
+                    // Якщо щось пішло не так — просто перезавантажуємо сторінку по-старому
+                    // form.submit(); // Розкоментуй, якщо хочеш фолбек
+                })
+                .finally(() => {
+                    // Повертаємо кнопку до життя
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnContent;
+                    }
                 });
             }
         });

@@ -12,11 +12,13 @@
     <div class="cart-offcanvas-list flex-grow-1 overflow-auto pe-2">
         {% for item in cart %}
         <div class="d-flex align-items-center mb-3 p-3 rounded-4 cart-item-glass position-relative">
-            <div style="width: 70px; height: 70px; flex-shrink: 0;" class="me-3 bg-white rounded-3 shadow-sm p-1">
-                {% if item.product.photo %}
-                    <img src="{{ item.product.photo.url }}" class="w-100 h-100 object-fit-contain rounded-2" alt="img">
+            <div style="width: 70px; height: 70px; flex-shrink: 0;" class="me-3 bg-white rounded-3 shadow-sm p-1 d-flex align-items-center justify-content-center">
+                {% if item.product.photo_url %}
+                    <img src="{{ item.product.photo_url }}" class="w-100 h-100 object-fit-contain rounded-2" alt="{{ item.product.name }}" onerror="this.src='https://placehold.co/70x70?text=No+Img';">
+                {% elif item.product.photo %}
+                    <img src="{{ item.product.photo.url }}" class="w-100 h-100 object-fit-contain rounded-2" alt="{{ item.product.name }}">
                 {% else %}
-                    <img src="{% static 'images/no-image.png' %}" class="w-100 h-100 object-fit-contain rounded-2" alt="img">
+                    <img src="{% static 'images/no-image.png' %}" class="w-100 h-100 object-fit-contain rounded-2" alt="No image">
                 {% endif %}
             </div>
             

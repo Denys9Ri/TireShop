@@ -13,14 +13,17 @@ class Cart:
     def add(self, product, quantity=1, update_quantity=False):
         product_id = str(product.id)
         
-        # Створюємо запис, якщо його немає
+        # Конвертуємо ціну в текст ВІДРАЗУ, щоб не було помилок
+        price_str = str(product.price)
+
         if product_id not in self.cart:
-            self.cart[product_id] = {'quantity': 0, 'price': str(product.price)}
-            
-        # 🔥 ПРИМУСОВЕ ЛІКУВАННЯ:
-        # Навіть якщо товар вже був у кошику, перезаписуємо ціну як рядок (str).
-        # Це виправить помилку, якщо в сесії застряг Decimal.
-        self.cart[product_id]['price'] = str(product.price)
+            self.cart[product_id] = {
+                'quantity': 0,
+                'price': price_str
+            }
+        
+        # Оновлюємо ціну на актуальну (якщо змінилась)
+        self.cart[product_id]['price'] = price_str
 
         if update_quantity:
             self.cart[product_id]['quantity'] = quantity
@@ -47,7 +50,7 @@ class Cart:
             cart[str(product.id)]['product'] = product
 
         for item in cart.values():
-            # Конвертуємо назад у Decimal для розрахунків
+            # Перетворюємо текст назад у число для математики
             item['price'] = Decimal(item['price'])
             item['total_price'] = item['price'] * item['quantity']
             yield item
@@ -56,6 +59,7 @@ class Cart:
         return sum(item['quantity'] for item in self.cart.values())
 
     def get_total_price(self):
+        # Рахуємо суму
         return sum(Decimal(item['price']) * item['quantity'] for item in self.cart.values())
 
     def clear(self):

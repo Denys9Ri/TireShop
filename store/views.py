@@ -283,12 +283,28 @@ def cart_update_quantity_view(request, product_id):
     except ValueError: pass
     return redirect('store:cart_detail')
 
-# 🔥 ОСЬ ЦІЄЇ ФУНКЦІЇ НЕ БУЛО, ТОМУ ВИБИВАЛО ПОМИЛКУ 🔥
 def cart_remove_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     cart.remove(product)
     return redirect('store:cart_detail')
+
+# 🔥 AJAX CART VIEW 🔥
+def cart_add_ajax_view(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    
+    # Додаємо товар
+    cart.add(product=product, quantity=1, update_quantity=False)
+    
+    # Рендеримо шматочок HTML для шторки
+    html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
+    
+    # Повертаємо відповідь для JS
+    return JsonResponse({
+        'html': html,
+        'cart_len': len(cart)
+    })
 
 # --- ЗАМОВЛЕННЯ (CHECKOUT) ---
 def checkout_view(request):
@@ -340,8 +356,6 @@ def checkout_view(request):
         cart.clear()
         return redirect('store:catalog')
 
-    # ... (початок функції checkout_view без змін)
-
     # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ (БЕЗПЕЧНА ВЕРСІЯ) 🔥
     initial_data = {}
     if request.user.is_authenticated:
@@ -351,15 +365,10 @@ def checkout_view(request):
         # Перевіряємо, чи є профіль, щоб не було помилок
         if hasattr(request.user, 'profile'):
             profile = request.user.profile
-            
-            # 🔥 ОСЬ ТУТ БУЛА ПОМИЛКА. ВИПРАВЛЯЄМО:
-            # Ми пробуємо знайти 'phone', якщо немає - шукаємо 'phone_number', якщо немає - пустий рядок.
             initial_data['phone'] = getattr(profile, 'phone', getattr(profile, 'phone_number', ''))
-            
             initial_data['city'] = getattr(profile, 'city', '')
             initial_data['nova_poshta_branch'] = getattr(profile, 'nova_poshta_branch', '')
             
-            # Якщо ім'я в юзері пусте, беремо з профілю (безпечно)
             if not initial_data['full_name']:
                  initial_data['full_name'] = getattr(profile, 'full_name', '')
 
@@ -378,19 +387,3 @@ def bot_callback_view(request):
     return JsonResponse({'status': 'err'})
 def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')
 def faq_view(request): return render(request, 'store/faq.html')
-
-def cart_add_ajax_view(request, product_id):
-    cart = Cart(request)
-    product = get_object_or_404(Product, id=product_id)
-    
-    # Додаємо товар
-    cart.add(product=product, quantity=1, update_quantity=False)
-    
-    # Рендеримо шматочок HTML для шторки
-    html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
-    
-    # Повертаємо відповідь для JS
-    return JsonResponse({
-        'html': html,
-        'cart_len': len(cart)
-    })

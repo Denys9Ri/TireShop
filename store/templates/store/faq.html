@@ -1,0 +1,129 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Часті питання про шини (FAQ) | R16.com.ua{% endblock %}
+{% block meta_description %}Відповіді на популярні питання про шини: коли перевзуватись, шипи чи липучка, як вибрати розмір, чи варто купувати китайські шини.{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-primary">Часті запитання (FAQ)</h1>
+        <p class="text-muted fs-5">Все, що потрібно знати водію про вибір та експлуатацію шин</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="accordion custom-accordion" id="faqAccordion">
+
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                            📅 Коли потрібно перевзуватись на зимову гуму?
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Загальне правило: змінювати шини потрібно, коли середньодобова температура опускається нижче <strong>+7°C</strong>. 
+                            Літня гума при такій температурі "дубіє" і втрачає зчеплення, навіть якщо снігу ще немає. Не чекайте першої ожеледиці — це небезпечно і викликає черги на шиномонтажах.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                            ❄️ Що краще: шипи чи "липучка" (фрикційна гума)?
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Вибір залежить від умов експлуатації:
+                            <ul>
+                                <li><strong>Шипи:</strong> Найкращі для зледенілих доріг, втрамбованого снігу та трас. Ідеально для регіонів із суворими зимами.</li>
+                                <li><strong>Європейська липучка:</strong> Для м'якої зими, мокрого асфальту та міста (Київ, Одеса), де дороги чистять реагентами.</li>
+                                <li><strong>Скандинавська липучка:</strong> Компроміс для суворих умов, якщо ви не хочете шуму від шипів.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                            🇨🇳 Чи варто купувати китайські шини?
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Сучасний Китай (наприклад, <strong>Aplus, Sailun, Triangle</strong>) — це вже не те саме, що 10 років тому. 
+                            Вони використовують західне обладнання та якісний каучук. 
+                            Це ідеальний варіант для спокійної їзди містом. Вони програють топ-брендам (Michelin, Continental) у екстремальному гальмуванні на швидкості 150 км/год, але коштують у 2-3 рази дешевше.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                            📏 Як дізнатися розмір шин для мого авто?
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Найпростіший спосіб — подивитися на боковину шин, які зараз встановлені на авто (наприклад, <strong>205/55 R16</strong>). 
+                            Також ця інформація є на наклейці на стійці дверей водія або на лючку бензобака. Там вказані рекомендовані розміри та тиск.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header" id="headingFive">
+                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive">
+                            🛡 Яка гарантія на шини в R16.com.ua?
+                        </button>
+                    </h2>
+                    <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Ми надаємо офіційну гарантію на заводський брак. Ви можете оглянути шини при отриманні на Новій Пошті. 
+                            Якщо виявиться дефект балансування (що буває вкрай рідко), ми замінимо шину або повернемо кошти згідно із законодавством України (протягом 14 днів, якщо шина не була в експлуатації).
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Коли потрібно перевзуватись на зимову гуму?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Коли середньодобова температура опускається нижче +7°C. Літня гума при такій температурі втрачає еластичність."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Що краще: шипи чи липучка?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Шипи — для ожеледиці та траси. Липучка — для міста (Київ), де дороги чистять, та мокрого снігу."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Чи варто купувати китайські шини?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Так, бренди як Aplus чи Triangle пропонують відмінне співвідношення ціни та якості для спокійної щоденної їзди."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}

@@ -58,7 +58,7 @@
     .auto-badges-container { position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
     .badge-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: fit-content; }
     .badge-fresh { background: #20c997; } 
-    .badge-top { background: #6610f2; }    
+    .badge-top { background: #6610f2; }     
     .badge-taxi { background: #fd7e14; }  
     .badge-sale { background: #dc3545; }  
 
@@ -249,7 +249,8 @@
                     <div class="set-price-calc">Комплект (4 шт): <strong>{% widthratio product.price 1 4 %} грн</strong></div>
                     <p class="product-stock text-muted small mb-2">На складі: {{ product.stock_quantity }} шт.</p>
                     
-                    <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto">
+                    {# 🔥 ОСЬ ТУТ ЗМІНИ: Додали ajax-cart-form та data-product-id 🔥 #}
+                    <form action="{% url 'store:cart_add' product.id %}" method="post" class="product-card__cart-form mt-auto ajax-cart-form" data-product-id="{{ product.id }}">
                         {% csrf_token %}
                         <div class="quantity-stepper">
                             <button type="button" class="quantity-btn" data-direction="decrease">−</button>

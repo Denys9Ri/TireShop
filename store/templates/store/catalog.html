@@ -125,7 +125,8 @@
             <select name="season">
                 <option value="">Будь-який</option>
                 {% for value, display in all_seasons %}
-                    <option value="{{ value }}" {% if value == selected_season %}selected{% endif %}>{{ display }}</option>
+                    {# 🔥 ПОРІВНЮЄМО ЯК ТЕКСТ #}
+                    <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
                 {% endfor %}
             </select>
             
@@ -133,7 +134,8 @@
             <select name="width">
                 <option value="">Всі</option>
                 {% for width in all_widths %}
-                    <option value="{{ width }}" {% if width == selected_width %}selected{% endif %}>{{ width }}</option>
+                    {# 🔥 ПОРІВНЮЄМО ЯК ТЕКСТ #}
+                    <option value="{{ width }}" {% if width|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ width }}</option>
                 {% endfor %}
             </select>
             
@@ -141,7 +143,8 @@
             <select name="profile">
                 <option value="">Всі</option>
                 {% for profile in all_profiles %}
-                    <option value="{{ profile }}" {% if profile == selected_profile %}selected{% endif %}>{{ profile }}</option>
+                    {# 🔥 ПОРІВНЮЄМО ЯК ТЕКСТ #}
+                    <option value="{{ profile }}" {% if profile|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ profile }}</option>
                 {% endfor %}
             </select>
             
@@ -149,7 +152,8 @@
             <select name="diameter">
                 <option value="">Всі</option>
                 {% for diameter in all_diameters %}
-                    <option value="{{ diameter }}" {% if diameter == selected_diameter %}selected{% endif %}>R{{ diameter }}</option>
+                    {# 🔥 ПОРІВНЮЄМО ЯК ТЕКСТ #}
+                    <option value="{{ diameter }}" {% if diameter|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ diameter }}</option>
                 {% endfor %}
             </select>
 
@@ -157,7 +161,7 @@
             <select name="brand">
                 <option value="">Всі бренди</option>
                 {% for brand in all_brands %}
-                    <option value="{{ brand.id }}" {% if brand.id == selected_brand_id %}selected{% endif %}>{{ brand.name }}</option>
+                    <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
                 {% endfor %}
             </select>
             

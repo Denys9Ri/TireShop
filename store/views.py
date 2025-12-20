@@ -359,3 +359,5 @@ def bot_callback_view(request):
     except: pass
     return JsonResponse({'status': 'err'})
 def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')
+def faq_view(request):
+    return render(request, 'store/faq.html')

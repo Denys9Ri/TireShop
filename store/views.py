@@ -121,13 +121,38 @@ def get_faq_schema(seo_data, min_price):
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
     links = []
-    if current_season_slug and not w:
-        top_sizes = [(175,70,13), (185,65,14), (195,65,15), (205,55,16), (215,60,16), (225,45,17), (235,55,18)]
+    # Список популярних розмірів для генерації кнопок
+    top_sizes = [
+        (175, 70, 13), (185, 65, 14), (185, 65, 15), 
+        (195, 65, 15), (205, 55, 16), (215, 60, 16), 
+        (225, 45, 17), (225, 50, 17), (235, 55, 18)
+    ]
+    
+    # Показуємо кнопки, тільки якщо розмір ще НЕ обраний (щоб не захламляти екран)
+    if not w:
         group = {'title': 'Популярні розміри:', 'items': []}
         for sw, sp, sd in top_sizes:
-            url = reverse('store:seo_season_size', args=[current_season_slug, sw, sp, sd])
-            group['items'].append({'text': f"R{sd} {sw}/{sp}", 'url': url})
-        links.append(group)
+            text = f"R{sd} {sw}/{sp}"
+            
+            # 🔥 ЛОГІКА ПОБУДОВИ ПРАВИЛЬНОГО URL 🔥
+            if current_brand and current_season_slug:
+                # Якщо обрано І БРЕНД, І СЕЗОН -> ведемо на повний шлях
+                url = reverse('store:seo_full', args=[current_brand.slug, current_season_slug, sw, sp, sd])
+                
+            elif current_season_slug:
+                # Якщо обрано тільки СЕЗОН -> ведемо на сезон+розмір
+                url = reverse('store:seo_season_size', args=[current_season_slug, sw, sp, sd])
+                
+            else:
+                # Якщо ми на ГОЛОВНІЙ (нічого не обрано) або тільки Бренд -> ведемо на чистий розмір
+                # (Це універсальний варіант, який завжди працює)
+                url = reverse('store:seo_size', args=[sw, sp, sd])
+            
+            group['items'].append({'text': text, 'url': url})
+        
+        if group['items']:
+            links.append(group)
+            
     return links
 
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO + ПОШУК + ФІЛЬТРИ) 🔥 ---

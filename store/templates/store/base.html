@@ -257,29 +257,27 @@
                     return response.json();
                 })
                 .then(data => {
-                    // 5. Відкриваємо шторку
+                    // Все добре - відкриваємо шторку
                     const offcanvasEl = document.getElementById('quickCart');
                     const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
                     
-                    // Оновлюємо HTML всередині
                     document.getElementById('quickCartBody').innerHTML = data.html;
                     
-                    // Оновлюємо лічильники
                     const badge = document.getElementById('cart-badge');
                     if (badge) badge.innerText = `(${data.cart_len})`;
                     
                     const badgeMobile = document.getElementById('cart-badge-mobile');
                     if (badgeMobile) badgeMobile.innerText = `(${data.cart_len})`;
 
-                    bsOffcanvas.show(); // Показуємо шторку
+                    bsOffcanvas.show();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    // Якщо щось пішло не так — просто перезавантажуємо сторінку по-старому
-                    // form.submit(); // Розкоментуй, якщо хочеш фолбек
+                    // 🔥 ЯКЩО ПОМИЛКА - ПРОСТО ЙДЕМО В КОШИК
+                    // Це "план Б", щоб клієнт не думав, що сайт завис
+                    window.location.href = "/cart/"; 
                 })
                 .finally(() => {
-                    // Повертаємо кнопку до життя
                     if(btn) {
                         btn.disabled = false;
                         btn.innerHTML = originalBtnContent;

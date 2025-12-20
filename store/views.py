@@ -294,13 +294,18 @@ def cart_add_ajax_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     
-    # Додаємо товар
-    cart.add(product=product, quantity=1, update_quantity=False)
+    # 🔥 ВИПРАВЛЕННЯ: Зчитуємо кількість із форми
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+    except (ValueError, TypeError):
+        quantity = 1
+    
+    # Додаємо товар із правильною кількістю
+    cart.add(product=product, quantity=quantity, update_quantity=False)
     
     # Рендеримо шматочок HTML для шторки
     html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
     
-    # Повертаємо відповідь для JS
     return JsonResponse({
         'html': html,
         'cart_len': len(cart)

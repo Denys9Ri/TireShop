@@ -246,8 +246,11 @@
                 const url = `/cart/add-ajax/${productId}/`;
                 
                 // 4. Відправляємо запит
+                const formData = new FormData(form);
+
                 fetch(url, {
                     method: 'POST',
+                    body: formData, // <--- ОСЬ ЦЬОГО НЕ ВИСТАЧАЛО! Тепер цифра полетить на сервер.
                     headers: {
                         'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
                     }

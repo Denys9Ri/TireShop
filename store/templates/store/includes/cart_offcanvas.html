@@ -1,0 +1,55 @@
+{% load static %}
+
+{% if cart|length == 0 %}
+    <div class="text-center py-5 my-auto">
+        <div class="mb-3 text-primary" style="font-size: 4rem; opacity: 0.5;">🛒</div>
+        <p class="text-muted fs-5">Кошик поки що порожній</p>
+        <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-dismiss="offcanvas">
+            Почати покупки
+        </button>
+    </div>
+{% else %}
+    <div class="cart-offcanvas-list flex-grow-1 overflow-auto pe-2">
+        {% for item in cart %}
+        <div class="d-flex align-items-center mb-3 p-3 rounded-4 cart-item-glass position-relative">
+            <div style="width: 70px; height: 70px; flex-shrink: 0;" class="me-3 bg-white rounded-3 shadow-sm p-1">
+                {% if item.product.photo %}
+                    <img src="{{ item.product.photo.url }}" class="w-100 h-100 object-fit-contain rounded-2" alt="img">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" class="w-100 h-100 object-fit-contain rounded-2" alt="img">
+                {% endif %}
+            </div>
+            
+            <div class="flex-grow-1" style="min-width: 0;">
+                <h6 class="mb-1 text-dark fw-bold text-truncate">{{ item.product.brand.name }} {{ item.product.name }}</h6>
+                <div class="badge bg-light text-dark border mb-1">
+                    {{ item.product.width }}/{{ item.product.profile }} R{{ item.product.diameter }}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">{{ item.quantity }} шт. × {{ item.price }} ₴</span>
+                    <span class="fw-bold text-primary">{{ item.total_price }} ₴</span>
+                </div>
+            </div>
+
+            <a href="{% url 'store:cart_remove' item.product.id %}" class="position-absolute top-0 end-0 p-2 text-muted opacity-50 hover-opacity-100 text-decoration-none" style="line-height: 1;">
+                ✕
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-3 pt-3 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-secondary">Разом до сплати:</span>
+            <span class="fs-3 fw-bold text-primary">{{ cart.get_total_price }} ₴</span>
+        </div>
+        <div class="d-grid gap-2">
+            <a href="{% url 'store:checkout' %}" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">
+                Оформити замовлення
+            </a>
+            <a href="{% url 'store:cart_detail' %}" class="btn btn-light text-primary border rounded-pill py-2">
+                Редагувати кошик
+            </a>
+        </div>
+    </div>
+{% endif %}

@@ -37,7 +37,9 @@
             <p>Якщо ви хочете повернути товар, будь ласка, зв'яжіться з нами:</p>
             <div class="d-flex gap-3 flex-wrap">
                 <a href="tel:+380666881491" class="btn btn-outline-primary rounded-pill px-4"><i class="bi bi-phone"></i> +38 (066) 688-14-91</a>
-                <a href="{% url 'contacts' %}" class="btn btn-outline-secondary rounded-pill px-4">Контакти</a>
+                
+                {# 🔥 ТУТ БУЛА ПОМИЛКА: Треба писати store:contacts #}
+                <a href="{% url 'store:contacts' %}" class="btn btn-outline-secondary rounded-pill px-4">Контакти</a>
             </div>
         </div>
     </div>

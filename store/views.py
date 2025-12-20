@@ -289,26 +289,62 @@ def cart_update_quantity_view(request, product_id):
 def cart_remove_view(request, product_id):
     cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
+# --- store/views.py (Оновлена функція замовлення) ---
+
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
+    
     if request.method == 'POST':
-        is_pickup = request.POST.get('shipping_type') == 'pickup'
+        # Отримуємо тип доставки (має бути 'pickup' або 'nova_poshta')
+        shipping_type = request.POST.get('shipping_type', 'pickup') 
+        is_pickup = (shipping_type == 'pickup')
+        
+        # Створюємо замовлення
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,
-            shipping_type=request.POST.get('shipping_type'),
-            full_name=request.POST.get('pickup_name' if is_pickup else 'full_name'),
-            phone=request.POST.get('pickup_phone' if is_pickup else 'phone'),
-            city="Київ" if is_pickup else request.POST.get('city'),
-            nova_poshta_branch=None if is_pickup else request.POST.get('nova_poshta_branch')
+            shipping_type=shipping_type,
+            # Якщо самовивіз - беремо дані з полів для самовивозу, інакше - для доставки
+            full_name=request.POST.get('pickup_name') if is_pickup else request.POST.get('full_name'),
+            phone=request.POST.get('pickup_phone') if is_pickup else request.POST.get('phone'),
+            email=None if is_pickup else request.POST.get('email'),
+            city="Київ (Самовивіз)" if is_pickup else request.POST.get('city'),
+            nova_poshta_branch="-" if is_pickup else request.POST.get('nova_poshta_branch')
         )
-        items = ""
+
+        # Зберігаємо товари
+        items_text = ""
         for item in cart:
-            OrderItem.objects.create(order=order, product=item['product'], quantity=item['quantity'], price_at_purchase=item['price'])
-            items += f"\n🔘 {item['product'].name} — {item['quantity']} шт."
-        send_telegram(f"🔥 ЗАМОВЛЕННЯ #{order.id}\n👤 {order.full_name}\n📞 {order.phone}\n🛒 {items}\n💰 {cart.get_total_price()} грн")
+            p = item['product']
+            OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
+            items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
+
+        # 🔥 ФОРМУВАННЯ ПОВІДОМЛЕННЯ ДЛЯ ТЕЛЕГРАМ 🔥
+        if is_pickup:
+            delivery_icon = "🏃"
+            delivery_details = "САМОВИВІЗ (Київ, вул. Качали 3)"
+        else:
+            delivery_icon = "🚚"
+            city = request.POST.get('city', 'Не вказано')
+            branch = request.POST.get('nova_poshta_branch', 'Не вказано')
+            delivery_details = f"НОВА ПОШТА\n📍 Місто: {city}\n🏢 Відділення: {branch}"
+
+        telegram_msg = (
+            f"🔥 <b>НОВЕ ЗАМОВЛЕННЯ #{order.id}</b>\n"
+            f"👤 Клієнт: {order.full_name}\n"
+            f"📞 Телефон: {order.phone}\n"
+            f"➖➖➖➖➖➖➖➖➖➖\n"
+            f"{delivery_icon} {delivery_details}\n"
+            f"➖➖➖➖➖➖➖➖➖➖\n"
+            f"🛒 <b>ТОВАРИ:</b>{items_text}\n"
+            f"➖➖➖➖➖➖➖➖➖➖\n"
+            f"💰 <b>СУМА: {cart.get_total_price()} грн</b>"
+        )
+        
+        send_telegram(telegram_msg)
         cart.clear()
-        return redirect('store:catalog')
+        return redirect('store:catalog') # Або на сторінку "Дякуємо"
+        
     return render(request, 'store/checkout.html')
 
 def about_view(request): return render(request, 'store/about.html')

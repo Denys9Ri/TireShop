@@ -294,14 +294,31 @@ def cart_add_ajax_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     
-    # 🔥 ВИПРАВЛЕННЯ: Зчитуємо кількість із форми
     try:
-        quantity = int(request.POST.get('quantity', 1))
+        quantity_to_add = int(request.POST.get('quantity', 1))
     except (ValueError, TypeError):
-        quantity = 1
+        quantity_to_add = 1
     
-    # Додаємо товар із правильною кількістю
-    cart.add(product=product, quantity=quantity, update_quantity=False)
+    # 🔥 ПЕРЕВІРКА СКЛАДУ 🔥
+    # 1. Дивимось, скільки вже лежить у кошику
+    cart_item = cart.cart.get(str(product.id))
+    current_in_cart = cart_item['quantity'] if cart_item else 0
+    
+    # 2. Рахуємо, скільки вийде разом
+    total_wanted = current_in_cart + quantity_to_add
+    
+    # 3. Якщо клієнт хоче більше, ніж є на складі -> обрізаємо
+    if total_wanted > product.stock_quantity:
+        # Додаємо тільки різницю, яка ще доступна
+        quantity_to_add = product.stock_quantity - current_in_cart
+        
+        # Якщо в кошику ВЖЕ лежить максимум, то додаємо 0
+        if quantity_to_add < 0:
+            quantity_to_add = 0
+
+    # Додаємо (якщо є що додавати)
+    if quantity_to_add > 0:
+        cart.add(product=product, quantity=quantity_to_add, update_quantity=False)
     
     # Рендеримо шматочок HTML для шторки
     html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)

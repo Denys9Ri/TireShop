@@ -339,20 +339,28 @@ def checkout_view(request):
         cart.clear()
         return redirect('store:catalog')
 
-    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ (GET ЗАПИТ) 🔥
-    # Тепер якщо користувач увійшов, поля в checkout.html будуть заповнені
+    # ... (початок функції checkout_view без змін)
+
+    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ (БЕЗПЕЧНА ВЕРСІЯ) 🔥
     initial_data = {}
     if request.user.is_authenticated:
         initial_data['email'] = request.user.email
         initial_data['full_name'] = f"{request.user.first_name} {request.user.last_name}".strip()
         
+        # Перевіряємо, чи є профіль, щоб не було помилок
         if hasattr(request.user, 'profile'):
             profile = request.user.profile
-            initial_data['phone'] = profile.phone
-            initial_data['city'] = profile.city
-            initial_data['nova_poshta_branch'] = profile.nova_poshta_branch
-            if not initial_data['full_name'] and hasattr(profile, 'full_name'):
-                 initial_data['full_name'] = profile.full_name
+            
+            # 🔥 ОСЬ ТУТ БУЛА ПОМИЛКА. ВИПРАВЛЯЄМО:
+            # Ми пробуємо знайти 'phone', якщо немає - шукаємо 'phone_number', якщо немає - пустий рядок.
+            initial_data['phone'] = getattr(profile, 'phone', getattr(profile, 'phone_number', ''))
+            
+            initial_data['city'] = getattr(profile, 'city', '')
+            initial_data['nova_poshta_branch'] = getattr(profile, 'nova_poshta_branch', '')
+            
+            # Якщо ім'я в юзері пусте, беремо з профілю (безпечно)
+            if not initial_data['full_name']:
+                 initial_data['full_name'] = getattr(profile, 'full_name', '')
 
     return render(request, 'store/checkout.html', {'user_data': initial_data})
 

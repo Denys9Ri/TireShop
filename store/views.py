@@ -284,13 +284,28 @@ def cart_add_view(request, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
 @require_POST
 def cart_update_quantity_view(request, product_id):
-    cart = Cart(request); cart.add(get_object_or_404(Product, id=product_id), int(request.POST.get('quantity', 1)), True)
-    return redirect('store:cart_detail')
-def cart_remove_view(request, product_id):
-    cart = Cart(request); cart.remove(get_object_or_404(Product, id=product_id))
-    return redirect('store:cart_detail')
-# --- store/views.py (Оновлена функція замовлення) ---
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+        
+        # 🔥 ПЕРЕВІРКА ЗАЛИШКІВ 🔥
+        # Якщо просять більше, ніж є на складі - ставимо максимум
+        if quantity > product.stock_quantity:
+            quantity = product.stock_quantity
+            # Можна додати повідомлення, але поки просто обмежуємо
+        
+        # Не можна купити 0 або від'ємну кількість
+        if quantity < 1:
+            quantity = 1
 
+        cart.add(product, quantity, update_quantity=True)
+    except ValueError:
+        pass
+        
+    return redirect('store:cart_detail')
+    
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')

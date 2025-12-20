@@ -12,9 +12,7 @@ class Cart:
 
     def add(self, product, quantity=1, update_quantity=False):
         product_id = str(product.id)
-        
-        # Одразу перетворюємо в str, щоб уникнути помилок
-        price_str = str(product.price)
+        price_str = str(product.price) # Тільки текст!
 
         if product_id not in self.cart:
             self.cart[product_id] = {
@@ -22,7 +20,7 @@ class Cart:
                 'price': price_str
             }
         
-        # Оновлюємо ціну
+        # Оновлюємо ціну (текстом)
         self.cart[product_id]['price'] = price_str
 
         if update_quantity:
@@ -33,13 +31,6 @@ class Cart:
         self.save()
 
     def save(self):
-        # 🔥 БРОНЕБІЙНИЙ ЗАХИСТ ВІД DECIMAL 🔥
-        # Перед тим як сказати джанго "збережи", ми проходимось по всьому кошику
-        # і гарантуємо, що ціна - це рядок.
-        for item in self.cart.values():
-            if 'price' in item:
-                item['price'] = str(item['price'])
-        
         self.session.modified = True
 
     def remove(self, product):
@@ -49,37 +40,41 @@ class Cart:
             self.save()
 
     def __iter__(self):
+        """
+        Перебираємо товари в кошику.
+        """
         product_ids = self.cart.keys()
         products = Product.objects.filter(id__in=product_ids)
-        cart = self.cart.copy()
+        
+        # Створюємо тимчасовий словник для продуктів, щоб не смикати базу в циклі
+        product_map = {str(p.id): p for p in products}
 
-        for product in products:
-            cart[str(product.id)]['product'] = product
-
-        for item in cart.values():
-            # Тут перетворюємо назад у числа для математики на сторінці
-            # Використовуємо try/except, щоб не впало, якщо там сміття
-            try:
-                price_dec = Decimal(str(item['price']))
-            except:
-                price_dec = Decimal('0')
+        for product_id, item in self.cart.items():
+            # 🔥 НАЙВАЖЛИВІШИЙ МОМЕНТ:
+            # Ми робимо .copy(), щоб не змінювати дані в самій сесії!
+            # Якщо ми змінимо item напряму, Django знову спробує зберегти Decimal і впаде.
+            current_item = item.copy()
+            
+            product = product_map.get(product_id)
+            if product:
+                current_item['product'] = product
+                # Тут безпечно перетворюємо в Decimal для обчислень (тільки в копії)
+                price_dec = Decimal(str(current_item['price']))
+                current_item['price'] = price_dec
+                current_item['total_price'] = price_dec * current_item['quantity']
                 
-            item['price'] = price_dec
-            item['total_price'] = price_dec * item['quantity']
-            yield item
+                yield current_item
 
     def __len__(self):
         return sum(item['quantity'] for item in self.cart.values())
 
     def get_total_price(self):
-        total = Decimal('0')
+        total = Decimal('0.00')
         for item in self.cart.values():
             try:
                 price = Decimal(str(item['price']))
-                qty = item['quantity']
-                total += price * qty
-            except:
-                pass
+                total += price * item['quantity']
+            except: pass
         return total
 
     def clear(self):

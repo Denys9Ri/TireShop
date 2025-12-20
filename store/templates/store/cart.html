@@ -30,6 +30,7 @@
                                 <div>
                                     <div class="cart-item__title">{{ item.product.brand.name }} {{ item.product.name }}</div>
                                     <div class="cart-item__meta">{{ item.product.width }}/{{ item.product.profile }} R{{ item.product.diameter }}</div>
+                                    <div class="text-muted small mt-1">В наявності: {{ item.product.stock_quantity }} шт.</div>
                                 </div>
                                 <a href="{% url 'store:cart_remove' item.product.id %}" class="cart-remove-btn" aria-label="Видалити товар">✕</a>
                             </div>
@@ -39,7 +40,14 @@
                                     {% csrf_token %}
                                     <div class="quantity-stepper">
                                         <button type="button" class="quantity-btn" data-direction="decrease" aria-label="Зменшити кількість">−</button>
-                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" aria-label="Кількість" />
+                                        
+                                        <input type="number" 
+                                               name="quantity" 
+                                               value="{{ item.quantity }}" 
+                                               min="1" 
+                                               max="{{ item.product.stock_quantity }}" 
+                                               aria-label="Кількість" />
+                                        
                                         <button type="button" class="quantity-btn" data-direction="increase" aria-label="Збільшити кількість">+</button>
                                     </div>
                                     <div class="cart-item__subtotal">{{ item.total_price }} грн.</div>
@@ -76,6 +84,7 @@
                     const direction = btn.dataset.direction;
                     const currentValue = parseInt(input.value, 10) || 1;
                     const min = parseInt(input.getAttribute('min'), 10) || 1;
+                    // Скрипт тепер бере реальний max, який ми прописали в HTML
                     const max = parseInt(input.getAttribute('max'), 10) || 99;
 
                     let nextValue = currentValue;
@@ -95,6 +104,7 @@
                 const min = parseInt(input.getAttribute('min'), 10) || 1;
                 const max = parseInt(input.getAttribute('max'), 10) || 99;
                 let value = parseInt(input.value, 10) || min;
+                // Блокуємо введення руками більше ліміту
                 value = Math.min(Math.max(value, min), max);
                 input.value = value;
                 form.submit();

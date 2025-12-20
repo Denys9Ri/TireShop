@@ -82,6 +82,30 @@
         .schedule-block { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin: 20px auto; max-width: 500px; font-size: 0.9rem; line-height: 1.6; }
 
         @media (max-width: 992px) { .navbar { padding: 8px 20px; } .logo-img { height: 40px; } .navbar-menu { display: none; } .hamburger { display: flex; } }
+
+        /* 🔥 CSS ДЛЯ СКЛЯНОГО КОШИКА (OFFCANVAS) 🔥 */
+        .offcanvas-glass {
+            background: rgba(255, 255, 255, 0.85) !important; /* Напівпрозорий */
+            backdrop-filter: blur(20px); /* Ефект розмиття */
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -10px 0 30px rgba(0, 85, 255, 0.15); /* Синя тінь */
+        }
+        .offcanvas-glass .offcanvas-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        /* Стиль карток всередині кошика */
+        .cart-item-glass {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cart-item-glass:hover {
+            transform: translateX(-2px);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -96,7 +120,9 @@
         
         <a href="{% url 'store:about' %}" class="navbar-item">Про нас</a>
         <a href="{% url 'store:delivery_payment' %}" class="navbar-item">Доставка</a>
-        <a href="{% url 'store:cart_detail' %}" class="navbar-item"><i class="bi bi-cart3" style="font-size: 1.3rem;"></i> Кошик ({{ cart|length }})</a>
+        <a href="{% url 'store:cart_detail' %}" class="navbar-item">
+            <i class="bi bi-cart3" style="font-size: 1.3rem;"></i> Кошик <span id="cart-badge">({{ cart|length }})</span>
+        </a>
         
         <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 20px; margin: 0 5px;"></div>
 
@@ -117,7 +143,7 @@
     <a href="{% url 'store:about' %}"><i class="bi bi-info-circle"></i> Про нас</a>
     <a href="{% url 'store:contacts' %}"><i class="bi bi-telephone"></i> Контакти</a>
     <a href="{% url 'store:delivery_payment' %}"><i class="bi bi-truck"></i> Доставка і оплата</a>
-    <a href="{% url 'store:cart_detail' %}"><i class="bi bi-cart3"></i> Кошик ({{ cart|length }})</a>
+    <a href="{% url 'store:cart_detail' %}"><i class="bi bi-cart3"></i> Кошик <span id="cart-badge-mobile">({{ cart|length }})</span></a>
     {% if user.is_authenticated %}
         <a href="{% url 'users:profile' %}"><i class="bi bi-person"></i> Мій Кабінет</a>
         <form action="{% url 'users:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-button-mobile"><i class="bi bi-box-arrow-right"></i> Вийти</button></form>
@@ -154,6 +180,23 @@
     <p class="small opacity-50 mb-0">Copyright © 2025 R16.com.ua</p>
 </footer>
 
+<div class="offcanvas offcanvas-end offcanvas-glass border-0" tabindex="-1" id="quickCart" aria-labelledby="quickCartLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title fw-bold text-primary" id="quickCartLabel">
+            🛒 Ваш кошик
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    
+    <div class="offcanvas-body d-flex flex-column" id="quickCartBody">
+        <div class="text-center py-5 my-auto">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const hamburgerButton = document.getElementById('hamburger-button');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -165,6 +208,59 @@
     });
     hamburgerButton.addEventListener('click', function() {
         mobileMenu.classList.toggle('is-active');
+    });
+
+    // 🔥 JS ДЛЯ ШВИДКОГО КОШИКА (AJAX) 🔥
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.addEventListener('submit', function(e) {
+            const form = e.target;
+            
+            // Перевіряємо, чи це форма додавання в кошик (по URL або класу)
+            if (form.action && form.action.includes('/cart/add/')) {
+                e.preventDefault(); // Зупиняємо перезавантаження сторінки
+                
+                // Пробуємо знайти ID товару з атрибута data-product-id або з URL
+                const productId = form.getAttribute('data-product-id') || form.action.split('/').slice(-2)[0];
+                
+                if (!productId) {
+                    form.submit(); // Якщо не знайшли ID, просто відправляємо як раніше
+                    return;
+                }
+
+                const url = `/cart/add-ajax/${productId}/`;
+                
+                // Відкриваємо шторку (використовуємо Bootstrap API)
+                const offcanvasEl = document.getElementById('quickCart');
+                const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
+                bsOffcanvas.show();
+
+                // Відправляємо запит на сервер
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // 1. Оновлюємо вміст шторки
+                    document.getElementById('quickCartBody').innerHTML = data.html;
+                    
+                    // 2. Оновлюємо лічильник в шапці (Desktop)
+                    const badge = document.getElementById('cart-badge');
+                    if (badge) badge.innerText = `(${data.cart_len})`;
+                    
+                    // 3. Оновлюємо лічильник в мобільному меню (Mobile)
+                    const badgeMobile = document.getElementById('cart-badge-mobile');
+                    if (badgeMobile) badgeMobile.innerText = `(${data.cart_len})`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Якщо помилка - просто перезавантажимо сторінку
+                    // window.location.reload(); 
+                });
+            }
+        });
     });
 </script>
 

@@ -30,21 +30,14 @@
     "@type": "Offer",
     "url": "https://r16.com.ua{{ request.path }}",
     "priceCurrency": "UAH",
-    
-    /* 🔥 ВИПРАВЛЕННЯ 1: ЦІНА БЕЗ ПРОБІЛІВ (Critical Issue Fix) */
     "price": "{{ product.price|stringformat:'.2f' }}",
-    
-    /* 🔥 ВИПРАВЛЕННЯ 2: ДАТА ВАЛІДНОСТІ ЦІНИ */
     "priceValidUntil": "2026-12-31",
-    
     "itemCondition": "https://schema.org/NewCondition",
     "availability": "{% if product.stock_quantity > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
     "seller": {
       "@type": "Organization",
       "name": "R16"
     },
-
-    /* 🔥 ВИПРАВЛЕННЯ 3: ДЕТАЛІ ДОСТАВКИ */
     "shippingDetails": {
       "@type": "OfferShippingDetails",
       "shippingRate": {
@@ -72,8 +65,6 @@
         }
       }
     },
-
-    /* 🔥 ВИПРАВЛЕННЯ 4: ПОЛІТИКА ПОВЕРНЕННЯ */
     "hasMerchantReturnPolicy": {
       "@type": "MerchantReturnPolicy",
       "applicableCountry": "UA",
@@ -83,8 +74,6 @@
       "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
     }
   },
-  
-  /* 🔥 ВИПРАВЛЕННЯ 5: РЕЙТИНГ І ВІДГУКИ (Щоб не сварився на aggregateRating) */
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",
@@ -406,7 +395,8 @@
                     {% endif %}
                 </div>
 
-                <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-3">
+                {# 🔥 ОСЬ ТУТ ЗМІНИ (Додано клас ajax-cart-form і data-product-id) 🔥 #}
+                <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-3 ajax-cart-form" data-product-id="{{ product.id }}">
                     {% csrf_token %}
                     <div class="action-row">
                         <div class="quantity-selector">

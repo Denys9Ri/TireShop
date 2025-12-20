@@ -43,4 +43,6 @@ urlpatterns = [
     path('warranty/', views.warranty_view, name='warranty'),
     path('bot-callback/', views.bot_callback_view, name='bot_callback'),
     path('sync-google-sheet/', views.sync_google_sheet_view, name='sync_google_sheet'),
+    # FAQ
+    path('faq/', views.faq_view, name='faq'),
 ]

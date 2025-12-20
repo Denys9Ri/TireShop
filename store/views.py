@@ -59,7 +59,6 @@ def send_telegram(message):
     except: pass
 
 def get_base_products():
-    # Повертаємо всі товари, які мають розміри
     return Product.objects.filter(width__gt=0, diameter__gt=0).annotate(
         status_order=Case(When(stock_quantity__gt=0, then=Value(0)), default=Value(1), output_field=IntegerField())
     )
@@ -136,33 +135,26 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     brand_obj = None
     season_db = None
 
-    # 1. ОБРОБКА SEO URL (Clean URL)
+    # 1. ОБРОБКА SEO URL
     if slug:
         if slug in SEASONS_MAP: season_slug = slug
         else:
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
             if brand_obj: brand_slug = slug
 
-    # 2. 🔥 ОБРОБКА ПОШУКУ (TEXT SEARCH) 🔥
+    # 2. 🔥 ОБРОБКА ПОШУКУ 🔥
     query = request.GET.get('query', '').strip()
     if query:
-        # Очищаємо запит від сміття (/, R, пробіли)
         clean = re.sub(r'[/\sR\-]', '', query, flags=re.IGNORECASE)
-        # Перевіряємо, чи це розмір (наприклад 1956515)
         match = re.fullmatch(r'(\d{6,7})', clean)
         if match:
             d = match.group(1)
-            # Якщо це розмір - шукаємо точно по розміру
             products = products.filter(width=int(d[:3]), profile=int(d[3:5]), diameter=int(d[5:]))
         else:
-            # Якщо це текст - шукаємо в назві або бренді
             products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
-    # 3. 🔥 ОБРОБКА ФІЛЬТРІВ (DROPDOWN) 🔥
-    # URL параметри мають пріоритет. Якщо їх немає - беремо з GET запиту
-    
-    # -- БРЕНД --
-    if not brand_obj: # Якщо бренд не заданий в URL
+    # 3. 🔥 ОБРОБКА ФІЛЬТРІВ 🔥
+    if not brand_obj:
         s_brand_id = request.GET.get('brand')
         if s_brand_id: 
             products = products.filter(brand__id=s_brand_id)
@@ -170,12 +162,10 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     else:
         products = products.filter(brand=brand_obj)
 
-    # -- СЕЗОН --
-    if not season_slug: # Якщо сезон не заданий в URL
+    if not season_slug:
         s_season = request.GET.get('season')
         if s_season:
             products = products.filter(seasonality=s_season)
-            # Спробуємо знайти назву сезону для SEO
             for k, v in SEASONS_MAP.items():
                 if v['db'] == s_season:
                     season_slug = k
@@ -185,7 +175,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         season_db = SEASONS_MAP[season_slug]['db']
         products = products.filter(seasonality=season_db)
 
-    # -- РОЗМІРИ --
     req_width = width or request.GET.get('width')
     req_profile = profile or request.GET.get('profile')
     req_diameter = diameter or request.GET.get('diameter')
@@ -194,13 +183,16 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     if req_profile: products = products.filter(profile=req_profile)
     if req_diameter: products = products.filter(diameter=req_diameter)
 
-    # --- СТАТИСТИКА (ДЛЯ SEO ТЕКСТІВ) ---
-    stats = products.aggregate(min_price=Min('price'), max_price=Max('price'), count=Count('id'))
-    min_price = stats['min_price'] if stats['min_price'] is not None else 0
-    max_price = stats['max_price'] if stats['max_price'] is not None else 0
+    # --- СТАТИСТИКА (Ігноруємо ціну 0) ---
+    real_products = products.filter(price__gt=0)
+    if real_products.exists():
+        stats = real_products.aggregate(min_price=Min('price'), max_price=Max('price'))
+        min_price = stats['min_price']
+        max_price = stats['max_price']
+    else:
+        min_price = 0; max_price = 0
 
-    # --- ГЕНЕРАЦІЯ SEO ---
-    # Перетворюємо розміри в int для генератора
+    # --- SEO DATA ---
     w_int = int(req_width) if req_width else None
     p_int = int(req_profile) if req_profile else None
     d_int = int(req_diameter) if req_diameter else None
@@ -213,14 +205,13 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     ordering = request.GET.get('ordering')
     if ordering == 'cheap': products = products.order_by('price')
     elif ordering == 'expensive': products = products.order_by('-price')
-    else: products = products.order_by('status_order', 'brand__name', 'name') # Спочатку в наявності
+    else: products = products.order_by('status_order', 'brand__name', 'name')
 
-    # --- UI ДАНІ ---
+    # --- UI ---
     brands = Brand.objects.all().order_by('name')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
     
-    # Зберігаємо параметри фільтру для пагінації (щоб при переході на стор. 2 фільтр не злітав)
     q_params = request.GET.copy()
     if 'page' in q_params: del q_params['page']
 
@@ -232,12 +223,10 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'all_profiles': Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile'),
         'all_diameters': Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter'),
         'all_seasons': Product.SEASON_CHOICES,
-        
         'selected_brand_id': brand_obj.id if brand_obj else (int(request.GET.get('brand')) if request.GET.get('brand') else None),
         'selected_season': season_db,
         'selected_width': w_int, 'selected_profile': p_int, 'selected_diameter': d_int,
         'search_query': query,
-        
         'seo_title': seo_data['title'],
         'seo_h1': seo_data['h1'],
         'seo_h2': seo_data['seo_h2'],
@@ -248,15 +237,11 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'is_seo_page': True
     })
 
-# --- ЗВИЧАЙНИЙ КАТАЛОГ ---
-def catalog_view(request):
-    return seo_matrix_view(request)
+def catalog_view(request): return seo_matrix_view(request)
 
-# --- ТОВАР ---
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     similar = Product.objects.filter(width=product.width, diameter=product.diameter).exclude(id=product.id)[:4]
-    
     seo_data = generate_seo_content(product.brand, product.seasonality, product.width, product.profile, product.diameter, int(product.price), int(product.price))
     faq_schema = get_faq_schema(seo_data, int(product.price))
 
@@ -276,50 +261,46 @@ def redirect_old_product_urls(request, product_id):
     p = get_object_or_404(Product, id=product_id)
     return redirect('store:product_detail', slug=p.slug, permanent=True)
 
-# --- CART / INFO / CHECKOUT ---
+# --- 🛒 CART LOGIC ---
 def cart_detail_view(request): return render(request, 'store/cart.html', {'cart': Cart(request)})
+
 @require_POST
 def cart_add_view(request, product_id):
     cart = Cart(request); cart.add(get_object_or_404(Product, id=product_id), int(request.POST.get('quantity', 1)))
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
+
 @require_POST
 def cart_update_quantity_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    
     try:
         quantity = int(request.POST.get('quantity', 1))
-        
-        # 🔥 ПЕРЕВІРКА ЗАЛИШКІВ 🔥
-        # Якщо просять більше, ніж є на складі - ставимо максимум
-        if quantity > product.stock_quantity:
-            quantity = product.stock_quantity
-            # Можна додати повідомлення, але поки просто обмежуємо
-        
-        # Не можна купити 0 або від'ємну кількість
-        if quantity < 1:
-            quantity = 1
-
+        # Ліміт на складі
+        if quantity > product.stock_quantity: quantity = product.stock_quantity
+        if quantity < 1: quantity = 1
         cart.add(product, quantity, update_quantity=True)
-    except ValueError:
-        pass
-        
+    except ValueError: pass
     return redirect('store:cart_detail')
-    
+
+# 🔥 ОСЬ ЦІЄЇ ФУНКЦІЇ НЕ БУЛО, ТОМУ ВИБИВАЛО ПОМИЛКУ 🔥
+def cart_remove_view(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    cart.remove(product)
+    return redirect('store:cart_detail')
+
+# --- ЗАМОВЛЕННЯ (CHECKOUT) ---
 def checkout_view(request):
     cart = Cart(request)
     if not cart: return redirect('store:catalog')
     
     if request.method == 'POST':
-        # Отримуємо тип доставки (має бути 'pickup' або 'nova_poshta')
         shipping_type = request.POST.get('shipping_type', 'pickup') 
         is_pickup = (shipping_type == 'pickup')
         
-        # Створюємо замовлення
         order = Order.objects.create(
             customer=request.user if request.user.is_authenticated else None,
             shipping_type=shipping_type,
-            # Якщо самовивіз - беремо дані з полів для самовивозу, інакше - для доставки
             full_name=request.POST.get('pickup_name') if is_pickup else request.POST.get('full_name'),
             phone=request.POST.get('pickup_phone') if is_pickup else request.POST.get('phone'),
             email=None if is_pickup else request.POST.get('email'),
@@ -327,14 +308,13 @@ def checkout_view(request):
             nova_poshta_branch="-" if is_pickup else request.POST.get('nova_poshta_branch')
         )
 
-        # Зберігаємо товари
         items_text = ""
         for item in cart:
             p = item['product']
             OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
             items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
 
-        # 🔥 ФОРМУВАННЯ ПОВІДОМЛЕННЯ ДЛЯ ТЕЛЕГРАМ 🔥
+        # Телеграм
         if is_pickup:
             delivery_icon = "🏃"
             delivery_details = "САМОВИВІЗ (Київ, вул. Качали 3)"
@@ -355,12 +335,26 @@ def checkout_view(request):
             f"➖➖➖➖➖➖➖➖➖➖\n"
             f"💰 <b>СУМА: {cart.get_total_price()} грн</b>"
         )
-        
         send_telegram(telegram_msg)
         cart.clear()
-        return redirect('store:catalog') # Або на сторінку "Дякуємо"
+        return redirect('store:catalog')
+
+    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ (GET ЗАПИТ) 🔥
+    # Тепер якщо користувач увійшов, поля в checkout.html будуть заповнені
+    initial_data = {}
+    if request.user.is_authenticated:
+        initial_data['email'] = request.user.email
+        initial_data['full_name'] = f"{request.user.first_name} {request.user.last_name}".strip()
         
-    return render(request, 'store/checkout.html')
+        if hasattr(request.user, 'profile'):
+            profile = request.user.profile
+            initial_data['phone'] = profile.phone
+            initial_data['city'] = profile.city
+            initial_data['nova_poshta_branch'] = profile.nova_poshta_branch
+            if not initial_data['full_name'] and hasattr(profile, 'full_name'):
+                 initial_data['full_name'] = profile.full_name
+
+    return render(request, 'store/checkout.html', {'user_data': initial_data})
 
 def about_view(request): return render(request, 'store/about.html')
 def contacts_view(request): return render(request, 'store/contacts.html')
@@ -374,5 +368,4 @@ def bot_callback_view(request):
     except: pass
     return JsonResponse({'status': 'err'})
 def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')
-def faq_view(request):
-    return render(request, 'store/faq.html')
+def faq_view(request): return render(request, 'store/faq.html')

@@ -23,7 +23,8 @@ class Cart:
         if product_id not in self.cart:
             self.cart[product_id] = {
                 'quantity': 0,
-                # 🔥 ВАЖЛИВО: Перетворюємо Decimal у str, щоб JSON не ламався
+                # 🔥 ТУТ БУЛА ПОМИЛКА. МИ ВИПРАВИЛИ:
+                # Перетворюємо ціну (Decimal) у текст (str), щоб не було помилки JSON
                 'price': str(product.price) 
             }
             
@@ -61,7 +62,8 @@ class Cart:
             cart[str(product.id)]['product'] = product
 
         for item in cart.values():
-            # 🔥 ВАЖЛИВО: Перетворюємо назад із str у Decimal для розрахунків
+            # 🔥 ТУТ ПОВЕРТАЄМО НАЗАД:
+            # Перетворюємо текст (str) назад у гроші (Decimal) для математики
             item['price'] = Decimal(item['price'])
             item['total_price'] = item['price'] * item['quantity']
             yield item

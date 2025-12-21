@@ -62,7 +62,7 @@
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
 
-    /* Виправлення FAQ, щоб не вилазив */
+    /* Виправлення FAQ */
     .seo-text-block { word-wrap: break-word; overflow-wrap: break-word; }
 </style>
 
@@ -82,6 +82,7 @@
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
                 <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
+                {# 🔥 ВКЛЮЧАЄМО ФАЙЛ З ФОРМОЮ 🔥 #}
                 {% include "store/includes/filter_form.html" %} 
             </div>
         </aside>
@@ -173,11 +174,9 @@
                                 </a>
                             </div>
                             
-                            {# Розмір під назвою #}
                             <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
 
                             <div class="mt-auto">
-                                {# Ціна #}
                                 <div class="mb-1">
                                     {% if product.discount_percent > 0 %}
                                         <span class="text-danger fw-bold fs-5">{{ product.price }} ₴</span> 
@@ -187,17 +186,14 @@
                                     {% endif %}
                                 </div>
                                 
-                                {# Наявність #}
                                 <div class="text-success small mb-2" style="font-size: 0.8rem;">
                                     <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
                                 </div>
 
-                                {# Комплект (СІРИЙ ФОН) #}
                                 <div class="set-price-block">
                                     Комплект 4 шт: <b>{% widthratio product.price 1 4 %} ₴</b>
                                 </div>
 
-                                {# ФОРМА ДОДАВАННЯ З КНОПКАМИ + / - #}
                                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form" data-product-id="{{ product.id }}">
                                     {% csrf_token %}
                                     <div class="quantity-stepper">
@@ -282,65 +278,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-         {# ТУТ ВСТАВЛЯЄМО ТУ САМУ ФОРМУ, ЩО І В САЙДБАРІ #}
-         <form method="get" action="{% url 'store:catalog' %}">
-            {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
-            {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
-
-            <div class="accordion" id="filterAccordionMobile">
-                {# СЕЗОН #}
-                <div class="filter-group mb-3">
-                    <label class="fw-bold mb-2">Сезон</label>
-                    <select name="season" class="form-select">
-                        <option value="">Будь-який</option>
-                        {% for value, display in all_seasons %}
-                            <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                {# РОЗМІРИ #}
-                <div class="filter-group mb-3">
-                    <label class="fw-bold mb-2">Розмір</label>
-                    <div class="row g-2">
-                        <div class="col-4">
-                            <select name="width" class="form-select">
-                                <option value="">Ширина</option>
-                                {% for w in all_widths %}<option value="{{ w }}" {% if w|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ w }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-4">
-                            <select name="profile" class="form-select">
-                                <option value="">Профіль</option>
-                                {% for p in all_profiles %}<option value="{{ p }}" {% if p|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ p }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-4">
-                            <select name="diameter" class="form-select">
-                                <option value="">Діаметр</option>
-                                {% for d in all_diameters %}<option value="{{ d }}" {% if d|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ d }}</option>{% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {# БРЕНД #}
-                <div class="filter-group mb-3">
-                    <label class="fw-bold mb-2">Бренд</label>
-                    <select name="brand" class="form-select">
-                        <option value="">Всі бренди</option>
-                        {% for brand in all_brands %}
-                            <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            
-            <div class="d-grid gap-2 mt-4">
-                <button type="submit" class="btn btn-primary rounded-pill fw-bold">Застосувати</button>
-                <a href="{% url 'store:catalog' %}" class="btn btn-light rounded-pill border">Скинути</a>
-            </div>
-        </form>
+         {# 🔥 ТУТ ТЕЖ ВКЛЮЧАЄМО ФОРМУ (ПОВТОРНЕ ВИКОРИСТАННЯ) 🔥 #}
+         {% include "store/includes/filter_form.html" %}
     </div>
 </div>
 

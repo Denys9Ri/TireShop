@@ -227,11 +227,18 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     faq_schema = get_faq_schema(seo_data, int(min_price))
     cross_links = get_cross_links(season_slug, brand_obj, w_int, p_int, d_int)
 
-    # --- СОРТУВАННЯ ---
+    # --- СОРТУВАННЯ (З ФІЛЬТРАЦІЄЮ НАЯВНОСТІ) ---
     ordering = request.GET.get('ordering')
-    if ordering == 'cheap': products = products.order_by('price')
-    elif ordering == 'expensive': products = products.order_by('-price')
-    else: products = products.order_by('status_order', 'brand__name', 'name')
+    
+    if ordering == 'cheap':
+        # 🔥 Показуємо ТІЛЬКИ ті, що є в наявності
+        products = products.filter(stock_quantity__gt=0).order_by('price')
+    elif ordering == 'expensive':
+        # 🔥 Показуємо ТІЛЬКИ ті, що є в наявності
+        products = products.filter(stock_quantity__gt=0).order_by('-price')
+    else:
+        # За замовчуванням: спочатку в наявності (status_order=0), потім нові (-id)
+        products = products.order_by('status_order', '-id')
 
     # --- UI ---
     brands = Brand.objects.all().order_by('name')

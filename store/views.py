@@ -434,3 +434,66 @@ def bot_callback_view(request):
     return JsonResponse({'status': 'err'})
 def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')
 def faq_view(request): return render(request, 'store/faq.html')
+
+def fix_product_names_view(request):
+    """
+    Секретна в'юшка для очистки назв без доступу до Shell.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'status': 'error', 'message': 'Access denied'})
+
+    count = 0
+    log = []
+    
+    # Імпортуємо тут, щоб не було конфліктів зверху
+    from .models import Product
+    import re
+    
+    products = Product.objects.all()
+    
+    for p in products:
+        raw_name = p.name
+        
+        # 1. Прибираємо "Шина", бренд
+        clean_name = raw_name.replace("Шина", "").replace("шина", "")
+        
+        if p.brand:
+            # Видаляємо бренд з початку
+            clean_name = re.sub(f"^{p.brand.name}", "", clean_name, flags=re.IGNORECASE)
+            # Видаляємо бренд в дужках (APLUS)
+            clean_name = re.sub(f"\({p.brand.name}\)", "", clean_name, flags=re.IGNORECASE)
+
+        # 2. Витягуємо індекси (91V, 102XL, 75T)
+        index_match = re.search(r'\b(\d{2,3}[A-Z]{1,2})\b', clean_name)
+        load_speed_idx = ""
+        if index_match:
+            load_speed_idx = index_match.group(1)
+        
+        # 3. Витягуємо модель (те що лишилось без розміру і індексів)
+        clean_name_no_size = re.sub(r'\d{3}/\d{2}[R|Z]\d{2}', '', clean_name)
+        if load_speed_idx:
+            clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
+
+        model_name = clean_name_no_size.strip()
+        model_name = re.sub(r'^\W+|\W+$', '', model_name) # trim символів
+
+        # 4. Формуємо красиву назву
+        size_str = f"{p.width}/{p.profile} R{p.diameter}"
+        
+        final_name = f"{model_name} {size_str}"
+        if load_speed_idx:
+            final_name += f" {load_speed_idx}"
+        
+        final_name = re.sub(r'\s+', ' ', final_name).strip()
+
+        if final_name != p.name and len(final_name) > 5: # Перевірка щоб не стерти все
+            log.append(f"Fixed: {p.name} -> {final_name}")
+            p.name = final_name
+            p.save()
+            count += 1
+            
+    return JsonResponse({
+        'status': 'success', 
+        'updated_count': count,
+        'log': log[:50] # Покажемо перші 50 змін
+    })

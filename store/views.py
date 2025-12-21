@@ -245,7 +245,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
 
     seo_data = generate_seo_content(brand_obj, season_db, w_int, p_int, d_int, int(min_price), int(max_price))
     
-    # 🔥 ГЕНЕРАЦІЯ FAQ (СПИСОК + SCHEMA) 🔥
+    # FAQ
     faq_list = get_combined_faq(season_db)
     faq_schema = get_faq_schema_json(faq_list)
     
@@ -265,11 +265,15 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
     
+    # 🔥 ГЕНЕРУЄМО РОЗУМНУ ПАГІНАЦІЮ [1, '...', 5, 6, 7, '...', 20] 🔥
+    custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    
     q_params = request.GET.copy()
     if 'page' in q_params: del q_params['page']
 
     return render(request, 'store/catalog.html', {
         'page_obj': page_obj, 
+        'custom_page_range': custom_page_range, # Передаємо в шаблон
         'filter_query_string': q_params.urlencode(),
         'all_brands': brands,
         'all_widths': Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width'),
@@ -286,7 +290,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'seo_description': seo_data['meta_description'],
         'seo_text_html': seo_data['description_html'],
         'faq_schema': faq_schema,
-        'faq_list': faq_list, # 🔥 Передаємо список питань у шаблон
+        'faq_list': faq_list, 
         'cross_links': cross_links,
         'is_seo_page': True
     })
@@ -297,8 +301,6 @@ def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     similar = Product.objects.filter(width=product.width, diameter=product.diameter).exclude(id=product.id)[:4]
     seo_data = generate_seo_content(product.brand, product.seasonality, product.width, product.profile, product.diameter, int(product.price), int(product.price))
-    
-    # Для товару беремо тільки базові + сезонні
     faq_list = get_combined_faq(product.seasonality)
     faq_schema = get_faq_schema_json(faq_list)
 
@@ -312,7 +314,7 @@ def product_detail_view(request, slug):
         'product': product, 'similar_products': similar, 'parent_category': parent_cat,
         'seo_title': seo_data['title'], 'seo_h1': seo_data['h1'], 'seo_h2': seo_data['seo_h2'],
         'seo_text_html': seo_data['description_html'], 
-        'faq_schema': faq_schema # Schema для товару
+        'faq_schema': faq_schema 
     })
 
 def redirect_old_product_urls(request, product_id):
@@ -350,13 +352,9 @@ def cart_remove_view(request, product_id):
 def cart_add_ajax_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
+    try: quantity_to_add = int(request.POST.get('quantity', 1))
+    except: quantity_to_add = 1
     
-    try:
-        quantity_to_add = int(request.POST.get('quantity', 1))
-    except (ValueError, TypeError):
-        quantity_to_add = 1
-    
-    # 🔥 ПЕРЕВІРКА СКЛАДУ 🔥
     cart_item = cart.cart.get(str(product.id))
     current_in_cart = cart_item['quantity'] if cart_item else 0
     total_wanted = current_in_cart + quantity_to_add
@@ -369,11 +367,7 @@ def cart_add_ajax_view(request, product_id):
         cart.add(product=product, quantity=quantity_to_add, update_quantity=False)
     
     html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
-    
-    return JsonResponse({
-        'html': html,
-        'cart_len': len(cart)
-    })
+    return JsonResponse({'html': html, 'cart_len': len(cart)})
 
 # --- ЗАМОВЛЕННЯ (CHECKOUT) ---
 def checkout_view(request):
@@ -400,7 +394,6 @@ def checkout_view(request):
             OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
             items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
 
-        # Телеграм
         if is_pickup:
             delivery_icon = "🏃"
             delivery_details = "САМОВИВІЗ (Київ, вул. Качали 3)"
@@ -425,7 +418,6 @@ def checkout_view(request):
         cart.clear()
         return redirect('store:catalog')
 
-    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ 🔥
     initial_data = {}
     if request.user.is_authenticated:
         initial_data['email'] = request.user.email

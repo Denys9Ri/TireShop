@@ -438,7 +438,7 @@ def faq_view(request): return render(request, 'store/faq.html')
 def fix_product_names_view(request):
     """
     Секретна в'юшка для очистки назв. 
-    Обробляє по 300 штук за раз.
+    Логіка: Залишаємо ТІЛЬКИ Модель та Індекс (без розміру).
     Використання: /secret-fix-names/?page=1, потім ?page=2 і т.д.
     """
     if not request.user.is_superuser:
@@ -446,10 +446,9 @@ def fix_product_names_view(request):
 
     from .models import Product
     import re
-    import time
 
-    # 1. Налаштування пагінації (сторінок)
-    batch_size = 300  # Ваше прохання: 300 штук
+    # 1. Налаштування пагінації (300 шт за раз)
+    batch_size = 300
     try:
         page = int(request.GET.get('page', 1))
     except ValueError:
@@ -459,7 +458,6 @@ def fix_product_names_view(request):
     end_index = start_index + batch_size
 
     # 2. Отримуємо порцію товарів
-    # Використовуємо order_by('id'), щоб порядок був стабільним
     products = Product.objects.order_by('id')[start_index:end_index]
 
     if not products:
@@ -475,42 +473,51 @@ def fix_product_names_view(request):
     for p in products:
         raw_name = p.name
         
-        # --- ЛОГІКА ОЧИСТКИ (ТА Ж САМА) ---
+        # --- ЛОГІКА ОЧИСТКИ ---
         clean_name = raw_name.replace("Шина", "").replace("шина", "")
         
         if p.brand:
+            # Видаляємо бренд з початку (щоб не було "Aplus Aplus...")
             clean_name = re.sub(f"^{p.brand.name}", "", clean_name, flags=re.IGNORECASE)
             clean_name = re.sub(f"\({p.brand.name}\)", "", clean_name, flags=re.IGNORECASE)
 
+        # Шукаємо Індекс (наприклад 91T)
         index_match = re.search(r'\b(\d{2,3}[A-Z]{1,2})\b', clean_name)
         load_speed_idx = ""
         if index_match:
             load_speed_idx = index_match.group(1)
         
+        # Видаляємо сам розмір з назви (наприклад 195/65R15)
         clean_name_no_size = re.sub(r'\d{3}/\d{2}[R|Z]\d{2}', '', clean_name)
+        
+        # Видаляємо знайдений індекс з тексту моделі (щоб додати його в кінці красиво)
         if load_speed_idx:
             clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
 
+        # Чистимо модель від сміття
         model_name = clean_name_no_size.strip()
-        model_name = re.sub(r'^\W+|\W+$', '', model_name)
+        model_name = re.sub(r'^\W+|\W+$', '', model_name) # прибираємо коми/тире на краях
 
-        size_str = f"{p.width}/{p.profile} R{p.diameter}"
+        # 🔥 ГОЛОВНА ЗМІНА: Формуємо назву БЕЗ розміру
+        # Було: final_name = f"{model_name} {size_str}"
+        # Стало:
+        final_name = model_name
         
-        final_name = f"{model_name} {size_str}"
         if load_speed_idx:
             final_name += f" {load_speed_idx}"
         
+        # Прибираємо подвійні пробіли
         final_name = re.sub(r'\s+', ' ', final_name).strip()
         # ----------------------------------
 
-        # Зберігаємо ТІЛЬКИ якщо змінилась назва
-        if final_name != p.name and len(final_name) > 5:
+        # Зберігаємо, якщо назва змінилась і не стала пустою
+        if final_name != p.name and len(final_name) > 1:
             log.append(f"{p.id}: {p.name} -> {final_name}")
             p.name = final_name
             p.save()
             count += 1
             
-    # 4. Формуємо відповідь
+    # 4. Формуємо лінк на наступну сторінку
     next_page = page + 1
     next_link = f"{request.path}?page={next_page}"
     
@@ -519,6 +526,6 @@ def fix_product_names_view(request):
         'current_page': page,
         'checked_range': f"{start_index} - {end_index}",
         'fixed_in_this_batch': count,
-        'NEXT_STEP': f"Щоб продовжити, перейдіть сюди: {next_link}",
+        'NEXT_STEP': f"Перейдіть сюди: {next_link}",
         'log': log[:20]
     })

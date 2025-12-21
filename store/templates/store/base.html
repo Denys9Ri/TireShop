@@ -85,16 +85,15 @@
 
         /* 🔥 CSS ДЛЯ СКЛЯНОГО КОШИКА (OFFCANVAS) 🔥 */
         .offcanvas-glass {
-            background: rgba(255, 255, 255, 0.85) !important; /* Напівпрозорий */
-            backdrop-filter: blur(20px); /* Ефект розмиття */
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-left: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: -10px 0 30px rgba(0, 85, 255, 0.15); /* Синя тінь */
+            box-shadow: -10px 0 30px rgba(0, 85, 255, 0.15);
         }
         .offcanvas-glass .offcanvas-header {
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
-        /* Стиль карток всередині кошика */
         .cart-item-glass {
             background: rgba(255, 255, 255, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.8);
@@ -106,49 +105,10 @@
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
-
-        /* --- 🤖 ЛОГІКА ЧАТ-БОТА --- */
-        /* 1. Ховати на сторінках оформлення */
-        .page-checkout .floating-bot {
-            display: none !important;
-        }
-        .page-checkout .tire-bot-btn {
-            display: none !important;
-        }
-
-        /* 2. Стилі кнопки бота */
-        .floating-bot {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 9999;
-            transition: all 0.3s ease;
-        }
-
-        /* 3. Мобільна версія: Зменшення при скролі */
-        @media (max-width: 768px) {
-            .floating-bot.scrolled-down {
-                width: 40px !important;
-                height: 40px !important;
-                bottom: 15px;
-                right: 15px;
-                opacity: 0.7;
-                font-size: 14px !important; /* Менша іконка */
-            }
-            .floating-bot.scrolled-down .bi {
-                 font-size: 20px;
-            }
-            /* Повертаємо нормальний вигляд, якщо натиснути */
-            .floating-bot.scrolled-down:active {
-                opacity: 1;
-                transform: scale(1.1);
-            }
-        }
     </style>
 </head>
 
-{# 🔥 Додаємо клас page-checkout, якщо ми в кошику або оформленні #}
-<body class="{% if request.resolver_match.url_name in 'cart_detail,checkout' %}page-checkout{% endif %}">
+<body>
 
 <header class="navbar">
     <div class="navbar-brand">
@@ -250,19 +210,17 @@
         mobileMenu.classList.toggle('is-active');
     });
 
-    // --- ОНОВЛЕНИЙ JS ДЛЯ ШВИДКОГО КОШИКА ---
+    // --- JS ДЛЯ ШВИДКОГО КОШИКА ---
     document.addEventListener('DOMContentLoaded', function() {
         document.body.addEventListener('submit', function(e) {
             const form = e.target;
             
-            // 1. Перевіряємо, чи має форма наш спеціальний клас
             const isCartForm = form.classList.contains('ajax-cart-form') || 
                                (form.action && form.action.includes('/add/'));
 
             if (isCartForm) {
-                e.preventDefault(); // 🛑 СТОП! Не перезавантажуй сторінку!
+                e.preventDefault(); 
                 
-                // 2. Шукаємо кнопку і додаємо анімацію "Завантаження"
                 const btn = form.querySelector('button[type="submit"]');
                 const originalBtnContent = btn ? btn.innerHTML : '';
                 if(btn) {
@@ -270,18 +228,13 @@
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
                 }
 
-                // 3. Беремо ID товару
                 let productId = form.getAttribute('data-product-id');
                 if (!productId && form.action) {
                     const parts = form.action.split('/'); 
                     productId = parts.filter(part => part).pop();
                 }
 
-                console.log("Adding product ID:", productId); 
-
                 const url = `/cart/add-ajax/${productId}/`;
-                
-                // 4. Відправляємо запит з даними
                 const formData = new FormData(form);
 
                 fetch(url, {
@@ -298,7 +251,6 @@
                 .then(data => {
                     const offcanvasEl = document.getElementById('quickCart');
                     const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
-                    
                     document.getElementById('quickCartBody').innerHTML = data.html;
                     
                     const badge = document.getElementById('cart-badge');
@@ -321,26 +273,16 @@
                 });
             }
         });
-
-        // 🔥 JS ДЛЯ ЗМЕНШЕННЯ БОТА ПРИ СКРОЛІ 🔥
-        window.addEventListener('scroll', function() {
-            const bot = document.querySelector('.floating-bot');
-            if (bot) {
-                if (window.scrollY > 100) {
-                    bot.classList.add('scrolled-down');
-                } else {
-                    bot.classList.remove('scrolled-down');
-                }
-            }
-        });
     });
 </script>
 
 <style>
+    /* Стилі для кнопки бота біля пошуку */
     .tire-bot-btn { width: 50px; height: 50px; background: #1a1a1a; border: 2px dashed #666; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.4s; position: relative; z-index: 100; }
     .tire-bot-btn:hover { transform: rotate(180deg) scale(1.1); border-color: #999; }
     .tire-bot-btn::after { content: ''; position: absolute; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #444; }
     
+    /* Overlay та вікно чату (приховані за замовчуванням) */
     .chat-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .chat-window { width: 90%; max-width: 400px; height: auto; min-height: 500px; border-radius: 20px; background: rgba(255,255,255,0.95); box-shadow: 0 20px 50px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; animation: botPop 0.3s ease-out; }
     @keyframes botPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -356,7 +298,6 @@
     .size-label { font-size: 0.75rem; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
     .size-inputs { display: flex; gap: 8px; margin-top: 10px; width: 100%; }
     .size-input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; }
-    .size-input::placeholder { color: #ccc; font-weight: normal; font-size: 0.9rem; }
     
     .chat-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
     .suggestion-btn { background: #fff; border: 1px solid #dee2e6; padding: 12px; border-radius: 12px; text-align: left; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -371,8 +312,6 @@
     @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 </style>
 
-<div class="tire-bot-btn floating-bot" onclick="openChat()"><i class="bi bi-robot"></i></div>
-
 <div id="chatOverlay" class="chat-overlay">
     <div class="chat-window">
         <div class="chat-header">
@@ -385,23 +324,12 @@
             
             <div id="stepSize">
                 <div class="msg msg-bot">Введіть розмір:</div>
-                
                 <div class="size-inputs mb-3">
-                    <div class="size-input-group">
-                        <span class="size-label">Ширина</span>
-                        <input type="number" id="botW" class="size-input" placeholder="205">
-                    </div>
-                    <div class="size-input-group">
-                        <span class="size-label">Профіль</span>
-                        <input type="number" id="botP" class="size-input" placeholder="55">
-                    </div>
-                    <div class="size-input-group">
-                        <span class="size-label">Діаметр</span>
-                        <input type="number" id="botD" class="size-input" placeholder="16">
-                    </div>
+                    <div class="size-input-group"><span class="size-label">Ширина</span><input type="number" id="botW" class="size-input" placeholder="205"></div>
+                    <div class="size-input-group"><span class="size-label">Профіль</span><input type="number" id="botP" class="size-input" placeholder="55"></div>
+                    <div class="size-input-group"><span class="size-label">Діаметр</span><input type="number" id="botD" class="size-input" placeholder="16"></div>
                 </div>
                 <button class="btn btn-primary w-100 rounded-pill fw-bold mb-3" onclick="validateSize()">Далі <i class="bi bi-arrow-right"></i></button>
-                
                 <div class="suggestion-btn btn-sos" onclick="startSosMode()">🤷 Я не знаю розмір / Допоможіть</div>
             </div>
 
@@ -440,13 +368,10 @@
     const chatOverlay = document.getElementById('chatOverlay');
     const chatBody = document.getElementById('chatBody');
     const typingDots = document.getElementById('typingDots');
-    
     let botState = { width: '', profile: '', diameter: '', budget: '', season: '' };
-
     function openChat() { chatOverlay.style.display = 'flex'; }
     function closeChat() { chatOverlay.style.display = 'none'; }
     chatOverlay.addEventListener('click', (e) => { if(e.target === chatOverlay) closeChat(); });
-
     function validateSize() {
         const w = document.getElementById('botW').value;
         const p = document.getElementById('botP').value;
@@ -457,14 +382,12 @@
         document.getElementById('stepSize').style.display = 'none';
         showTypingAndSwitch('stepBudget');
     }
-
     function stepBudgetDone(value, text) {
         botState.budget = value;
         document.getElementById('stepBudget').style.display = 'none';
         addUserMsg(text);
         showTypingAndSwitch('stepSeason');
     }
-
     function stepSeasonDone(seasonValue) {
         document.getElementById('stepSeason').style.display = 'none';
         botState.season = seasonValue;
@@ -480,13 +403,11 @@
             window.location.href = url;
         }, 1000);
     }
-
     function startSosMode() {
         document.getElementById('stepSize').style.display = 'none';
         addUserMsg("Я не знаю розмір / Допоможіть");
         showTypingAndSwitch('stepSos');
     }
-
     function sendSos() {
         const phone = document.getElementById('sosPhone').value;
         if (phone.length < 9) { alert('Введіть коректний номер!'); return; }
@@ -505,14 +426,12 @@
             chatBody.appendChild(botMsg);
         });
     }
-
     function addUserMsg(text) {
         const msg = document.createElement('div');
         msg.className = 'msg msg-user';
         msg.innerText = text;
         chatBody.insertBefore(msg, typingDots);
     }
-
     function showTypingAndSwitch(nextId) {
         typingDots.style.display = 'block';
         chatBody.scrollTop = chatBody.scrollHeight;

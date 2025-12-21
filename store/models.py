@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
-from django.db import models
 import decimal
 import re
 
@@ -71,34 +70,58 @@ class Product(models.Model):
     @property
     def display_name(self):
         """
-        Віртуальна назва для сайту:
-        Прибирає Бренд, 'Шина' та Розмір, залишаючи тільки Модель та Індекси.
+        Формує красиву назву за стандартом:
+        [Модель] [XL/RunFlat] [Розмір з бази] [Індекс]
+        Наприклад: A502 XL 215/55 R16 97H
+        (Бренд додається окремо в шаблоні)
         """
         text = self.name
         
-        # 1. Прибираємо "Шина"
+        # 1. Прибираємо сміття ("Шина", назву бренду)
         text = text.replace("Шина", "").replace("шина", "")
-        
-        # 2. Прибираємо назву Бренду (якщо вона є на початку або в дужках)
         if self.brand:
-            # Case-insensitive заміна бренду на початку
             text = re.sub(f"^{self.brand.name}", "", text, flags=re.IGNORECASE)
-            # Заміна (Brand)
             text = re.sub(f"\({self.brand.name}\)", "", text, flags=re.IGNORECASE)
 
-        # 3. Прибираємо Розмір (195/65R15, 205/55 R16 тощо)
-        # Шукаємо патерн: Цифри/Цифри[Буква]Цифри
+        # 2. Шукаємо особливості (XL, RunFlat)
+        features = []
+        if re.search(r'\bXL\b', text, re.IGNORECASE) or "EXTRA LOAD" in text.upper():
+            features.append("XL")
+            text = re.sub(r'\bXL\b', '', text, flags=re.IGNORECASE)
+            text = re.sub(r'\bEXTRA LOAD\b', '', text, flags=re.IGNORECASE)
+            
+        if re.search(r'\bRunFlat\b', text, re.IGNORECASE) or re.search(r'\bRFT\b', text, re.IGNORECASE):
+            features.append("RunFlat")
+            text = re.sub(r'\bRunFlat\b', '', text, flags=re.IGNORECASE)
+            text = re.sub(r'\bRFT\b', '', text, flags=re.IGNORECASE)
+
+        # 3. Шукаємо Індекс (наприклад 97H)
+        index_match = re.search(r'\b\d{2,3}[A-Z]\b', text)
+        index_val = ""
+        if index_match:
+            index_val = index_match.group(0)
+            text = text.replace(index_val, "") 
+
+        # 4. Видаляємо старий кривий розмір (155/65R14...) з тексту
         text = re.sub(r'\d{3}/\d{2}\s?[R|Z|r|z]\d{1,2}', '', text)
 
-        # 4. Прибираємо зайві пробіли та символи по краях
-        text = re.sub(r'\s+', ' ', text).strip()
-        text = re.sub(r'^\W+|\W+$', '', text) # Прибирає коми/тире на початку і в кінці
+        # 5. Очищаємо назву моделі (те, що лишилось)
+        model_name = text.strip()
+        model_name = re.sub(r'^\W+|\W+$', '', model_name) # прибираємо коми/тире
+        model_name = re.sub(r'\s+', ' ', model_name).strip()
 
-        # Якщо раптом стерли все (буває таке), повертаємо оригінал, щоб не було пусто
-        if not text:
-            return self.name
-            
-        return text
+        # 6. ФОРМУЄМО ІДЕАЛЬНИЙ РЯДОК
+        size_clean = f"{self.width}/{self.profile} R{self.diameter}"
+        
+        final_parts = []
+        if model_name: final_parts.append(model_name)
+        if features: final_parts.extend(features)
+        final_parts.append(size_clean)
+        if index_val: final_parts.append(index_val)
+
+        # Якщо раптом пусто - повертаємо оригінал
+        res = " ".join(final_parts)
+        return res if len(res) > 5 else self.name
         
     # Технічні характеристики
     country = models.CharField(max_length=50, blank=True, null=True)
@@ -108,24 +131,31 @@ class Product(models.Model):
     stud_type = models.CharField(max_length=50, default="Не шип")
     vehicle_type = models.CharField(max_length=50, default="Легковий")
 
-    # Властивість для "Старої ціни" (щоб показувати закреслену ціну)
+    # Властивість для "Старої ціни"
     @property
     def old_price(self):
         if self.discount_percent > 0:
-            # Якщо є знижка, то price - це вже знижена ціна.
-            # Нам треба повернути ціну ДО знижки.
             return int(self.price * 100 / (100 - self.discount_percent))
         return None
 
     # Авто-генерація SLUG та ЦІНИ при збереженні
     def save(self, *args, **kwargs):
-        # 1. Генерація SLUG
+        # 1. Генерація SLUG (з захистом від дублікатів)
         if not self.slug:
-            b_name = self.brand.name if self.brand else 'no-brand'
-            base_slug = f"{b_name}-{self.name}-{self.width}-{self.profile}-{self.diameter}"
-            self.slug = slugify(base_slug)[:250]
+            slug_candidate = f"{self.brand.name}-{self.name}" if self.brand else self.name
+            # Очистимо від слешів, щоб slugify спрацював коректно
+            slug_candidate = slug_candidate.replace('/', '')
+            self.slug = slugify(slug_candidate)
 
-        # 2. Розрахунок ЦІНИ (Фіксуємо в базу)
+        # 🔥 ПЕРЕВІРКА НА УНІКАЛЬНІСТЬ SLUG (ЩОБ ПРАЙС НЕ ПАДАВ) 🔥
+        original_slug = self.slug
+        counter = 1
+        # Шукаємо, чи є такий slug у ІНШИХ товарів (exclude self.id)
+        while Product.objects.filter(slug=self.slug).exclude(id=self.id).exists():
+            self.slug = f"{original_slug}-{counter}"
+            counter += 1
+
+        # 2. Розрахунок ЦІНИ
         try:
             settings = SiteSettings.get_solo()
             markup = decimal.Decimal(str(settings.global_markup))
@@ -133,18 +163,14 @@ class Product(models.Model):
             markup = decimal.Decimal('1.30')
         
         cost = decimal.Decimal(str(self.cost_price))
-        
-        # Базова ціна = Собівартість * Націнка
         base_price = cost * markup
         
-        # Якщо є знижка - віднімаємо її
         if self.discount_percent > 0:
             factor = (decimal.Decimal('100') - decimal.Decimal(self.discount_percent)) / decimal.Decimal('100')
             final_price = base_price * factor
         else:
             final_price = base_price
             
-        # Записуємо в реальне поле price (округлюємо до цілого)
         self.price = int(final_price)
 
         super().save(*args, **kwargs)

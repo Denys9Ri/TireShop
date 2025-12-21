@@ -68,6 +68,38 @@ class Product(models.Model):
     photo_url = models.URLField(max_length=1024, blank=True, null=True)
     photo = models.ImageField(upload_to='products/', blank=True, null=True)
 
+    @property
+    def display_name(self):
+        """
+        Віртуальна назва для сайту:
+        Прибирає Бренд, 'Шина' та Розмір, залишаючи тільки Модель та Індекси.
+        """
+        text = self.name
+        
+        # 1. Прибираємо "Шина"
+        text = text.replace("Шина", "").replace("шина", "")
+        
+        # 2. Прибираємо назву Бренду (якщо вона є на початку або в дужках)
+        if self.brand:
+            # Case-insensitive заміна бренду на початку
+            text = re.sub(f"^{self.brand.name}", "", text, flags=re.IGNORECASE)
+            # Заміна (Brand)
+            text = re.sub(f"\({self.brand.name}\)", "", text, flags=re.IGNORECASE)
+
+        # 3. Прибираємо Розмір (195/65R15, 205/55 R16 тощо)
+        # Шукаємо патерн: Цифри/Цифри[Буква]Цифри
+        text = re.sub(r'\d{3}/\d{2}\s?[R|Z|r|z]\d{1,2}', '', text)
+
+        # 4. Прибираємо зайві пробіли та символи по краях
+        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r'^\W+|\W+$', '', text) # Прибирає коми/тире на початку і в кінці
+
+        # Якщо раптом стерли все (буває таке), повертаємо оригінал, щоб не було пусто
+        if not text:
+            return self.name
+            
+        return text
+        
     # Технічні характеристики
     country = models.CharField(max_length=50, blank=True, null=True)
     year = models.IntegerField(default=2024)

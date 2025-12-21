@@ -47,45 +47,20 @@
 
     /* ВИБІР КІЛЬКОСТІ (СКЛЯНИЙ СТИЛЬ) */
     .product-card__cart-form { text-align: center; } 
-    
     .quantity-stepper { 
-        display: inline-flex; 
-        align-items: center; 
-        justify-content: space-between; 
-        background: rgba(255, 255, 255, 0.8); 
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(13, 110, 253, 0.2); 
-        border-radius: 50px; 
-        padding: 3px; 
-        margin: 0 auto 10px auto; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        width: fit-content;
+        display: inline-flex; align-items: center; justify-content: space-between; 
+        background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px);
+        border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 50px; 
+        padding: 3px; margin: 0 auto 10px auto; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content;
     }
     .quantity-btn { 
-        width: 28px; 
-        height: 28px; 
-        border-radius: 50%; 
-        border: none; 
-        background: rgba(13, 110, 253, 0.1); 
-        color: #0d6efd; 
-        font-weight: bold; 
-        cursor: pointer; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        transition: 0.2s; 
+        width: 28px; height: 28px; border-radius: 50%; border: none; 
+        background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-weight: bold; 
+        cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; 
     }
     .quantity-btn:hover { background: #0d6efd; color: white; }
-    .quantity-stepper input { 
-        width: 35px; 
-        border: none; 
-        text-align: center; 
-        font-weight: bold; 
-        font-size: 0.95rem; 
-        background: transparent; 
-        color: #333;
-        outline: none; 
-    }
+    .quantity-stepper input { width: 35px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; color: #333; outline: none; }
 
     /* БАНЕР */
     .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
@@ -100,44 +75,32 @@
 
     /* --- 🔥 FAQ СТИЛЬ (СКЛО) 🔥 --- */
     .glass-faq-container {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px;
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        word-wrap: break-word; 
-        overflow-wrap: break-word;
+        word-wrap: break-word; overflow-wrap: break-word;
     }
-    .custom-accordion .accordion-item {
-        background: transparent;
-        border: none;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    .custom-accordion .accordion-item { background: transparent; border: none; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+    .custom-accordion .accordion-button { background: transparent; box-shadow: none; color: #004a99; font-weight: 700; padding: 15px 0; }
+    .custom-accordion .accordion-button:not(.collapsed) { color: #dc3545; }
+    .custom-accordion .accordion-button:focus { box-shadow: none; }
+    .custom-accordion .accordion-body { padding: 0 0 15px 0; color: #555; font-size: 0.95rem; line-height: 1.6; }
+
+    /* --- 🔥 ПАГІНАЦІЯ СТИЛЬ (СКЛО) 🔥 --- */
+    .pagination .page-link {
+        border-radius: 50%; width: 40px; height: 40px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 4px; border: none; color: #333; font-weight: 600;
+        background: rgba(255,255,255,0.7); backdrop-filter: blur(4px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
     }
-    .custom-accordion .accordion-button {
-        background: transparent;
-        box-shadow: none;
-        color: #004a99; /* Синій колір R16 */
-        font-weight: 700;
-        padding: 15px 0;
-    }
-    .custom-accordion .accordion-button:not(.collapsed) {
-        color: #dc3545; /* Червоний при відкритті */
-    }
-    .custom-accordion .accordion-button:focus {
-        box-shadow: none;
-    }
-    .custom-accordion .accordion-body {
-        padding: 0 0 15px 0;
-        color: #555;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
+    .pagination .page-link:hover { background: #fff; color: #0d6efd; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .pagination .page-item.active .page-link { background: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); }
+    .pagination .page-item.disabled .page-link { background: rgba(255,255,255,0.3); color: #ccc; box-shadow: none; }
 </style>
 
 <div class="container py-3">
     
-    {# --- ХЛІБНІ КРИХТИ --- #}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small mb-3" style="background: transparent; padding-left: 0;">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
@@ -147,7 +110,7 @@
 
     <div class="row">
         
-        {# ============ ЛІВА КОЛОНКА (САЙДБАР - ТІЛЬКИ ПК) ============ #}
+        {# ============ ЛІВА КОЛОНКА (САЙДБАР) ============ #}
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
                 <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
@@ -158,22 +121,17 @@
         {# ============ ПРАВА КОЛОНКА (ТОВАРИ) ============ #}
         <div class="col-lg-9">
             
-            {# ====== ПОШУК + КНОПКА ФІЛЬТРІВ (МОБ) ====== #}
             <div class="mb-3">
                 <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    
-                    {# Кнопка фільтрів для мобільного #}
                     <button class="btn btn-outline-primary d-lg-none fw-bold" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilter" style="white-space: nowrap;">
                         <i class="bi bi-sliders"></i> Фільтри
                     </button>
-                    
                     <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none; min-width: 150px;" placeholder="Пошук (Michelin, 205/55R16)..." value="{{ search_query }}">
                     <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота"><i class="bi bi-robot"></i></div>
                     <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;"><i class="bi bi-search"></i></button>
                 </form>
             </div>
 
-            {# ====== BANNERS ====== #}
             {% if show_banner and banners %}
                 <div class="banner-wrapper">
                     <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
@@ -194,10 +152,8 @@
                 </div>
             {% endif %}
 
-            {# ЗАГОЛОВОК #}
             <h1 class="h4 fw-bold mb-3">{{ seo_h1 }}</h1>
 
-            {# 🔥 СОРТУВАННЯ 🔥 #}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="text-muted small">Знайдено: {{ page_obj.paginator.count }} шт.</div>
                 <form method="get" action="{% url 'store:catalog' %}">
@@ -215,7 +171,7 @@
             </div>
 
             {# СІТКА ТОВАРІВ #}
-            {# 🔥 ВИПРАВЛЕНО: row-cols-1 для мобільного (один товар в ряд) 🔥 #}
+            {# row-cols-1 для мобільного = 1 товар в ряд #}
             <div class="row row-cols-1 row-cols-md-3 g-3">
                 {% for product in page_obj %}
                     <div class="col">
@@ -255,7 +211,6 @@
                                     {% endif %}
                                 </div>
                                 
-                                {# 🔥 ВИПРАВЛЕНО: ЛОГІКА НАЯВНОСТІ (ЧЕРВОНИЙ/ЗЕЛЕНИЙ) 🔥 #}
                                 {% if product.stock_quantity > 0 %}
                                     <div class="text-success small mb-2" style="font-size: 0.8rem;">
                                         <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
@@ -291,22 +246,54 @@
                 {% endfor %}
             </div>
 
-            {# ПАГІНАЦІЯ #}
+            {# 🔥 ПОКРАЩЕНА ПАГІНАЦІЯ 🔥 #}
             {% if page_obj.has_other_pages %}
-                 <nav class="mt-4">
-                    <ul class="pagination justify-content-center">
+                 <nav class="mt-5" aria-label="Page navigation">
+                    <ul class="pagination justify-content-center flex-wrap gap-1">
+                        
+                        {# "Назад" #}
                         {% if page_obj.has_previous %}
-                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}">←</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}" aria-label="Previous">←</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">←</span></li>
                         {% endif %}
-                        <li class="page-item disabled"><span class="page-link">{{ page_obj.number }}</span></li>
+
+                        {# СТОРІНКИ #}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            
+                            {# Показуємо: Перша, Остання, і Сусіди +/- 2 #}
+                            {% elif num == 1 or num == page_obj.paginator.num_pages or num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}&{{ filter_query_string }}">{{ num }}</a>
+                                </li>
+                            
+                            {# Крапки для пропусків #}
+                            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                                <li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {# "Вперед" #}
                         {% if page_obj.has_next %}
-                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}">→</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}" aria-label="Next">→</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">→</span></li>
                         {% endif %}
                     </ul>
+                    
+                    <div class="text-center text-muted small mt-3">
+                        Сторінка <b>{{ page_obj.number }}</b> із <b>{{ page_obj.paginator.num_pages }}</b>
+                    </div>
                  </nav>
             {% endif %}
             
-            {# 🔥 ОНОВЛЕНИЙ БЛОК FAQ (СКЛЯНИЙ СТИЛЬ) 🔥 #}
+            {# 🔥 БЛОК FAQ (СКЛЯНИЙ) 🔥 #}
             <div class="glass-faq-container mt-5 p-4">
                 <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
                 <div class="text-muted small mb-4">{{ seo_text_html|safe }}</div>
@@ -333,7 +320,6 @@
                 </div>
                 {% endif %}
                 
-                {# ХМАРА ТЕГІВ #}
                 {% if cross_links %}
                 <div class="mt-4 pt-3 border-top border-white">
                     {% for group in cross_links %}
@@ -352,27 +338,24 @@
 
         </div> </div> </div>
 
-{# 🔥 OFFCANVAS ФІЛЬТР ДЛЯ МОБІЛЬНОГО 🔥 #}
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter">
     <div class="offcanvas-header bg-light">
         <h5 class="offcanvas-title fw-bold"><i class="bi bi-sliders"></i> Фільтри</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-         {# 🔥 ТУТ ТЕЖ ВКЛЮЧАЄМО ФОРМУ (ПОВТОРНЕ ВИКОРИСТАННЯ) 🔥 #}
          {% include "store/includes/filter_form.html" %}
     </div>
 </div>
 
 <script>
-  // Логіка для кнопок +/- кількості
   document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.quantity-stepper').forEach((stepper) => {
         const input = stepper.querySelector('input[name="quantity"]');
         const buttons = stepper.querySelectorAll('.quantity-btn');
         buttons.forEach((button) => {
           button.addEventListener('click', (e) => {
-            e.preventDefault(); // Щоб форма не відправлялась
+            e.preventDefault(); 
             const direction = button.dataset.direction;
             let current = parseInt(input.value, 10) || 1;
             if (direction === 'increase') input.value = current + 1;

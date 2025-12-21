@@ -285,7 +285,7 @@
                             </a>
 
                             <div class="product-name h6 fw-bold mb-1" style="font-size: 0.95rem;">
-                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">{{ product.brand.name }} {{ product.name }}</a>
+                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">{{ product.brand.name }} {{ product.display_name }}</a>
                             </div>
                             
                             <p class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>

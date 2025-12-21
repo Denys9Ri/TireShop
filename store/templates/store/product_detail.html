@@ -3,10 +3,17 @@
 
 {# ================== SEO HEAD ================== #}
 
-{% block title %}{{ seo_title }}{% endblock %}
+{% block title %}
+    {# Використовуємо красиву назву для вкладки браузера #}
+    {% if seo_title %}
+        {{ seo_title }}
+    {% else %}
+        {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} - Купити в R16
+    {% endif %}
+{% endblock %}
 
 {% block meta_description %}
-Купити {{ product.brand.name }} {{ product.name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} в Києві. 💰 Ціна: {{ product.price }} грн. 🚚 Доставка по Україні. Гарантія якості.
+Купити {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} в Києві. 💰 Ціна: {{ product.price }} грн. 🚚 Доставка по Україні. Гарантія якості.
 {% endblock %}
 
 {% block content %}
@@ -15,11 +22,11 @@
 {
   "@context": "https://schema.org/",
   "@type": "Product",
-  "name": "{{ product.brand.name }} {{ product.name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}",
+  "name": "{{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}",
   "image": [
     "{% if product.photo_url %}{{ product.photo_url }}{% elif product.photo %}{{ product.photo.url }}{% else %}https://r16.com.ua/static/images/no-image.png{% endif %}"
   ],
-  "description": "Купити шини {{ product.brand.name }} {{ product.name }}. Розмір: {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Індекси: {{ product.load_index }}{{ product.speed_index }}. Рік: {{ product.year }}.",
+  "description": "Купити шини {{ product.brand.name }} {{ product.display_name }}. Розмір: {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Індекси: {{ product.load_index }}{{ product.speed_index }}. Рік: {{ product.year }}.",
   "brand": {
     "@type": "Brand",
     "name": "{{ product.brand.name }}"
@@ -287,7 +294,10 @@
                 </li>
             {% endif %}
 
-            <li class="breadcrumb-item active" aria-current="page" style="color: #333; font-weight: 600;">{{ product.brand.name }} {{ product.name }}</li>
+            {# 🔥 ТУТ ВИПРАВЛЕНО: Використовуємо display_name в хлібних крихтах #}
+            <li class="breadcrumb-item active" aria-current="page" style="color: #333; font-weight: 600;">
+                {{ product.brand.name }} {{ product.display_name }}
+            </li>
         </ol>
     </nav>
 
@@ -300,9 +310,9 @@
                         <div class="carousel-item active" onclick="openLightbox(0)">
                             <div class="carousel-item-content">
                                 {% if product.photo_url %}
-                                    <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
+                                    <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.brand.name }} {{ product.display_name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
                                 {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.name }}">
+                                    <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.brand.name }} {{ product.display_name }}">
                                 {% else %}
                                     <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="No image">
                                 {% endif %}
@@ -368,6 +378,7 @@
                     {% endif %}
                 </div>
 
+                {# 🔥 ТУТ ВИПРАВЛЕНО: H1 використовує display_name #}
                 <h1 class="fw-bold mb-2 lh-sm">
                     {% if product.seo_h1 %}
                         {{ product.seo_h1 }}
@@ -395,7 +406,6 @@
                     {% endif %}
                 </div>
 
-                {# 🔥 ОСЬ ТУТ ЗМІНИ (Додано клас ajax-cart-form і data-product-id) 🔥 #}
                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-3 ajax-cart-form" data-product-id="{{ product.id }}">
                     {% csrf_token %}
                     <div class="action-row">
@@ -449,9 +459,9 @@
                 <div class="col">
                     <div class="similar-card p-3 h-100 d-flex flex-column position-relative">
                         {% if sim.photo_url %}
-                            <img src="{{ sim.photo_url }}" class="similar-img" alt="{{ sim.name }}" onerror="this.src='https://placehold.co/400x400?text=No+Image';">
+                            <img src="{{ sim.photo_url }}" class="similar-img" alt="{{ sim.brand.name }} {{ sim.display_name }}" onerror="this.src='https://placehold.co/400x400?text=No+Image';">
                         {% elif sim.photo %}
-                            <img src="{{ sim.photo.url }}" class="similar-img" alt="{{ sim.name }}">
+                            <img src="{{ sim.photo.url }}" class="similar-img" alt="{{ sim.brand.name }} {{ sim.display_name }}">
                         {% else %}
                             <img src="https://placehold.co/400x400?text=No+Photo" class="similar-img">
                         {% endif %}
@@ -460,8 +470,9 @@
                             <span class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill small">-{{ sim.discount_percent }}%</span>
                         {% endif %}
 
+                        {# 🔥 ТУТ ВИПРАВЛЕНО: Схожі товари теж з гарною назвою #}
                         <a href="{% url 'store:product_detail' sim.slug %}" class="similar-title mt-2 stretched-link">
-                            {{ sim.brand.name }} {{ sim.name }}
+                            {{ sim.brand.name }} {{ sim.display_name }}
                         </a>
                         <p class="text-muted small mb-1">{{ sim.width }}/{{ sim.profile }} R{{ sim.diameter }}</p>
                         
@@ -495,9 +506,9 @@
                         <div class="carousel-item active h-100">
                             <div class="lightbox-img-wrap">
                                 {% if product.photo_url %}
-                                    <img src="{{ product.photo_url }}" alt="{{ product.name }}">
+                                    <img src="{{ product.photo_url }}" alt="{{ product.brand.name }} {{ product.display_name }}">
                                 {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}" alt="{{ product.name }}">
+                                    <img src="{{ product.photo.url }}" alt="{{ product.brand.name }} {{ product.display_name }}">
                                 {% else %}
                                     <img src="https://placehold.co/600x600?text=No+Photo">
                                 {% endif %}

@@ -171,7 +171,6 @@
             </div>
 
             {# СІТКА ТОВАРІВ #}
-            {# row-cols-1 для мобільного = 1 товар в ряд #}
             <div class="row row-cols-1 row-cols-md-3 g-3">
                 {% for product in page_obj %}
                     <div class="col">
@@ -246,12 +245,12 @@
                 {% endfor %}
             </div>
 
-            {# 🔥 ПОКРАЩЕНА ПАГІНАЦІЯ 🔥 #}
+            {# 🔥 РОЗУМНА ПАГІНАЦІЯ 🔥 #}
             {% if page_obj.has_other_pages %}
                  <nav class="mt-5" aria-label="Page navigation">
                     <ul class="pagination justify-content-center flex-wrap gap-1">
                         
-                        {# "Назад" #}
+                        {# Назад #}
                         {% if page_obj.has_previous %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}" aria-label="Previous">←</a>
@@ -260,24 +259,20 @@
                             <li class="page-item disabled"><span class="page-link">←</span></li>
                         {% endif %}
 
-                        {# СТОРІНКИ #}
-                        {% for num in page_obj.paginator.page_range %}
+                        {# 🔥 ЦИКЛ ПО РОЗУМНОМУ ДІАПАЗОНУ 🔥 #}
+                        {% for num in custom_page_range %}
                             {% if num == page_obj.number %}
                                 <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                            
-                            {# Показуємо: Перша, Остання, і Сусіди +/- 2 #}
-                            {% elif num == 1 or num == page_obj.paginator.num_pages or num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            {% elif num == page_obj.paginator.ELLIPSIS %}
+                                <li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>
+                            {% else %}
                                 <li class="page-item">
                                     <a class="page-link" href="?page={{ num }}&{{ filter_query_string }}">{{ num }}</a>
                                 </li>
-                            
-                            {# Крапки для пропусків #}
-                            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
-                                <li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>
                             {% endif %}
                         {% endfor %}
 
-                        {# "Вперед" #}
+                        {# Вперед #}
                         {% if page_obj.has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}" aria-label="Next">→</a>
@@ -293,7 +288,7 @@
                  </nav>
             {% endif %}
             
-            {# 🔥 БЛОК FAQ (СКЛЯНИЙ) 🔥 #}
+            {# FAQ (Скляний) #}
             <div class="glass-faq-container mt-5 p-4">
                 <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
                 <div class="text-muted small mb-4">{{ seo_text_html|safe }}</div>

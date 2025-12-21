@@ -107,7 +107,7 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- 🔥 1. РОЗУМНИЙ ЕКСПОРТ (УНІКАЛЬНІ МОДЕЛІ) ---
+    # --- 1. РОЗУМНИЙ ЕКСПОРТ (УНІКАЛЬНІ МОДЕЛІ) ---
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -145,7 +145,7 @@ class ProductAdmin(admin.ModelAdmin):
         wb.save(response)
         return response
 
-    # --- 🔥 2. РОЗУМНИЙ ІМПОРТ ФОТО (ВИПРАВЛЕНО) 🔥 ---
+    # --- 🔥 2. СУПЕР-РОЗУМНИЙ ІМПОРТ ФОТО (ІГНОРУЄ СМІТТЯ) 🔥 ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -154,6 +154,12 @@ class ProductAdmin(admin.ModelAdmin):
                 sheet = wb.active
                 updated_products = 0
                 
+                # Список слів-паразитів, які треба ігнорувати при пошуку
+                IGNORE_WORDS = [
+                    'serbia', 'china', 'korea', 'thailand', 'japan', 'turkey', 'germany', 'poland', 
+                    'dot', 'xl', 'new', 'demo', 'usa', 'hungary', 'romania', 'france', 'spain'
+                ]
+
                 # Проходимо по файлу
                 for row in sheet.iter_rows(min_row=2, values_only=True):
                     # Пропускаємо пусті рядки
@@ -166,21 +172,31 @@ class ProductAdmin(admin.ModelAdmin):
                     
                     if not url_txt.startswith('http'): continue
 
-                    # 🔥 НОВА ЛОГІКА ПОШУКУ 🔥
                     # 1. Фільтруємо по Бренду
                     query = Q(brand__name__icontains=brand_txt)
                     
-                    # 2. Розбиваємо назву моделі на слова (Tokens)
-                    # Наприклад "Primacy 4" -> шукаємо і "Primacy", і "4"
-                    # Це дозволяє знайти товар, навіть якщо слова перемішані або є зайві
-                    model_tokens = model_txt.split()
+                    # 2. Чистимо назву моделі від дужок, ком та іншого сміття
+                    clean_model_txt = re.sub(r'[(),]', ' ', model_txt)
                     
+                    # 3. Розбиваємо на слова
+                    model_tokens = clean_model_txt.split()
+                    
+                    # 4. Фільтруємо слова: прибираємо країни та коротке сміття
+                    valid_tokens = []
                     for token in model_tokens:
-                        # Ігноруємо дуже короткі символи, щоб не було помилкових спрацювань
-                        if len(token) > 1 or token.isdigit(): 
-                            query &= Q(name__icontains=token)
+                        t_lower = token.lower()
+                        # Ігноруємо короткі (менше 2 букв) і слова з чорного списку
+                        if len(token) > 1 and t_lower not in IGNORE_WORDS:
+                            valid_tokens.append(token)
+                    
+                    # Якщо після чистки нічого не залишилось, пропускаємо
+                    if not valid_tokens: continue
 
-                    # 3. Оновлюємо ВСІ товари, які підійшли під опис
+                    # 5. Формуємо запит: Товар повинен містити ВСІ "чисті" слова
+                    for token in valid_tokens:
+                        query &= Q(name__icontains=token)
+
+                    # 6. Оновлюємо
                     count = Product.objects.filter(query).update(photo_url=url_txt)
                     updated_products += count
                 

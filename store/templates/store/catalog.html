@@ -98,8 +98,41 @@
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
 
-    /* Виправлення FAQ */
-    .seo-text-block { word-wrap: break-word; overflow-wrap: break-word; }
+    /* --- 🔥 FAQ СТИЛЬ (СКЛО) 🔥 --- */
+    .glass-faq-container {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        word-wrap: break-word; 
+        overflow-wrap: break-word;
+    }
+    .custom-accordion .accordion-item {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .custom-accordion .accordion-button {
+        background: transparent;
+        box-shadow: none;
+        color: #004a99; /* Синій колір R16 */
+        font-weight: 700;
+        padding: 15px 0;
+    }
+    .custom-accordion .accordion-button:not(.collapsed) {
+        color: #dc3545; /* Червоний при відкритті */
+    }
+    .custom-accordion .accordion-button:focus {
+        box-shadow: none;
+    }
+    .custom-accordion .accordion-body {
+        padding: 0 0 15px 0;
+        color: #555;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
 </style>
 
 <div class="container py-3">
@@ -273,40 +306,41 @@
                  </nav>
             {% endif %}
             
-            {# SEO TEXT + FAQ #}
-            <div class="seo-text-block mt-5 p-4 rounded-4 bg-light border text-break">
-                <h2 class="h5 fw-bold mb-3">{{ seo_h2|default:seo_h1 }}</h2>
-                <div class="text-muted small">{{ seo_text_html|safe }}</div>
+            {# 🔥 ОНОВЛЕНИЙ БЛОК FAQ (СКЛЯНИЙ СТИЛЬ) 🔥 #}
+            <div class="glass-faq-container mt-5 p-4">
+                <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
+                <div class="text-muted small mb-4">{{ seo_text_html|safe }}</div>
                 
-                {% if faq_schema %}
+                {% if faq_list %}
                 <div class="mt-4">
-                    <h4 class="fw-bold mb-3">Часті питання</h4>
-                    <div class="accordion" id="dynamicFaq"></div>
-                    <script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            try {
-                                const schemaEl = document.getElementById('faq-json');
-                                if(!schemaEl) return;
-                                const schema = JSON.parse(schemaEl.textContent);
-                                const faqContainer = document.getElementById('dynamicFaq');
-                                schema.mainEntity.forEach((item, index) => {
-                                    const html = `<div class="accordion-item border-0 mb-2"><h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q${index}">${item.name}</button></h2><div id="q${index}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq"><div class="accordion-body text-muted">${item.acceptedAnswer.text}</div></div></div>`;
-                                    faqContainer.insertAdjacentHTML('beforeend', html);
-                                });
-                            } catch(e) { console.error("FAQ Error:", e); }
-                        });
-                    </script>
+                    <h4 class="fw-bold mb-3"><i class="bi bi-question-circle-fill text-primary"></i> Часті питання (FAQ)</h4>
+                    <div class="accordion custom-accordion" id="dynamicFaq">
+                        {% for question, answer in faq_list %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q{{ forloop.counter }}">
+                                    {{ question }}
+                                </button>
+                            </h2>
+                            <div id="q{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq">
+                                <div class="accordion-body">
+                                    {{ answer|safe }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endif %}
                 
                 {# ХМАРА ТЕГІВ #}
                 {% if cross_links %}
-                <div class="mt-4 pt-3 border-top">
+                <div class="mt-4 pt-3 border-top border-white">
                     {% for group in cross_links %}
                         <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
                         <div class="d-flex flex-wrap gap-2 mb-4">
                             {% for link in group.items %}
-                                <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white">
+                                <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white border-0 shadow-sm">
                                     {{ link.text }}
                                 </a>
                             {% endfor %}

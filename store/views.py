@@ -437,47 +437,63 @@ def faq_view(request): return render(request, 'store/faq.html')
 
 def fix_product_names_view(request):
     """
-    Секретна в'юшка для очистки назв без доступу до Shell.
+    Секретна в'юшка для очистки назв. 
+    Обробляє по 300 штук за раз.
+    Використання: /secret-fix-names/?page=1, потім ?page=2 і т.д.
     """
     if not request.user.is_superuser:
-        return JsonResponse({'status': 'error', 'message': 'Access denied'})
+        return JsonResponse({'status': 'error', 'message': 'Тільки для адміна'})
+
+    from .models import Product
+    import re
+    import time
+
+    # 1. Налаштування пагінації (сторінок)
+    batch_size = 300  # Ваше прохання: 300 штук
+    try:
+        page = int(request.GET.get('page', 1))
+    except ValueError:
+        page = 1
+
+    start_index = (page - 1) * batch_size
+    end_index = start_index + batch_size
+
+    # 2. Отримуємо порцію товарів
+    # Використовуємо order_by('id'), щоб порядок був стабільним
+    products = Product.objects.order_by('id')[start_index:end_index]
+
+    if not products:
+        return JsonResponse({
+            'status': 'done', 
+            'message': '🎉 Всі товари перевірено! Кінець бази даних.'
+        })
 
     count = 0
     log = []
     
-    # Імпортуємо тут, щоб не було конфліктів зверху
-    from .models import Product
-    import re
-    
-    products = Product.objects.all()
-    
+    # 3. Обробка
     for p in products:
         raw_name = p.name
         
-        # 1. Прибираємо "Шина", бренд
+        # --- ЛОГІКА ОЧИСТКИ (ТА Ж САМА) ---
         clean_name = raw_name.replace("Шина", "").replace("шина", "")
         
         if p.brand:
-            # Видаляємо бренд з початку
             clean_name = re.sub(f"^{p.brand.name}", "", clean_name, flags=re.IGNORECASE)
-            # Видаляємо бренд в дужках (APLUS)
             clean_name = re.sub(f"\({p.brand.name}\)", "", clean_name, flags=re.IGNORECASE)
 
-        # 2. Витягуємо індекси (91V, 102XL, 75T)
         index_match = re.search(r'\b(\d{2,3}[A-Z]{1,2})\b', clean_name)
         load_speed_idx = ""
         if index_match:
             load_speed_idx = index_match.group(1)
         
-        # 3. Витягуємо модель (те що лишилось без розміру і індексів)
         clean_name_no_size = re.sub(r'\d{3}/\d{2}[R|Z]\d{2}', '', clean_name)
         if load_speed_idx:
             clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
 
         model_name = clean_name_no_size.strip()
-        model_name = re.sub(r'^\W+|\W+$', '', model_name) # trim символів
+        model_name = re.sub(r'^\W+|\W+$', '', model_name)
 
-        # 4. Формуємо красиву назву
         size_str = f"{p.width}/{p.profile} R{p.diameter}"
         
         final_name = f"{model_name} {size_str}"
@@ -485,15 +501,24 @@ def fix_product_names_view(request):
             final_name += f" {load_speed_idx}"
         
         final_name = re.sub(r'\s+', ' ', final_name).strip()
+        # ----------------------------------
 
-        if final_name != p.name and len(final_name) > 5: # Перевірка щоб не стерти все
-            log.append(f"Fixed: {p.name} -> {final_name}")
+        # Зберігаємо ТІЛЬКИ якщо змінилась назва
+        if final_name != p.name and len(final_name) > 5:
+            log.append(f"{p.id}: {p.name} -> {final_name}")
             p.name = final_name
             p.save()
             count += 1
             
+    # 4. Формуємо відповідь
+    next_page = page + 1
+    next_link = f"{request.path}?page={next_page}"
+    
     return JsonResponse({
-        'status': 'success', 
-        'updated_count': count,
-        'log': log[:50] # Покажемо перші 50 змін
+        'status': 'processing',
+        'current_page': page,
+        'checked_range': f"{start_index} - {end_index}",
+        'fixed_in_this_batch': count,
+        'NEXT_STEP': f"Щоб продовжити, перейдіть сюди: {next_link}",
+        'log': log[:20]
     })

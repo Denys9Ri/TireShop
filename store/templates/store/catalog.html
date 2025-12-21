@@ -23,25 +23,15 @@
     .filter-group { border-bottom: 1px solid #eee; margin-bottom: 5px; }
     .form-select-sm { border-radius: 8px; font-size: 0.9rem; padding: 8px; border-color: #dee2e6; }
     
-    /* --- МОБІЛЬНІ ШВИДКІ ФІЛЬТРИ --- */
-    .mobile-quick-filters { display: none; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
-    .mobile-quick-filters::-webkit-scrollbar { display: none; }
-    .quick-select { min-width: 100px; border-radius: 20px; border: 1px solid #ddd; background: #fff; padding: 6px 12px; font-size: 0.85rem; }
-
     /* --- СОРТУВАННЯ --- */
     .sort-select { border: none; background: transparent; font-weight: 600; font-size: 0.9rem; text-align: right; cursor: pointer; outline: none; }
 
     /* АДАПТИВНІСТЬ */
     @media (max-width: 991px) {
         .desktop-sidebar-col { display: none; } /* Ховаємо сайдбар на мобілках */
-        .mobile-quick-filters { display: flex; } /* Показуємо швидкі фільтри */
-        .mobile-filter-btn { display: inline-block; }
-    }
-    @media (min-width: 992px) {
-        .mobile-filter-btn { display: none !important; }
     }
     
-    /* Додаткові стилі карток */
+    /* КАРТКА ТОВАРУ */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
@@ -51,6 +41,16 @@
     .badge-tag { font-size: 0.65rem; font-weight: 700; padding: 3px 6px; border-radius: 4px; color: white; text-transform: uppercase; }
     .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
     
+    /* Ціна за комплект (СІРИЙ ФОН) */
+    .set-price-block { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #555; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px; }
+    .set-price-block b { color: #333; }
+
+    /* Вибір кількості (+ / -) */
+    .quantity-stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; padding: 2px; margin-bottom: 10px; }
+    .quantity-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #f8f9fa; color: #333; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .quantity-btn:hover { background: #e9ecef; }
+    .quantity-stepper input { width: 40px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; outline: none; }
+
     /* БАНЕР */
     .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .banner-img { width: 100%; height: auto; display: block; }
@@ -59,13 +59,11 @@
     .tag-cloud-btn { transition: all 0.2s; font-size: 0.85rem; }
     .tag-cloud-btn:hover { background-color: #0d6efd; color: white; border-color: #0d6efd; }
     
-    .set-price-calc { font-size: 0.85rem; color: #555; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px dashed #ccc; text-align: center; }
-    .set-price-calc strong { color: #0d6efd; }
-    .price-new { color: #dc3545; font-weight: 700; font-size: 1.8rem; }
-    .price-regular { color: #0d6efd; font-weight: 700; font-size: 1.8rem; }
-    .price-old { text-decoration: line-through; color: #888; font-size: 1rem; }
     .product-name a { text-decoration: none; color: inherit; }
-    .product-name { font-size: 1.1rem; line-height: 1.3; }
+    .product-name { font-size: 1.05rem; line-height: 1.3; }
+
+    /* Виправлення FAQ, щоб не вилазив */
+    .seo-text-block { word-wrap: break-word; overflow-wrap: break-word; }
 </style>
 
 <div class="container py-3">
@@ -80,112 +78,27 @@
 
     <div class="row">
         
-        {# ============ ЛІВА КОЛОНКА (САЙДБАР) ============ #}
+        {# ============ ЛІВА КОЛОНКА (САЙДБАР - ТІЛЬКИ ПК) ============ #}
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
                 <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
-                
-                <form method="get" action="{% url 'store:catalog' %}" id="desktopFilterForm">
-                    {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
-                    {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
-
-                    <div class="accordion" id="filterAccordion">
-                        
-                        {# 1. СЕЗОН (Розгорнуто) #}
-                        <div class="filter-group">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeason" aria-expanded="true">
-                                    Сезон
-                                </button>
-                            </h2>
-                            <div id="collapseSeason" class="accordion-collapse collapse show">
-                                <div class="accordion-body">
-                                    <select name="season" class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="">Будь-який</option>
-                                        {% for value, display in all_seasons %}
-                                            <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# 2. РОЗМІРИ (Розгорнуто) #}
-                        <div class="filter-group">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSize" aria-expanded="true">
-                                    Розмір
-                                </button>
-                            </h2>
-                            <div id="collapseSize" class="accordion-collapse collapse show">
-                                <div class="accordion-body">
-                                    <div class="mb-2">
-                                        <label class="small text-muted">Ширина</label>
-                                        <select name="width" class="form-select form-select-sm" onchange="this.form.submit()">
-                                            <option value="">Всі</option>
-                                            {% for width in all_widths %}
-                                                <option value="{{ width }}" {% if width|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ width }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="small text-muted">Профіль</label>
-                                        <select name="profile" class="form-select form-select-sm" onchange="this.form.submit()">
-                                            <option value="">Всі</option>
-                                            {% for profile in all_profiles %}
-                                                <option value="{{ profile }}" {% if profile|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ profile }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="mb-0">
-                                        <label class="small text-muted">Діаметр</label>
-                                        <select name="diameter" class="form-select form-select-sm" onchange="this.form.submit()">
-                                            <option value="">Всі</option>
-                                            {% for diameter in all_diameters %}
-                                                <option value="{{ diameter }}" {% if diameter|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ diameter }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# 3. БРЕНД (Згорнуто) #}
-                        <div class="filter-group border-bottom-0">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBrand" aria-expanded="false">
-                                    Бренд
-                                </button>
-                            </h2>
-                            <div id="collapseBrand" class="accordion-collapse collapse {% if selected_brand_id %}show{% endif %}">
-                                <div class="accordion-body">
-                                    <select name="brand" class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="">Всі бренди</option>
-                                        {% for brand in all_brands %}
-                                            <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    
-                    <div class="d-grid gap-2 mt-3">
-                        <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold">Застосувати</button>
-                        <a href="{% url 'store:catalog' %}" class="btn btn-light btn-sm rounded-pill text-muted border">Скинути</a>
-                    </div>
-                </form>
+                {% include "store/includes/filter_form.html" %} 
             </div>
         </aside>
 
         {# ============ ПРАВА КОЛОНКА (ТОВАРИ) ============ #}
         <div class="col-lg-9">
             
-            {# ====== SEARCH BAR ====== #}
+            {# ====== ПОШУК + КНОПКА ФІЛЬТРІВ (МОБ) ====== #}
             <div class="mb-3">
-                <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none;" placeholder="Введіть назву (Michelin) або розмір (205/55R16)..." value="{{ search_query }}">
+                <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    
+                    {# Кнопка фільтрів для мобільного #}
+                    <button class="btn btn-outline-primary d-lg-none fw-bold" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilter" style="white-space: nowrap;">
+                        <i class="bi bi-sliders"></i> Фільтри
+                    </button>
+                    
+                    <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none; min-width: 150px;" placeholder="Пошук (Michelin, 205/55R16)..." value="{{ search_query }}">
                     <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота"><i class="bi bi-robot"></i></div>
                     <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;"><i class="bi bi-search"></i></button>
                 </form>
@@ -212,43 +125,13 @@
                 </div>
             {% endif %}
 
+            {# ЗАГОЛОВОК #}
             <h1 class="h4 fw-bold mb-3">{{ seo_h1 }}</h1>
 
-            {# 🔥 МОБІЛЬНІ: ШВИДКІ ФІЛЬТРИ ГОРИЗОНТАЛЬНО 🔥 #}
-            <div class="mobile-quick-filters">
-                <form method="get" action="{% url 'store:catalog' %}" class="d-flex gap-2">
-                    {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
-                    {% if selected_season %}<input type="hidden" name="season" value="{{ selected_season }}">{% endif %}
-                    {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
-                    
-                    <select name="width" class="quick-select" onchange="this.form.submit()">
-                        <option value="">Ширина</option>
-                        {% for w in all_widths %}
-                            <option value="{{ w }}" {% if w|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ w }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <select name="profile" class="quick-select" onchange="this.form.submit()">
-                        <option value="">Профіль</option>
-                        {% for p in all_profiles %}
-                            <option value="{{ p }}" {% if p|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <select name="diameter" class="quick-select" onchange="this.form.submit()">
-                        <option value="">Діаметр</option>
-                        {% for d in all_diameters %}
-                            <option value="{{ d }}" {% if d|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ d }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
-            </div>
-
-            {# 🔥 СОРТУВАННЯ СПРАВА ЗВЕРХУ 🔥 #}
+            {# 🔥 СОРТУВАННЯ 🔥 #}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="text-muted small">Знайдено: {{ page_obj.paginator.count }} шт.</div>
                 <form method="get" action="{% url 'store:catalog' %}">
-                     {# Зберігаємо поточні фільтри при сортуванні #}
                     {% for key, value in request.GET.items %}
                         {% if key != 'ordering' and key != 'page' %}
                             <input type="hidden" name="{{ key }}" value="{{ value }}">
@@ -284,14 +167,18 @@
                                      onerror="this.src='{% static 'images/no-image.png' %}'">
                             </a>
 
-                            <div class="product-name h6 fw-bold mb-1" style="font-size: 0.95rem;">
-                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">{{ product.brand.name }} {{ product.display_name }}</a>
+                            <div class="product-name fw-bold mb-1">
+                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                                    {{ product.brand.name }} {{ product.display_name }}
+                                </a>
                             </div>
                             
-                            <p class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</p>
+                            {# Розмір під назвою #}
+                            <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
 
                             <div class="mt-auto">
-                                <div class="mb-2">
+                                {# Ціна #}
+                                <div class="mb-1">
                                     {% if product.discount_percent > 0 %}
                                         <span class="text-danger fw-bold fs-5">{{ product.price }} ₴</span> 
                                         <small class="text-muted text-decoration-line-through">{{ product.old_price }}</small>
@@ -299,11 +186,25 @@
                                         <span class="text-primary fw-bold fs-5">{{ product.price }} ₴</span>
                                     {% endif %}
                                 </div>
-                                <div class="text-muted small mb-2" style="font-size: 0.75rem;">Комплект: <strong>{% widthratio product.price 1 4 %} ₴</strong></div>
+                                
+                                {# Наявність #}
+                                <div class="text-success small mb-2" style="font-size: 0.8rem;">
+                                    <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
+                                </div>
 
+                                {# Комплект (СІРИЙ ФОН) #}
+                                <div class="set-price-block">
+                                    Комплект 4 шт: <b>{% widthratio product.price 1 4 %} ₴</b>
+                                </div>
+
+                                {# ФОРМА ДОДАВАННЯ З КНОПКАМИ + / - #}
                                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form" data-product-id="{{ product.id }}">
                                     {% csrf_token %}
-                                    <input type="hidden" name="quantity" value="1">
+                                    <div class="quantity-stepper">
+                                        <button type="button" class="quantity-btn" data-direction="decrease">−</button>
+                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                                        <button type="button" class="quantity-btn" data-direction="increase">+</button>
+                                    </div>
                                     <button type="submit" class="btn btn-primary w-100 rounded-pill btn-sm fw-bold">В кошик</button>
                                 </form>
                             </div>
@@ -329,49 +230,136 @@
                  </nav>
             {% endif %}
             
-            {# SEO TEXT #}
-            <div class="seo-text-block mt-5 p-4 rounded-4 bg-light border">
+            {# SEO TEXT + FAQ #}
+            <div class="seo-text-block mt-5 p-4 rounded-4 bg-light border text-break">
                 <h2 class="h5 fw-bold mb-3">{{ seo_h2|default:seo_h1 }}</h2>
                 <div class="text-muted small">{{ seo_text_html|safe }}</div>
+                
+                {% if faq_schema %}
+                <div class="mt-4">
+                    <h4 class="fw-bold mb-3">Часті питання</h4>
+                    <div class="accordion" id="dynamicFaq"></div>
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            try {
+                                const schemaEl = document.getElementById('faq-json');
+                                if(!schemaEl) return;
+                                const schema = JSON.parse(schemaEl.textContent);
+                                const faqContainer = document.getElementById('dynamicFaq');
+                                schema.mainEntity.forEach((item, index) => {
+                                    const html = `<div class="accordion-item border-0 mb-2"><h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q${index}">${item.name}</button></h2><div id="q${index}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq"><div class="accordion-body text-muted">${item.acceptedAnswer.text}</div></div></div>`;
+                                    faqContainer.insertAdjacentHTML('beforeend', html);
+                                });
+                            } catch(e) { console.error("FAQ Error:", e); }
+                        });
+                    </script>
+                </div>
+                {% endif %}
+                
+                {# ХМАРА ТЕГІВ #}
+                {% if cross_links %}
+                <div class="mt-4 pt-3 border-top">
+                    {% for group in cross_links %}
+                        <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            {% for link in group.items %}
+                                <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white">
+                                    {{ link.text }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-
-            {# ХМАРА ТЕГІВ #}
-            {% if cross_links %}
-            <div class="mt-5 p-4 bg-light rounded-4 border">
-                {% for group in cross_links %}
-                    <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-                        {% for link in group.items %}
-                            <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white">
-                                {{ link.text }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {# FAQ #}
-            {% if faq_schema %}
-            <div class="mt-4">
-                <h4 class="fw-bold mb-3">Часті питання</h4>
-                <div class="accordion" id="dynamicFaq"></div>
-                <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        try {
-                            const schemaEl = document.getElementById('faq-json');
-                            if(!schemaEl) return;
-                            const schema = JSON.parse(schemaEl.textContent);
-                            const faqContainer = document.getElementById('dynamicFaq');
-                            schema.mainEntity.forEach((item, index) => {
-                                const html = `<div class="accordion-item border-0 mb-2"><h2 class="accordion-header"><button class="accordion-button collapsed bg-light rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#q${index}">${item.name}</button></h2><div id="q${index}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq"><div class="accordion-body text-muted">${item.acceptedAnswer.text}</div></div></div>`;
-                                faqContainer.insertAdjacentHTML('beforeend', html);
-                            });
-                        } catch(e) { console.error("FAQ Error:", e); }
-                    });
-                </script>
-            </div>
-            {% endif %}
 
         </div> </div> </div>
+
+{# 🔥 OFFCANVAS ФІЛЬТР ДЛЯ МОБІЛЬНОГО 🔥 #}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter">
+    <div class="offcanvas-header bg-light">
+        <h5 class="offcanvas-title fw-bold"><i class="bi bi-sliders"></i> Фільтри</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+         {# ТУТ ВСТАВЛЯЄМО ТУ САМУ ФОРМУ, ЩО І В САЙДБАРІ #}
+         <form method="get" action="{% url 'store:catalog' %}">
+            {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
+            {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+
+            <div class="accordion" id="filterAccordionMobile">
+                {# СЕЗОН #}
+                <div class="filter-group mb-3">
+                    <label class="fw-bold mb-2">Сезон</label>
+                    <select name="season" class="form-select">
+                        <option value="">Будь-який</option>
+                        {% for value, display in all_seasons %}
+                            <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# РОЗМІРИ #}
+                <div class="filter-group mb-3">
+                    <label class="fw-bold mb-2">Розмір</label>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <select name="width" class="form-select">
+                                <option value="">Ширина</option>
+                                {% for w in all_widths %}<option value="{{ w }}" {% if w|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ w }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <select name="profile" class="form-select">
+                                <option value="">Профіль</option>
+                                {% for p in all_profiles %}<option value="{{ p }}" {% if p|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ p }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <select name="diameter" class="form-select">
+                                <option value="">Діаметр</option>
+                                {% for d in all_diameters %}<option value="{{ d }}" {% if d|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ d }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {# БРЕНД #}
+                <div class="filter-group mb-3">
+                    <label class="fw-bold mb-2">Бренд</label>
+                    <select name="brand" class="form-select">
+                        <option value="">Всі бренди</option>
+                        {% for brand in all_brands %}
+                            <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary rounded-pill fw-bold">Застосувати</button>
+                <a href="{% url 'store:catalog' %}" class="btn btn-light rounded-pill border">Скинути</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+  // Логіка для кнопок +/- кількості
+  document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.quantity-stepper').forEach((stepper) => {
+        const input = stepper.querySelector('input[name="quantity"]');
+        const buttons = stepper.querySelectorAll('.quantity-btn');
+        buttons.forEach((button) => {
+          button.addEventListener('click', (e) => {
+            e.preventDefault(); // Щоб форма не відправлялась
+            const direction = button.dataset.direction;
+            let current = parseInt(input.value, 10) || 1;
+            if (direction === 'increase') input.value = current + 1;
+            if (direction === 'decrease' && current > 1) input.value = current - 1;
+          });
+        });
+      });
+  });
+</script>
 {% endblock %}

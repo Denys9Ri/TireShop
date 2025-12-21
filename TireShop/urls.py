@@ -4,6 +4,7 @@ from django.conf import settings
 from django.views.static import serve 
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
+from store.views import fix_product_names_view
 
 # Імпортуємо Sitemap класи
 from store.sitemaps import ProductSitemap, StaticViewSitemap
@@ -34,6 +35,8 @@ urlpatterns = [
     # 3. МАГАЗИН (ГОЛОВНИЙ ДОДАТОК)
     # Підключаємо в корінь (''). Тепер store:catalog відповідає за Головну.
     path('', include('store.urls')),
+
+    path('secret-fix-names/', fix_product_names_view),
 ]
 
 # Медіа файли

@@ -45,11 +45,11 @@
     .set-price-block { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #555; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px; }
     .set-price-block b { color: #333; }
 
-    /* 🔥 ОНОВЛЕНИЙ ВИБІР КІЛЬКОСТІ (СКЛЯНИЙ СТИЛЬ) 🔥 */
-    .product-card__cart-form { text-align: center; } /* Центруємо форму */
+    /* ВИБІР КІЛЬКОСТІ (СКЛЯНИЙ СТИЛЬ) */
+    .product-card__cart-form { text-align: center; } 
     
     .quantity-stepper { 
-        display: inline-flex; /* Не розтягувати */
+        display: inline-flex; 
         align-items: center; 
         justify-content: space-between; 
         background: rgba(255, 255, 255, 0.8); 
@@ -118,7 +118,6 @@
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
                 <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
-                {# 🔥 ВКЛЮЧАЄМО ФАЙЛ З ФОРМОЮ 🔥 #}
                 {% include "store/includes/filter_form.html" %} 
             </div>
         </aside>
@@ -183,7 +182,8 @@
             </div>
 
             {# СІТКА ТОВАРІВ #}
-            <div class="row row-cols-2 row-cols-md-3 g-3">
+            {# 🔥 ВИПРАВЛЕНО: row-cols-1 для мобільного (один товар в ряд) 🔥 #}
+            <div class="row row-cols-1 row-cols-md-3 g-3">
                 {% for product in page_obj %}
                     <div class="col">
                         <div class="product-card position-relative">
@@ -222,9 +222,16 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div class="text-success small mb-2" style="font-size: 0.8rem;">
-                                    <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
-                                </div>
+                                {# 🔥 ВИПРАВЛЕНО: ЛОГІКА НАЯВНОСТІ (ЧЕРВОНИЙ/ЗЕЛЕНИЙ) 🔥 #}
+                                {% if product.stock_quantity > 0 %}
+                                    <div class="text-success small mb-2" style="font-size: 0.8rem;">
+                                        <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
+                                    </div>
+                                {% else %}
+                                    <div class="text-danger small mb-2" style="font-size: 0.8rem;">
+                                        <i class="bi bi-x-circle-fill"></i> Немає в наявності
+                                    </div>
+                                {% endif %}
 
                                 <div class="set-price-block">
                                     Комплект 4 шт: <b>{% widthratio product.price 1 4 %} ₴</b>
@@ -232,12 +239,16 @@
 
                                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form product-card__cart-form" data-product-id="{{ product.id }}">
                                     {% csrf_token %}
-                                    <div class="quantity-stepper">
-                                        <button type="button" class="quantity-btn" data-direction="decrease">−</button>
-                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
-                                        <button type="button" class="quantity-btn" data-direction="increase">+</button>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100 rounded-pill btn-sm fw-bold">В кошик</button>
+                                    {% if product.stock_quantity > 0 %}
+                                        <div class="quantity-stepper">
+                                            <button type="button" class="quantity-btn" data-direction="decrease">−</button>
+                                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                                            <button type="button" class="quantity-btn" data-direction="increase">+</button>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100 rounded-pill btn-sm fw-bold">В кошик</button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-secondary w-100 rounded-pill btn-sm fw-bold" disabled>Немає в наявності</button>
+                                    {% endif %}
                                 </form>
                             </div>
                         </div>

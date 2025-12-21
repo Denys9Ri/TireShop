@@ -95,21 +95,40 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     key = season_db if season_db in SEO_TEMPLATES else 'default'
     template = SEO_TEMPLATES[key]
 
+    # --- ФОРМУВАННЯ H1 ТА Title ---
     h1_parts = []
+    
+    # 1. Сезон
     if season_db == 'winter': h1_parts.append("Зимові шини")
     elif season_db == 'summer': h1_parts.append("Літні шини")
     elif season_db == 'all_season': h1_parts.append("Всесезонні шини")
-    else: h1_parts.append("Шини")
+    else: h1_parts.append("Шини") # Просто "Шини" якщо сезон не обрано
     
+    # 2. Бренд
     if brand_obj: h1_parts.append(brand_obj.name)
+    
+    # 3. Розмір
     if size_str: h1_parts.append(size_str)
     
     h1_final = " ".join(h1_parts)
-    title_final = f"{h1_final} — Ціна від {min_price} грн | R16.com.ua"
     
+    # 🔥 СПЕЦІАЛЬНИЙ Title ДЛЯ СТОРІНОК РОЗМІРІВ 🔥
+    # Якщо вибрано розмір, але НЕ вибрано бренд -> робимо "продаючий" заголовок
+    if size_str and not brand_obj:
+        title_final = f"Купити резину {size_str} Київ — Ціна від {min_price} грн | R16.com.ua"
+        # Для H1 теж можна уточнити, якщо треба, але стандартний "Шини 205/55 R16" теж ок
+    else:
+        title_final = f"{h1_final} — Ціна від {min_price} грн | R16.com.ua"
+    
+    # --- ТЕКСТ ОПИСУ ---
     try:
-        description_html = template['text'].format(brand=brand_name, size=size_str)
-        seo_h2 = template['h2'].format(brand=brand_name, size=size_str)
+        # Якщо це чистий розмір, даємо унікальний текст
+        if size_str and not brand_obj and key == 'default':
+            description_html = f"<p>Шукаєте надійні <b>шини {size_str}</b>? У нас великий вибір гуми цього розміру. 🚗 Підберемо найкращий варіант для вашого авто. В наявності зимові, літні та всесезонні моделі.</p>"
+            seo_h2 = f"Гума {size_str}: ТОП пропозиції"
+        else:
+            description_html = template['text'].format(brand=brand_name, size=size_str)
+            seo_h2 = template['h2'].format(brand=brand_name, size=size_str)
     except:
         description_html = SEO_TEMPLATES['default']['text'].format(brand=brand_name, size=size_str)
         seo_h2 = h1_final
@@ -117,40 +136,23 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     return {
         'title': title_final, 'h1': h1_final, 'seo_h2': seo_h2,
         'description_html': description_html,
-        'meta_description': f"{h1_final} в наявності! 💰 Ціна: {min_price}-{max_price} грн.",
+        'meta_description': f"{h1_final} в наявності! 🚚 Доставка по Україні. 💰 Ціна: {min_price}-{max_price} грн.",
         'faq_key': key, 'brand_name': brand_name
     }
 
 def get_combined_faq(season_db):
-    """Збирає базові питання + сезонні"""
-    faq_list = FAQ_DATA['base'].copy() # Копіюємо базу (10 питань)
-    
-    if season_db == 'winter':
-        faq_list.extend(FAQ_DATA['winter'])
-    elif season_db == 'summer':
-        faq_list.extend(FAQ_DATA['summer'])
-    elif season_db == 'all_season' or season_db == 'all-season': # На всяк випадок перевіряємо обидва варіанти
-        faq_list.extend(FAQ_DATA['all_season'])
-        
+    faq_list = FAQ_DATA['base'].copy()
+    if season_db == 'winter': faq_list.extend(FAQ_DATA['winter'])
+    elif season_db == 'summer': faq_list.extend(FAQ_DATA['summer'])
+    elif season_db == 'all_season' or season_db == 'all-season': faq_list.extend(FAQ_DATA['all_season'])
     return faq_list
 
 def get_faq_schema_json(faq_list):
-    """Генерує JSON-LD для Google"""
     schema_items = []
     for q, a in faq_list:
-        # Чистимо HTML теги для Schema.org (Google любить чистий текст)
         clean_a = re.sub('<[^<]+?>', '', a)
-        schema_items.append({
-            "@type": "Question",
-            "name": q,
-            "acceptedAnswer": {"@type": "Answer", "text": clean_a}
-        })
-        
-    faq = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": schema_items
-    }
+        schema_items.append({"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": clean_a}})
+    faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": schema_items}
     return json.dumps(faq)
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
@@ -273,7 +275,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
 
     return render(request, 'store/catalog.html', {
         'page_obj': page_obj, 
-        'custom_page_range': custom_page_range, # Передаємо в шаблон
+        'custom_page_range': custom_page_range, 
         'filter_query_string': q_params.urlencode(),
         'all_brands': brands,
         'all_widths': Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width'),

@@ -22,31 +22,55 @@ SEASONS_MAP = {
     'vsesezonni': {'db': 'all_season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'}
 }
 
-# --- 🧠 SEO ШАБЛОНИ ---
+# --- 📚 НОВА БАЗА ЗНАНЬ (FAQ) ---
+FAQ_DATA = {
+    'base': [
+        ("Як дізнатися свій розмір шин?", "Подивись наклейку на дверях авто або на кришці бензобака — там буде щось типу 205/55 R16.<br>Не хочеш шукати — напиши нам марку, модель, рік і мотор, і ми підберемо."),
+        ("Що означають цифри 205/55 R16?", "205 — ширина, 55 — висота профілю, R16 — діаметр диска. Це впливає на керованість і комфорт."),
+        ("Що таке індекс навантаження і швидкості (напр. 91V)?", "Показує, скільки ваги і яку швидкість шина може витримати. Краще не ставити нижчі індекси, ніж радить виробник авто."),
+        ("Можна купити дві шини замість чотирьох?", "Ідеально — чотири однакові. Якщо міняєш тільки дві, то кращу пару став на задню вісь — так авто буде більш стійким."),
+        ("Який тиск качати в шинах?", "Дивись наклейку на авто. Не поради знайомих, а саме там. Неправильний тиск дає більший знос і гіршу керованість."),
+        ("Що таке XL, RunFlat, C?", "<b>XL</b> — посилена, тримає більшу вагу.<br><b>RunFlat</b> — можна трохи їхати після проколу.<br><b>C</b> — для бусів або комерційного транспорту.<br>Якщо не впевнений — скажи авто, і підкажемо, чи це потрібно."),
+        ("Як перевірити, наскільки свіжі шини?", "Є код DOT — тиждень і рік виробництва. Якщо треба, підкажемо перед покупкою."),
+        ("Чому одна й та сама модель може коштувати по‑різному?", "Через індекси, посилення, RunFlat, партії, країну виробництва, наявність на складі."),
+        ("Доставка й оплата — як це працює?", "Оформляєш замовлення, ми підтверджуємо наявність, відправляємо по Україні, підбираємо варіанти, якщо твій варіант відсутній."),
+        ("Чи можна повернути шини?", "Так, якщо шини не були в користуванні і зберегли товарний вигляд. Умови пояснимо одразу.")
+    ],
+    'winter': [
+        ("Коли переходити на зимову гуму?", "Коли температура стабільно опускається до приблизно +7°C і нижче. Це загальне правило, яке використовують виробники шин, бо при холоді літня гума гірше працює."),
+        ("Шипи чи липучка — що кращe?", "<b>Шипи</b> — багато льоду, укатаний сніг, траси або села.<br><b>Липучка</b> — місто, мокрий асфальт, відлиги.<br>Скажи, де їздиш, і скажемо точніше."),
+        ("Що означає “під шип”?", "Це модель, яку можна шипувати. Користь — якщо реально є лід чи частий сильний мороз."),
+        ("Чи можна їздити взимку на дуже зношених шинах?", "Небезпечно. Взимку важливий протектор для гальмування і контролю. Краще міняти вчасно, ніж чекати до крайності.")
+    ],
+    'summer': [
+        ("Коли ставити літню гуму?", "Коли температура стабільно вище приблизно +7°C. Літня гумa на теплій дорозі тримає краще."),
+        ("Які літні шини кращі: для міста чи траси?", "<b>Місто</b> — тихі, зносостійкі.<br><b>Траса</b> — стабільні на швидкості, добре тримають дорогу у дощ.<br>Пиши, як їздиш, і підберемо."),
+        ("Що таке аквапланування і як його уникнути?", "Це коли авто ніби пливе по воді і гірше керується. Допомагає: нормальний протектор, правильний тиск і адекватна швидкість у дощ.")
+    ],
+    'all_season': [
+        ("Всесезонка — реально на весь рік?", "Так, але найкраще — якщо зима не дуже сувора. Якщо багато льоду чи заметів, краще окремо зимові."),
+        ("Чим всесезонка гірша за літні чи зимові?", "Це компроміс: не дає максимуму ні в зимі, ні влітку, зате один комплект — зручно, менше замін."),
+        ("Кому всесезонка підходить найбільше?", "Тим, хто їздить здебільшого містом, не дуже швидко й хоче мінімізувати сезонні заміни.")
+    ]
+}
+
+# --- 🧠 SEO ШАБЛОНИ (H1/Text) ---
 SEO_TEMPLATES = {
     'winter': {
         'h2': "Чому варто купити зимові шини {brand} {size}?",
-        'text': "<p>Зимова гума <b>{brand}</b> {size} розроблена для складних умов. Відмінне зчеплення на снігу та льоду.</p>",
-        'faq_best': "Які зимові шини {brand} найкращі?",
-        'faq_best_ans': "Найпопулярніші моделі {brand} забезпечують безпеку та короткий гальмівний шлях."
+        'text': "<p>Зимова гума <b>{brand}</b> {size} розроблена для складних умов. Відмінне зчеплення на снігу та льоду.</p>"
     },
     'summer': {
         'h2': "Літні шини {brand} {size}: Швидкість та контроль",
-        'text': "<p>Літня гума <b>{brand}</b> {size} створена для динамічної їзди. Захист від аквапланування та комфорт.</p>",
-        'faq_best': "Чи шумні літні шини {brand}?",
-        'faq_best_ans': "Ні, лінійка {brand} вирізняється акустичним комфортом."
+        'text': "<p>Літня гума <b>{brand}</b> {size} створена для динамічної їзди. Захист від аквапланування та комфорт.</p>"
     },
     'all_season': {
         'h2': "Всесезонні шини {brand} {size}",
-        'text': "<p>Універсальна гума <b>{brand}</b> {size} — компроміс для м'якої зими та літа.</p>",
-        'faq_best': "Чи підходять для снігу?",
-        'faq_best_ans': "Так, для легкого снігу. У сильну ожеледицю краще шипи."
+        'text': "<p>Універсальна гума <b>{brand}</b> {size} — компроміс для м'якої зими та літа.</p>"
     },
     'default': {
         'h2': "Купити шини {brand} {size} в Києві",
-        'text': "<p>Інтернет-магазин R16 пропонує широкий вибір шин <b>{brand}</b> за низькими цінами.</p>",
-        'faq_best': "Яка ціна?",
-        'faq_best_ans': "Актуальну ціну дивіться в каталозі вище."
+        'text': "<p>Інтернет-магазин R16 пропонує широкий вибір шин <b>{brand}</b> за низькими цінами.</p>"
     }
 }
 
@@ -97,62 +121,58 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
         'faq_key': key, 'brand_name': brand_name
     }
 
-def get_faq_schema(seo_data, min_price):
-    key = seo_data['faq_key']
-    template = SEO_TEMPLATES[key]
-    brand = seo_data['brand_name']
+def get_combined_faq(season_db):
+    """Збирає базові питання + сезонні"""
+    faq_list = FAQ_DATA['base'].copy() # Копіюємо базу (10 питань)
     
-    try:
-        q = template['faq_best'].format(brand=brand)
-        a = template['faq_best_ans'].format(brand=brand)
-    except:
-        q = "Якість?"; a = "Відмінна."
+    if season_db == 'winter':
+        faq_list.extend(FAQ_DATA['winter'])
+    elif season_db == 'summer':
+        faq_list.extend(FAQ_DATA['summer'])
+    elif season_db == 'all_season' or season_db == 'all-season': # На всяк випадок перевіряємо обидва варіанти
+        faq_list.extend(FAQ_DATA['all_season'])
+        
+    return faq_list
 
+def get_faq_schema_json(faq_list):
+    """Генерує JSON-LD для Google"""
+    schema_items = []
+    for q, a in faq_list:
+        # Чистимо HTML теги для Schema.org (Google любить чистий текст)
+        clean_a = re.sub('<[^<]+?>', '', a)
+        schema_items.append({
+            "@type": "Question",
+            "name": q,
+            "acceptedAnswer": {"@type": "Answer", "text": clean_a}
+        })
+        
     faq = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "mainEntity": [
-            {"@type": "Question", "name": f"💰 Ціна?", "acceptedAnswer": {"@type": "Answer", "text": f"Від {min_price} грн."}},
-            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}},
-            {"@type": "Question", "name": "🚚 Доставка?", "acceptedAnswer": {"@type": "Answer", "text": "Нова Пошта."}}
-        ]
+        "mainEntity": schema_items
     }
     return json.dumps(faq)
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
     links = []
-    # Список популярних розмірів для генерації кнопок
     top_sizes = [
         (175, 70, 13), (185, 65, 14), (185, 65, 15), 
         (195, 65, 15), (205, 55, 16), (215, 60, 16), 
         (225, 45, 17), (225, 50, 17), (235, 55, 18)
     ]
     
-    # Показуємо кнопки, тільки якщо розмір ще НЕ обраний (щоб не захламляти екран)
     if not w:
         group = {'title': 'Популярні розміри:', 'items': []}
         for sw, sp, sd in top_sizes:
             text = f"R{sd} {sw}/{sp}"
-            
-            # 🔥 ЛОГІКА ПОБУДОВИ ПРАВИЛЬНОГО URL 🔥
             if current_brand and current_season_slug:
-                # Якщо обрано І БРЕНД, І СЕЗОН -> ведемо на повний шлях
                 url = reverse('store:seo_full', args=[current_brand.slug, current_season_slug, sw, sp, sd])
-                
             elif current_season_slug:
-                # Якщо обрано тільки СЕЗОН -> ведемо на сезон+розмір
                 url = reverse('store:seo_season_size', args=[current_season_slug, sw, sp, sd])
-                
             else:
-                # Якщо ми на ГОЛОВНІЙ (нічого не обрано) або тільки Бренд -> ведемо на чистий розмір
-                # (Це універсальний варіант, який завжди працює)
                 url = reverse('store:seo_size', args=[sw, sp, sd])
-            
             group['items'].append({'text': text, 'url': url})
-        
-        if group['items']:
-            links.append(group)
-            
+        if group['items']: links.append(group)
     return links
 
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO + ПОШУК + ФІЛЬТРИ) 🔥 ---
@@ -168,7 +188,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
             if brand_obj: brand_slug = slug
 
-    # 2. 🔥 ОБРОБКА ПОШУКУ 🔥
+    # 2. ПОШУК
     query = request.GET.get('query', '').strip()
     if query:
         clean = re.sub(r'[/\sR\-]', '', query, flags=re.IGNORECASE)
@@ -179,7 +199,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         else:
             products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
-    # 3. 🔥 ОБРОБКА ФІЛЬТРІВ 🔥
+    # 3. ФІЛЬТРИ
     if not brand_obj:
         s_brand_id = request.GET.get('brand')
         if s_brand_id: 
@@ -209,7 +229,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     if req_profile: products = products.filter(profile=req_profile)
     if req_diameter: products = products.filter(diameter=req_diameter)
 
-    # --- СТАТИСТИКА (Ігноруємо ціну 0) ---
+    # --- СТАТИСТИКА ---
     real_products = products.filter(price__gt=0)
     if real_products.exists():
         stats = real_products.aggregate(min_price=Min('price'), max_price=Max('price'))
@@ -224,20 +244,20 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     d_int = int(req_diameter) if req_diameter else None
 
     seo_data = generate_seo_content(brand_obj, season_db, w_int, p_int, d_int, int(min_price), int(max_price))
-    faq_schema = get_faq_schema(seo_data, int(min_price))
+    
+    # 🔥 ГЕНЕРАЦІЯ FAQ (СПИСОК + SCHEMA) 🔥
+    faq_list = get_combined_faq(season_db)
+    faq_schema = get_faq_schema_json(faq_list)
+    
     cross_links = get_cross_links(season_slug, brand_obj, w_int, p_int, d_int)
 
-    # --- СОРТУВАННЯ (З ФІЛЬТРАЦІЄЮ НАЯВНОСТІ) ---
+    # --- СОРТУВАННЯ ---
     ordering = request.GET.get('ordering')
-    
     if ordering == 'cheap':
-        # 🔥 Показуємо ТІЛЬКИ ті, що є в наявності
         products = products.filter(stock_quantity__gt=0).order_by('price')
     elif ordering == 'expensive':
-        # 🔥 Показуємо ТІЛЬКИ ті, що є в наявності
         products = products.filter(stock_quantity__gt=0).order_by('-price')
     else:
-        # За замовчуванням: спочатку в наявності (status_order=0), потім нові (-id)
         products = products.order_by('status_order', '-id')
 
     # --- UI ---
@@ -266,6 +286,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'seo_description': seo_data['meta_description'],
         'seo_text_html': seo_data['description_html'],
         'faq_schema': faq_schema,
+        'faq_list': faq_list, # 🔥 Передаємо список питань у шаблон
         'cross_links': cross_links,
         'is_seo_page': True
     })
@@ -276,7 +297,10 @@ def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     similar = Product.objects.filter(width=product.width, diameter=product.diameter).exclude(id=product.id)[:4]
     seo_data = generate_seo_content(product.brand, product.seasonality, product.width, product.profile, product.diameter, int(product.price), int(product.price))
-    faq_schema = get_faq_schema(seo_data, int(product.price))
+    
+    # Для товару беремо тільки базові + сезонні
+    faq_list = get_combined_faq(product.seasonality)
+    faq_schema = get_faq_schema_json(faq_list)
 
     parent_cat = None
     for k, v in SEASONS_MAP.items():
@@ -287,7 +311,8 @@ def product_detail_view(request, slug):
     return render(request, 'store/product_detail.html', {
         'product': product, 'similar_products': similar, 'parent_category': parent_cat,
         'seo_title': seo_data['title'], 'seo_h1': seo_data['h1'], 'seo_h2': seo_data['seo_h2'],
-        'seo_text_html': seo_data['description_html'], 'faq_schema': faq_schema
+        'seo_text_html': seo_data['description_html'], 
+        'faq_schema': faq_schema # Schema для товару
     })
 
 def redirect_old_product_urls(request, product_id):
@@ -332,27 +357,17 @@ def cart_add_ajax_view(request, product_id):
         quantity_to_add = 1
     
     # 🔥 ПЕРЕВІРКА СКЛАДУ 🔥
-    # 1. Дивимось, скільки вже лежить у кошику
     cart_item = cart.cart.get(str(product.id))
     current_in_cart = cart_item['quantity'] if cart_item else 0
-    
-    # 2. Рахуємо, скільки вийде разом
     total_wanted = current_in_cart + quantity_to_add
     
-    # 3. Якщо клієнт хоче більше, ніж є на складі -> обрізаємо
     if total_wanted > product.stock_quantity:
-        # Додаємо тільки різницю, яка ще доступна
         quantity_to_add = product.stock_quantity - current_in_cart
-        
-        # Якщо в кошику ВЖЕ лежить максимум, то додаємо 0
-        if quantity_to_add < 0:
-            quantity_to_add = 0
+        if quantity_to_add < 0: quantity_to_add = 0
 
-    # Додаємо (якщо є що додавати)
     if quantity_to_add > 0:
         cart.add(product=product, quantity=quantity_to_add, update_quantity=False)
     
-    # Рендеримо шматочок HTML для шторки
     html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
     
     return JsonResponse({
@@ -410,21 +425,17 @@ def checkout_view(request):
         cart.clear()
         return redirect('store:catalog')
 
-    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ (БЕЗПЕЧНА ВЕРСІЯ) 🔥
+    # 🔥 АВТОЗАПОВНЕННЯ ПОЛІВ 🔥
     initial_data = {}
     if request.user.is_authenticated:
         initial_data['email'] = request.user.email
         initial_data['full_name'] = f"{request.user.first_name} {request.user.last_name}".strip()
-        
-        # Перевіряємо, чи є профіль, щоб не було помилок
         if hasattr(request.user, 'profile'):
             profile = request.user.profile
             initial_data['phone'] = getattr(profile, 'phone', getattr(profile, 'phone_number', ''))
             initial_data['city'] = getattr(profile, 'city', '')
             initial_data['nova_poshta_branch'] = getattr(profile, 'nova_poshta_branch', '')
-            
-            if not initial_data['full_name']:
-                 initial_data['full_name'] = getattr(profile, 'full_name', '')
+            if not initial_data['full_name']: initial_data['full_name'] = getattr(profile, 'full_name', '')
 
     return render(request, 'store/checkout.html', {'user_data': initial_data})
 
@@ -443,96 +454,38 @@ def sync_google_sheet_view(request): return redirect('admin:store_product_change
 def faq_view(request): return render(request, 'store/faq.html')
 
 def fix_product_names_view(request):
-    """
-    Секретна в'юшка для очистки назв. 
-    Логіка: Залишаємо ТІЛЬКИ Модель та Індекс (без розміру).
-    Використання: /secret-fix-names/?page=1, потім ?page=2 і т.д.
-    """
-    if not request.user.is_superuser:
-        return JsonResponse({'status': 'error', 'message': 'Тільки для адміна'})
-
+    if not request.user.is_superuser: return JsonResponse({'status': 'error', 'message': 'Тільки для адміна'})
     from .models import Product
     import re
-
-    # 1. Налаштування пагінації (300 шт за раз)
     batch_size = 300
-    try:
-        page = int(request.GET.get('page', 1))
-    except ValueError:
-        page = 1
-
+    try: page = int(request.GET.get('page', 1))
+    except ValueError: page = 1
     start_index = (page - 1) * batch_size
     end_index = start_index + batch_size
-
-    # 2. Отримуємо порцію товарів
     products = Product.objects.order_by('id')[start_index:end_index]
-
-    if not products:
-        return JsonResponse({
-            'status': 'done', 
-            'message': '🎉 Всі товари перевірено! Кінець бази даних.'
-        })
-
-    count = 0
-    log = []
-    
-    # 3. Обробка
+    if not products: return JsonResponse({'status': 'done', 'message': '🎉 Всі товари перевірено!'})
+    count = 0; log = []
     for p in products:
         raw_name = p.name
-        
-        # --- ЛОГІКА ОЧИСТКИ ---
         clean_name = raw_name.replace("Шина", "").replace("шина", "")
-        
         if p.brand:
-            # Видаляємо бренд з початку (щоб не було "Aplus Aplus...")
             clean_name = re.sub(f"^{p.brand.name}", "", clean_name, flags=re.IGNORECASE)
             clean_name = re.sub(f"\({p.brand.name}\)", "", clean_name, flags=re.IGNORECASE)
-
-        # Шукаємо Індекс (наприклад 91T)
         index_match = re.search(r'\b(\d{2,3}[A-Z]{1,2})\b', clean_name)
         load_speed_idx = ""
-        if index_match:
-            load_speed_idx = index_match.group(1)
-        
-        # Видаляємо сам розмір з назви (наприклад 195/65R15)
+        if index_match: load_speed_idx = index_match.group(1)
         clean_name_no_size = re.sub(r'\d{3}/\d{2}[R|Z]\d{2}', '', clean_name)
-        
-        # Видаляємо знайдений індекс з тексту моделі (щоб додати його в кінці красиво)
-        if load_speed_idx:
-            clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
-
-        # Чистимо модель від сміття
+        if load_speed_idx: clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
         model_name = clean_name_no_size.strip()
-        model_name = re.sub(r'^\W+|\W+$', '', model_name) # прибираємо коми/тире на краях
-
-        # 🔥 ГОЛОВНА ЗМІНА: Формуємо назву БЕЗ розміру
-        # Було: final_name = f"{model_name} {size_str}"
-        # Стало:
+        model_name = re.sub(r'^\W+|\W+$', '', model_name)
         final_name = model_name
-        
-        if load_speed_idx:
-            final_name += f" {load_speed_idx}"
-        
-        # Прибираємо подвійні пробіли
+        if load_speed_idx: final_name += f" {load_speed_idx}"
         final_name = re.sub(r'\s+', ' ', final_name).strip()
-        # ----------------------------------
-
-        # Зберігаємо, якщо назва змінилась і не стала пустою
         if final_name != p.name and len(final_name) > 1:
             log.append(f"{p.id}: {p.name} -> {final_name}")
             p.name = final_name
             p.save()
             count += 1
-            
-    # 4. Формуємо лінк на наступну сторінку
     next_page = page + 1
     next_link = f"{request.path}?page={next_page}"
-    
-    return JsonResponse({
-        'status': 'processing',
-        'current_page': page,
-        'checked_range': f"{start_index} - {end_index}",
-        'fixed_in_this_batch': count,
-        'NEXT_STEP': f"Перейдіть сюди: {next_link}",
-        'log': log[:20]
-    })
+    return JsonResponse({'status': 'processing', 'current_page': page, 'fixed_in_this_batch': count, 'NEXT_STEP': f"Перейдіть сюди: {next_link}", 'log': log[:20]})

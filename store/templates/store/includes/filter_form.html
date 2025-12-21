@@ -1,0 +1,92 @@
+<form method="get" action="{% url 'store:catalog' %}">
+    {# Зберігаємо пошуковий запит і сортування, щоб вони не злітали при фільтрації #}
+    {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
+    {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+
+    <div class="accordion" id="filterAccordion">
+        
+        {# 1. СЕЗОН #}
+        <div class="filter-group">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeason">
+                    Сезон
+                </button>
+            </h2>
+            <div id="collapseSeason" class="accordion-collapse collapse show">
+                <div class="accordion-body">
+                    <select name="season" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Будь-який</option>
+                        {% for value, display in all_seasons %}
+                            <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {# 2. РОЗМІР (Ширина / Профіль / Діаметр) #}
+        <div class="filter-group">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSize">
+                    Розмір
+                </button>
+            </h2>
+            <div id="collapseSize" class="accordion-collapse collapse show">
+                <div class="accordion-body">
+                    <div class="mb-2">
+                        <label class="small text-muted">Ширина</label>
+                        <select name="width" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Всі</option>
+                            {% for w in all_widths %}
+                                <option value="{{ w }}" {% if w|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ w }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="small text-muted">Профіль</label>
+                        <select name="profile" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Всі</option>
+                            {% for p in all_profiles %}
+                                <option value="{{ p }}" {% if p|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="small text-muted">Діаметр</label>
+                        <select name="diameter" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Всі</option>
+                            {% for d in all_diameters %}
+                                <option value="{{ d }}" {% if d|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# 3. БРЕНД #}
+        <div class="filter-group border-bottom-0">
+             <h2 class="accordion-header">
+                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBrand">
+                     Бренд
+                 </button>
+             </h2>
+             <div id="collapseBrand" class="accordion-collapse collapse {% if selected_brand_id %}show{% endif %}">
+                <div class="accordion-body">
+                    <select name="brand" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Всі бренди</option>
+                        {% for brand in all_brands %}
+                            <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+             </div>
+        </div>
+
+    </div>
+    
+    <div class="d-grid gap-2 mt-3">
+        <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold">Застосувати</button>
+        <a href="{% url 'store:catalog' %}" class="btn btn-light btn-sm rounded-pill text-muted border">Скинути</a>
+    </div>
+</form>

@@ -204,6 +204,40 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
         if group['items']: links.append(group)
     return links
 
+# 🔥 НОВА ФУНКЦІЯ: БРЕНДОВА СТОРІНКА 🔥
+def brand_landing_view(request, brand_slug):
+    # Шукаємо бренд по slug або name
+    brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
+    if not brand:
+        raise Http404("Бренд не знайдено")
+    
+    # Отримуємо товари цього бренду
+    products = Product.objects.filter(brand=brand, stock_quantity__gt=0).order_by('price')
+    
+    # Пагінація
+    paginator = Paginator(products, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+
+    # SEO Мета
+    seo_title = brand.seo_title if brand.seo_title else f"Шини {brand.name} ({brand.country or 'Світ'}) — Купити в Києві | Відгуки, Ціни"
+    seo_h1 = brand.seo_h1 if brand.seo_h1 else f"Шини {brand.name}"
+    
+    if brand.description:
+         short_desc = brand.description[:150] + "..."
+         meta_desc = f"{short_desc} 💰 Каталог шин {brand.name} в наявності."
+    else:
+         meta_desc = f"Все про бренд {brand.name}: країна {brand.country}, для кого підходить, плюси та мінуси. 💰 Каталог шин {brand.name} в наявності."
+    
+    return render(request, 'store/brand_detail.html', {
+        'brand': brand,
+        'page_obj': page_obj,
+        'custom_page_range': custom_page_range,
+        'seo_title': seo_title,
+        'seo_h1': seo_h1,
+        'meta_description': meta_desc,
+    })
+
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO + ПОШУК + ФІЛЬТРИ) 🔥 ---
 def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     products = get_base_products()

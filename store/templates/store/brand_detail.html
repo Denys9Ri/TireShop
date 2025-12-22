@@ -1,0 +1,221 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Стиль картки бренду (Скляний ефект) */
+    .brand-hero {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 40px;
+        box-shadow: 0 15px 35px rgba(0, 74, 153, 0.05);
+    }
+    
+    .brand-meta-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #eef4ff;
+        color: #0d6efd;
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    .brand-logo-large {
+        max-width: 180px;
+        max-height: 80px;
+        object-fit: contain;
+        margin-bottom: 20px;
+        filter: grayscale(100%);
+        opacity: 0.8;
+        transition: 0.3s;
+    }
+    .brand-logo-large:hover { filter: grayscale(0%); opacity: 1; }
+
+    .pros-cons-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .pros-box, .cons-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid #f0f0f0;
+    }
+    .pros-title { color: #198754; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .cons-title { color: #dc3545; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
+    @media (max-width: 768px) {
+        .pros-cons-grid { grid-template-columns: 1fr; }
+        .brand-hero { padding: 25px; }
+    }
+    
+    /* Картка товару */
+    .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .season-badge.winter { background-color: #0dcaf0; } .season-badge.summer { background-color: #fd7e14; } .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
+    .quantity-stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; padding: 2px; margin-bottom: 10px; }
+    .quantity-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #f8f9fa; color: #333; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .quantity-stepper input { width: 40px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; outline: none; }
+</style>
+
+<div class="container py-4">
+    
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small mb-4">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-decoration-none text-muted">Каталог</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ brand.name }}</li>
+        </ol>
+    </nav>
+
+    {# 🔥 ІНФОРМАЦІЙНИЙ БЛОК БРЕНДУ 🔥 #}
+    <div class="brand-hero">
+        <div class="row align-items-start">
+            <div class="col-lg-8">
+                {% if brand.image %}
+                    <img src="{{ brand.image.url }}" alt="{{ brand.name }}" class="brand-logo-large">
+                {% endif %}
+                
+                <h1 class="fw-bold mb-3">{{ seo_h1 }}</h1>
+                
+                <div class="mb-3">
+                    {% if brand.country %}
+                        <span class="brand-meta-tag"><i class="bi bi-geo-alt-fill"></i> Країна: {{ brand.country }}</span>
+                    {% endif %}
+                    {% if brand.category == 'top' %}
+                        <span class="brand-meta-tag" style="background: #f3e5f5; color: #6f42c1;"><i class="bi bi-star-fill"></i> Преміум Клас</span>
+                    {% elif brand.category == 'medium' %}
+                        <span class="brand-meta-tag" style="background: #e3f2fd; color: #0d6efd;"><i class="bi bi-check-circle-fill"></i> Середній Клас</span>
+                    {% else %}
+                        <span class="brand-meta-tag" style="background: #fff3cd; color: #856404;"><i class="bi bi-wallet2"></i> Бюджетний Клас</span>
+                    {% endif %}
+                </div>
+
+                <div class="text-muted lead fs-6 mb-4">
+                    {% if brand.description %}
+                        {{ brand.description|linebreaksbr }}
+                    {% else %}
+                        Бренд {{ brand.name }} — надійний виробник шин. Перегляньте каталог моделей нижче.
+                    {% endif %}
+                </div>
+
+                {% if brand.target_audience %}
+                    <div class="p-3 bg-light rounded-3 border-start border-4 border-primary">
+                        <strong>🎯 Для кого підходить:</strong> {{ brand.target_audience }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="pros-cons-grid">
+                    <div class="pros-box">
+                        <div class="pros-title"><i class="bi bi-hand-thumbs-up-fill"></i> Сильні сторони</div>
+                        <div class="small text-muted">
+                            {% if brand.pros %}{{ brand.pros|linebreaksbr }}{% else %}• Хороша ціна<br>• Доступність{% endif %}
+                        </div>
+                    </div>
+                    <div class="cons-box">
+                        <div class="cons-title"><i class="bi bi-exclamation-triangle-fill"></i> Слабкі сторони</div>
+                        <div class="small text-muted">
+                            {% if brand.cons %}{{ brand.cons|linebreaksbr }}{% else %}• Гучність на швидкості<br>• Швидкий знос{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h4 fw-bold mb-4">Моделі шин {{ brand.name }} в наявності</h2>
+
+    {# СІТКА ТОВАРІВ #}
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+        {% for product in page_obj %}
+            <div class="col">
+                <div class="product-card position-relative">
+                    {% if product.seasonality == 'winter' %}<div class="season-badge winter"><i class="bi bi-snow"></i></div>
+                    {% elif product.seasonality == 'summer' %}<div class="season-badge summer"><i class="bi bi-sun-fill"></i></div>
+                    {% else %}<div class="season-badge all-season"><i class="bi bi-brightness-alt-high-fill"></i></div>{% endif %}
+
+                    <a href="{% url 'store:product_detail' product.slug %}">
+                        <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}" 
+                             class="product-image" loading="lazy" alt="{{ product.name }}"
+                             onerror="this.src='{% static 'images/no-image.png' %}'">
+                    </a>
+
+                    <div class="fw-bold mb-1">
+                        <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                            {{ product.brand.name }} {{ product.display_name }}
+                        </a>
+                    </div>
+                    
+                    <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
+
+                    <div class="mt-auto">
+                        <div class="text-primary fw-bold fs-5 mb-1">{{ product.price }} ₴</div>
+                        <div class="text-success small mb-2"><i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }}</div>
+                        
+                        <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form" data-product-id="{{ product.id }}">
+                            {% csrf_token %}
+                            <div class="quantity-stepper mb-2">
+                                <button type="button" class="quantity-btn" data-direction="decrease">−</button>
+                                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}">
+                                <button type="button" class="quantity-btn" data-direction="increase">+</button>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill btn-sm fw-bold">В кошик</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 py-5 text-center"><p class="text-muted">Товарів цього бренду наразі немає.</p></div>
+        {% endfor %}
+    </div>
+
+    {# ПАГІНАЦІЯ #}
+    {% if page_obj.has_other_pages %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center flex-wrap gap-1">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">←</a></li>
+                {% endif %}
+                
+                {% for num in custom_page_range %}
+                    {% if num == page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num == page_obj.paginator.ELLIPSIS %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">→</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+    {# SEO ТЕКСТ ЗНИЗУ #}
+    {% if brand.seo_text %}
+        <div class="mt-5 p-4 rounded-4 bg-white border text-muted small">
+            {{ brand.seo_text|safe }}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

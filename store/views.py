@@ -15,14 +15,24 @@ import re
 from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner
 
-# --- ⚙️ КОНФІГУРАЦІЯ ---
+# --- ⚙️ КОНФІГУРАЦІЯ (URL -> DB) ---
+# Розширений маппінг для різних варіантів написання URL
 SEASONS_MAP = {
+    # Зима
     'zymovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
+    'zimovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
+    'winter': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
+    
+    # Літо
     'litni': {'db': 'summer', 'ua': 'Літні шини', 'adj': 'літні'},
-    'vsesezonni': {'db': 'all_season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'}
+    'summer': {'db': 'summer', 'ua': 'Літні шини', 'adj': 'літні'},
+    
+    # Всесезон
+    'vsesezonni': {'db': 'all_season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'},
+    'all-season': {'db': 'all_season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'},
 }
 
-# --- 📚 НОВА БАЗА ЗНАНЬ (FAQ) ---
+# --- 📚 FAQ DATA ---
 FAQ_DATA = {
     'base': [
         ("Як дізнатися свій розмір шин?", "Подивись наклейку на дверях авто або на кришці бензобака — там буде щось типу 205/55 R16.<br>Не хочеш шукати — напиши нам марку, модель, рік і мотор, і ми підберемо."),
@@ -54,7 +64,7 @@ FAQ_DATA = {
     ]
 }
 
-# --- 🧠 SEO ШАБЛОНИ (H1/Text) ---
+# --- 🧠 SEO ШАБЛОНИ (Резервні) ---
 SEO_TEMPLATES = {
     'winter': {
         'h2': "Чому варто купити зимові шини {brand} {size}?",
@@ -95,43 +105,52 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     key = season_db if season_db in SEO_TEMPLATES else 'default'
     template = SEO_TEMPLATES[key]
 
-    # --- ФОРМУВАННЯ H1 ТА Title ---
+    # --- ФОРМУВАННЯ БАЗОВОГО ЗАГОЛОВКА ---
     h1_parts = []
-    
-    # 1. Сезон
     if season_db == 'winter': h1_parts.append("Зимові шини")
     elif season_db == 'summer': h1_parts.append("Літні шини")
     elif season_db == 'all_season': h1_parts.append("Всесезонні шини")
-    else: h1_parts.append("Шини") # Просто "Шини" якщо сезон не обрано
+    else: h1_parts.append("Шини")
     
-    # 2. Бренд
     if brand_obj: h1_parts.append(brand_obj.name)
-    
-    # 3. Розмір
     if size_str: h1_parts.append(size_str)
     
     h1_final = " ".join(h1_parts)
+    title_final = f"{h1_final} — Ціна від {min_price} грн | R16.com.ua"
+    description_html = ""
+    seo_h2 = ""
+
+    # 🔥 ПОКРАЩЕНА SEO ЛОГІКА (Тут формуємо контент) 🔥
     
-    # 🔥 СПЕЦІАЛЬНИЙ Title ДЛЯ СТОРІНОК РОЗМІРІВ 🔥
-    # Якщо вибрано розмір, але НЕ вибрано бренд -> робимо "продаючий" заголовок
-    if size_str and not brand_obj:
-        title_final = f"Купити резину {size_str} Київ — Ціна від {min_price} грн | R16.com.ua"
-        # Для H1 теж можна уточнити, якщо треба, але стандартний "Шини 205/55 R16" теж ок
+    # 1. Тільки РОЗМІР (без бренду і сезону)
+    if size_str and not brand_obj and not season_db:
+        title_final = f"Купити резину {size_str} Київ — Ціна від {min_price} грн"
+        seo_h2 = f"Гума {size_str}: ТОП пропозиції"
+        description_html = f"<p>Шукаєте надійні <b>шини {size_str}</b>? У нас великий вибір гуми цього розміру. 🚗 В наявності зимові, літні та всесезонні моделі.</p>"
+
+    # 2. СЕЗОН + РОЗМІР (Найвища конверсія!)
+    elif size_str and season_db and not brand_obj:
+        if season_db == 'winter':
+            title_final = f"Купити зимові шини {size_str} Київ — Ціна від {min_price} грн"
+            seo_h2 = f"Зимова гума {size_str}: Безпека на снігу"
+            description_html = f"<p>Шукаєте <b>зимові шини {size_str}</b>? Великий вибір: шиповані та фрикційні (липучки). ❄️ Гарантія та шиномонтаж.</p>"
+        elif season_db == 'summer':
+            title_final = f"Купити літні шини {size_str} Київ — Ціна від {min_price} грн"
+            seo_h2 = f"Літня гума {size_str}: Комфорт та швидкість"
+            description_html = f"<p>Обирайте <b>літні шини {size_str}</b>. Захист від аквапланування, економія пального. ☀️ Кращі бренди в наявності.</p>"
+        elif season_db == 'all_season':
+            title_final = f"Купити всесезонні шини {size_str} Київ — Ціна від {min_price} грн"
+            seo_h2 = f"Всесезонка {size_str}: Один комплект на рік"
+            description_html = f"<p>Універсальні <b>всесезонні шини {size_str}</b>. Економія на перевзуванні. 🌤 Ідеально для м'якої зими.</p>"
+
+    # 3. Стандартний шаблон (якщо нічого унікального не підійшло)
     else:
-        title_final = f"{h1_final} — Ціна від {min_price} грн | R16.com.ua"
-    
-    # --- ТЕКСТ ОПИСУ ---
-    try:
-        # Якщо це чистий розмір, даємо унікальний текст
-        if size_str and not brand_obj and key == 'default':
-            description_html = f"<p>Шукаєте надійні <b>шини {size_str}</b>? У нас великий вибір гуми цього розміру. 🚗 Підберемо найкращий варіант для вашого авто. В наявності зимові, літні та всесезонні моделі.</p>"
-            seo_h2 = f"Гума {size_str}: ТОП пропозиції"
-        else:
+        try:
             description_html = template['text'].format(brand=brand_name, size=size_str)
             seo_h2 = template['h2'].format(brand=brand_name, size=size_str)
-    except:
-        description_html = SEO_TEMPLATES['default']['text'].format(brand=brand_name, size=size_str)
-        seo_h2 = h1_final
+        except:
+            description_html = SEO_TEMPLATES['default']['text'].format(brand=brand_name, size=size_str)
+            seo_h2 = h1_final
 
     return {
         'title': title_final, 'h1': h1_final, 'seo_h2': seo_h2,
@@ -167,12 +186,17 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
         group = {'title': 'Популярні розміри:', 'items': []}
         for sw, sp, sd in top_sizes:
             text = f"R{sd} {sw}/{sp}"
+            
+            # 🔥 ГЕНЕРАЦІЯ ПРАВИЛЬНИХ URL 🔥
             if current_brand and current_season_slug:
                 url = reverse('store:seo_full', args=[current_brand.slug, current_season_slug, sw, sp, sd])
             elif current_season_slug:
+                # Це веде на /shiny/zimovi/205-55-r16/
                 url = reverse('store:seo_season_size', args=[current_season_slug, sw, sp, sd])
             else:
+                # Це веде на /shiny/205-55-r16/
                 url = reverse('store:seo_size', args=[sw, sp, sd])
+                
             group['items'].append({'text': text, 'url': url})
         if group['items']: links.append(group)
     return links

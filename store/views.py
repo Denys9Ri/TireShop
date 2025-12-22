@@ -60,7 +60,7 @@ FAQ_DATA = {
     ]
 }
 
-# --- 🧠 SEO ШАБЛОНИ (Резерв) ---
+# --- 🧠 SEO ШАБЛОНИ ---
 SEO_TEMPLATES = {
     'winter': {'h2': "Чому варто купити зимові шини {brand} {size}?", 'text': "<p>Зимова гума <b>{brand}</b> {size} розроблена для складних умов.</p>"},
     'summer': {'h2': "Літні шини {brand} {size}: Швидкість та контроль", 'text': "<p>Літня гума <b>{brand}</b> {size} створена для динамічної їзди.</p>"},
@@ -105,14 +105,10 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     seo_h2 = ""
 
     # 🔥 ПОКРАЩЕНА SEO ЛОГІКА (ГЕНЕРАЦІЯ КОНТЕНТУ) 🔥
-    
-    # 1. Тільки РОЗМІР
     if size_str and not brand_obj and not season_db:
         title_final = f"Купити резину {size_str} Київ — Ціна від {min_price} грн"
         seo_h2 = f"Гума {size_str}: ТОП пропозиції"
         description_html = f"<p>Шукаєте надійні <b>шини {size_str}</b>? У нас великий вибір гуми цього розміру. 🚗 В наявності зимові, літні та всесезонні моделі.</p>"
-
-    # 2. СЕЗОН + РОЗМІР (Топ конверсія)
     elif size_str and season_db and not brand_obj:
         if season_db == 'winter':
             title_final = f"Купити зимові шини {size_str} Київ — Ціна від {min_price} грн"
@@ -126,14 +122,10 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
             title_final = f"Купити всесезонні шини {size_str} Київ — Ціна від {min_price} грн"
             seo_h2 = f"Всесезонка {size_str}: Один комплект на рік"
             description_html = f"<p>Універсальні <b>всесезонні шини {size_str}</b>. Економія на перевзуванні. 🌤 Ідеально для м'якої зими.</p>"
-
-    # 3. БРЕНД + РОЗМІР (Нове!)
     elif size_str and brand_obj and not season_db:
         title_final = f"Шини {brand_name} {size_str} — Купити в Києві, Ціна"
         seo_h2 = f"Гума {brand_name} {size_str}: Огляд моделей"
         description_html = f"<p>Каталог шин <b>{brand_name}</b> у розмірі <b>{size_str}</b>. Оригінальна якість, гарантія від виробника. 🚚 Швидка доставка.</p>"
-
-    # 4. 🔥 ПОВНА КОМБІНАЦІЯ (Бренд + Сезон + Розмір) 🔥
     elif size_str and brand_obj and season_db:
         if season_db == 'winter':
              title_final = f"Зимові шини {brand_name} {size_str} — Ціна від {min_price} грн"
@@ -147,8 +139,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
              title_final = f"Всесезонні шини {brand_name} {size_str} — Краща ціна"
              seo_h2 = f"Всесезонка {brand_name} {size_str}"
              description_html = f"<p>Практичний вибір: <b>всесезонні шини {brand_name} {size_str}</b>. Забудьте про черги на шиномонтаж.</p>"
-
-    # 5. Стандарт (якщо нічого не співпало)
     else:
         try:
             description_html = template['text'].format(brand=brand_name, size=size_str)
@@ -179,47 +169,82 @@ def get_faq_schema_json(faq_list):
     faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": schema_items}
     return json.dumps(faq)
 
+# 🔥 РОЗУМНА ПЕРЕЛІНКОВКА (НОВА ФУНКЦІЯ) 🔥
 def get_cross_links(current_season_slug, current_brand, w, p, d):
     links = []
-    top_sizes = [
-        (175, 70, 13), (185, 65, 14), (185, 65, 15), 
-        (195, 65, 15), (205, 55, 16), (215, 60, 16), 
-        (225, 45, 17), (225, 50, 17), (235, 55, 18)
-    ]
     
-    if not w:
+    # 1. Якщо ми на сторінці БРЕНДУ (але не розміру): показуємо популярні розміри ЦЬОГО бренду
+    if current_brand and not w:
+        # Шукаємо розміри, які реально є у цього бренду
+        sizes = Product.objects.filter(brand=current_brand, stock_quantity__gt=0)\
+            .values('width', 'profile', 'diameter')\
+            .annotate(count=Count('id'))\
+            .order_by('-count')[:15] # Топ 15 розмірів
+            
+        if sizes:
+            group = {'title': f'Популярні розміри {current_brand.name}:', 'items': []}
+            for s in sizes:
+                sw, sp, sd = s['width'], s['profile'], s['diameter']
+                text = f"{sw}/{sp} R{sd}"
+                # Генеруємо URL: /shiny/brand/size/
+                url = reverse('store:seo_brand_size', args=[current_brand.slug, sw, sp, sd])
+                group['items'].append({'text': text, 'url': url})
+            links.append(group)
+            
+        # Додаємо лінки на СЕЗОНИ цього бренду
+        group_seasons = {'title': f'Сезони {current_brand.name}:', 'items': []}
+        group_seasons['items'].append({'text': f'Зимові {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'zimovi'])})
+        group_seasons['items'].append({'text': f'Літні {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'litni'])})
+        links.append(group_seasons)
+
+    # 2. Якщо ми на сторінці РОЗМІРУ (але не бренду): показуємо БРЕНДИ в цьому розмірі
+    elif w and p and d and not current_brand:
+        # Шукаємо бренди, у яких є цей розмір
+        brands = Brand.objects.filter(product__width=w, product__profile=p, product__diameter=d, product__stock_quantity__gt=0)\
+            .distinct().order_by('name')
+            
+        if brands:
+            group = {'title': f'Бренди у розмірі {w}/{p} R{d}:', 'items': []}
+            for b in brands:
+                text = b.name
+                # Генеруємо URL: /shiny/brand/size/
+                url = reverse('store:seo_brand_size', args=[b.slug, w, p, d])
+                group['items'].append({'text': text, 'url': url})
+            links.append(group)
+            
+        # Додаємо лінки на СЕЗОНИ в цьому розмірі
+        group_seasons = {'title': f'Сезонність {w}/{p} R{d}:', 'items': []}
+        group_seasons['items'].append({'text': f'Зимові {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['zimovi', w, p, d])})
+        group_seasons['items'].append({'text': f'Літні {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['litni', w, p, d])})
+        links.append(group_seasons)
+
+    # 3. Якщо просто каталог (або нічого не підійшло): показуємо загальні популярні розміри
+    if not links:
+        top_sizes = [
+            (175, 70, 13), (185, 65, 14), (185, 65, 15), 
+            (195, 65, 15), (205, 55, 16), (215, 60, 16), 
+            (225, 45, 17), (225, 50, 17), (235, 55, 18)
+        ]
         group = {'title': 'Популярні розміри:', 'items': []}
         for sw, sp, sd in top_sizes:
             text = f"R{sd} {sw}/{sp}"
-            
-            # 🔥 ГЕНЕРАЦІЯ ПРАВИЛЬНИХ URL 🔥
-            if current_brand and current_season_slug:
-                url = reverse('store:seo_full', args=[current_brand.slug, current_season_slug, sw, sp, sd])
-            elif current_season_slug:
-                url = reverse('store:seo_season_size', args=[current_season_slug, sw, sp, sd])
-            else:
-                url = reverse('store:seo_size', args=[sw, sp, sd])
-                
+            url = reverse('store:seo_size', args=[sw, sp, sd])
             group['items'].append({'text': text, 'url': url})
-        if group['items']: links.append(group)
+        links.append(group)
+        
     return links
 
 # 🔥 НОВА ФУНКЦІЯ: БРЕНДОВА СТОРІНКА 🔥
 def brand_landing_view(request, brand_slug):
-    # Шукаємо бренд по slug або name
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
-    if not brand:
-        raise Http404("Бренд не знайдено")
+    if not brand: raise Http404("Бренд не знайдено")
     
-    # Отримуємо товари цього бренду
     products = Product.objects.filter(brand=brand, stock_quantity__gt=0).order_by('price')
     
-    # Пагінація
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
     custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
 
-    # SEO Мета
     seo_title = brand.seo_title if brand.seo_title else f"Шини {brand.name} ({brand.country or 'Світ'}) — Купити в Києві | Відгуки, Ціни"
     seo_h1 = brand.seo_h1 if brand.seo_h1 else f"Шини {brand.name}"
     
@@ -229,6 +254,9 @@ def brand_landing_view(request, brand_slug):
     else:
          meta_desc = f"Все про бренд {brand.name}: країна {brand.country}, для кого підходить, плюси та мінуси. 💰 Каталог шин {brand.name} в наявності."
     
+    # Додаємо перелінковку для сторінки бренду
+    cross_links = get_cross_links(None, brand, None, None, None)
+
     return render(request, 'store/brand_detail.html', {
         'brand': brand,
         'page_obj': page_obj,
@@ -236,6 +264,7 @@ def brand_landing_view(request, brand_slug):
         'seo_title': seo_title,
         'seo_h1': seo_h1,
         'meta_description': meta_desc,
+        'cross_links': cross_links, # Передаємо лінки в шаблон
     })
 
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO + ПОШУК + ФІЛЬТРИ) 🔥 ---

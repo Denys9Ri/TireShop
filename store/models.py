@@ -20,11 +20,22 @@ class SiteSettings(models.Model):
 class Brand(models.Model):
     CATEGORY_CHOICES = [('budget', '💸 Економ'), ('medium', '⚖️ Ціна/Якість'), ('top', '💎 Топ')]
 
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=100, unique=True, null=True, blank=True)
+    name = models.CharField(max_length=100, unique=True, verbose_name="Назва бренду")
+    slug = models.SlugField(max_length=100, unique=True, null=True, blank=True, verbose_name="URL (Slug)")
     image = models.ImageField("Логотип", upload_to='brands/', blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='budget')
+    country = models.CharField(max_length=100, blank=True, null=True, verbose_name="Країна бренду")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='budget', verbose_name="Категорія")
+
+    # 🔥 НОВІ ПОЛЯ ДЛЯ ЛЕНДІНГУ БРЕНДУ 🔥
+    description = models.TextField(blank=True, verbose_name="Хто цей бренд (Опис)")
+    target_audience = models.TextField(blank=True, verbose_name="Для кого підходить")
+    pros = models.TextField(blank=True, verbose_name="Сильні сторони (Плюси)")
+    cons = models.TextField(blank=True, verbose_name="Слабкі сторони (Мінуси)")
+    
+    # Для SEO сторінки бренду
+    seo_title = models.CharField(max_length=255, blank=True, verbose_name="SEO Title")
+    seo_h1 = models.CharField(max_length=255, blank=True, verbose_name="SEO H1")
+    seo_text = models.TextField(blank=True, verbose_name="SEO Текст (знизу)")
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -33,6 +44,10 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "Бренд"
+        verbose_name_plural = "Бренди"
 
 
 # --- 2. ТОВАР ---

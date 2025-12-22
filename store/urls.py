@@ -6,26 +6,29 @@ app_name = 'store'
 urlpatterns = [
     path('', views.catalog_view, name='catalog'),
 
-    # --- SEO MATRIX (Шляхи для фільтрів) ---
-    # Важливо: Змінено 'shyny' на 'shiny' для кращого SEO (як у прикладі)
+    # --- SEO MATRIX (Всі можливі комбінації) ---
     
-    # 1. Найдовші шляхи (Повна комбінація)
+    # 1. 🔥 ПОВНА КОМБІНАЦІЯ (Бренд + Сезон + Розмір) 🔥
+    # Приклад: /shiny/aplus/zimovi/205-55-r16/
     path('shiny/<str:brand_slug>/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_full'),
     
-    # 2. Шляхи "Бренд + Сезон"
+    # 2. Бренд + Розмір (Додано нове!)
+    # Приклад: /shiny/sailun/215-60-r16/
+    path('shiny/<str:brand_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_brand_size'),
+
+    # 3. Бренд + Сезон
     path('shiny/<str:brand_slug>/<str:season_slug>/', views.seo_matrix_view, name='seo_brand_season'),
 
-    # 3. Шляхи "Сезон + Розмір"
+    # 4. Сезон + Розмір
     path('shiny/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_season_size'),
 
-    # 🔥 4. ГОЛОВНИЙ SEO ШЛЯХ (ТИПОРОЗМІР) 🔥
-    # Приклад: /shiny/205-55-r16/
+    # 5. Просто Розмір
     path('shiny/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_size'),
     
-    # 5. Універсальний шлях (Бренд або Сезон)
+    # 6. Універсальний (Бренд або Сезон)
     path('shiny/<str:slug>/', views.seo_matrix_view, name='seo_universal'), 
     
-    # Технічні дублі (можна залишити для сумісності)
+    # Технічні дублі
     path('shiny/season/<str:slug>/', views.seo_matrix_view, name='seo_season'),
     path('shiny/brand/<str:slug>/', views.seo_matrix_view, name='seo_brand'),
 
@@ -51,7 +54,5 @@ urlpatterns = [
     path('bot-callback/', views.bot_callback_view, name='bot_callback'),
     path('sync-google-sheet/', views.sync_google_sheet_view, name='sync_google_sheet'),
     path('faq/', views.faq_view, name='faq'),
-    
-    # Адмінка
     path('secret-fix-names/', views.fix_product_names_view),
 ]

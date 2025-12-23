@@ -4,6 +4,7 @@ from . import views
 app_name = 'store'
 
 urlpatterns = [
+    path('robots.txt', views.robots_txt),
     path('', views.catalog_view, name='catalog'),
 
     # 🔥 БРЕНДОВІ СТОРІНКИ (ДОВІРА + SEO) 🔥

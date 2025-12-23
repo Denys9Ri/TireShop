@@ -4,9 +4,10 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Case, When, Value, IntegerField, Min, Max, Count, Q
 from django.conf import settings
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
 from django.db import transaction
 from django.urls import reverse
+from django.core.cache import cache # 🔥 ВАЖЛИВИЙ ІМПОРТ ДЛЯ ШВИДКОСТІ
 import json
 import requests
 import re
@@ -104,7 +105,7 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     description_html = ""
     seo_h2 = ""
 
-    # 🔥 ПОКРАЩЕНА SEO ЛОГІКА (ГЕНЕРАЦІЯ КОНТЕНТУ) 🔥
+    # 🔥 ПОКРАЩЕНА SEO ЛОГІКА 🔥
     if size_str and not brand_obj and not season_db:
         title_final = f"Купити резину {size_str} Київ — Ціна від {min_price} грн"
         seo_h2 = f"Гума {size_str}: ТОП пропозиції"
@@ -169,37 +170,40 @@ def get_faq_schema_json(faq_list):
     faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": schema_items}
     return json.dumps(faq)
 
-# 🔥 РОЗУМНА ПЕРЕЛІНКОВКА (НОВА ФУНКЦІЯ) 🔥
+# 🔥 РОЗУМНА ПЕРЕЛІНКОВКА З КЕШУВАННЯМ (ЩОБ НЕ ПАДАВ СЕРВЕР) 🔥
 def get_cross_links(current_season_slug, current_brand, w, p, d):
+    # Створюємо унікальний ключ для кешу
+    cache_key = f"cross_links_{current_season_slug}_{current_brand}_{w}_{p}_{d}"
+    
+    # Спробуємо дістати дані з пам'яті
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
+
+    # Якщо в пам'яті немає - рахуємо (це важка операція)
     links = []
     
-    # 1. Якщо ми на сторінці БРЕНДУ (але не розміру): показуємо популярні розміри ЦЬОГО бренду
     if current_brand and not w:
-        # Шукаємо розміри, які реально є у цього бренду
         sizes = Product.objects.filter(brand=current_brand, stock_quantity__gt=0)\
             .values('width', 'profile', 'diameter')\
             .annotate(count=Count('id'))\
-            .order_by('-count')[:15] # Топ 15 розмірів
+            .order_by('-count')[:15]
             
         if sizes:
             group = {'title': f'Популярні розміри {current_brand.name}:', 'items': []}
             for s in sizes:
                 sw, sp, sd = s['width'], s['profile'], s['diameter']
                 text = f"{sw}/{sp} R{sd}"
-                # Генеруємо URL: /shiny/brand/size/
                 url = reverse('store:seo_brand_size', args=[current_brand.slug, sw, sp, sd])
                 group['items'].append({'text': text, 'url': url})
             links.append(group)
             
-        # Додаємо лінки на СЕЗОНИ цього бренду
         group_seasons = {'title': f'Сезони {current_brand.name}:', 'items': []}
         group_seasons['items'].append({'text': f'Зимові {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'zimovi'])})
         group_seasons['items'].append({'text': f'Літні {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'litni'])})
         links.append(group_seasons)
 
-    # 2. Якщо ми на сторінці РОЗМІРУ (але не бренду): показуємо БРЕНДИ в цьому розмірі
     elif w and p and d and not current_brand:
-        # Шукаємо бренди, у яких є цей розмір
         brands = Brand.objects.filter(product__width=w, product__profile=p, product__diameter=d, product__stock_quantity__gt=0)\
             .distinct().order_by('name')
             
@@ -207,18 +211,15 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
             group = {'title': f'Бренди у розмірі {w}/{p} R{d}:', 'items': []}
             for b in brands:
                 text = b.name
-                # Генеруємо URL: /shiny/brand/size/
                 url = reverse('store:seo_brand_size', args=[b.slug, w, p, d])
                 group['items'].append({'text': text, 'url': url})
             links.append(group)
             
-        # Додаємо лінки на СЕЗОНИ в цьому розмірі
         group_seasons = {'title': f'Сезонність {w}/{p} R{d}:', 'items': []}
         group_seasons['items'].append({'text': f'Зимові {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['zimovi', w, p, d])})
         group_seasons['items'].append({'text': f'Літні {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['litni', w, p, d])})
         links.append(group_seasons)
 
-    # 3. Якщо просто каталог (або нічого не підійшло): показуємо загальні популярні розміри
     if not links:
         top_sizes = [
             (175, 70, 13), (185, 65, 14), (185, 65, 15), 
@@ -232,9 +233,32 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
             group['items'].append({'text': text, 'url': url})
         links.append(group)
         
+    # Зберігаємо результат в кеш на 1 годину
+    cache.set(cache_key, links, 60 * 60)
+    
     return links
 
-# 🔥 НОВА ФУНКЦІЯ: БРЕНДОВА СТОРІНКА 🔥
+# 🔥 ROBOTS.TXT (Контроль ботів) 🔥
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Disallow: /cart/",
+        "Disallow: /checkout/",
+        "Disallow: /add/",
+        "Disallow: /remove/",
+        "Disallow: /admin/",
+        "Crawl-delay: 5",
+        "",
+        "User-agent: Googlebot",
+        "Disallow: /cart/",
+        "Disallow: /checkout/",
+        "Allow: /",
+        "",
+        "Sitemap: https://r16.com.ua/sitemap.xml" 
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+# 🔥 БРЕНДОВА СТОРІНКА 🔥
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
     if not brand: raise Http404("Бренд не знайдено")
@@ -254,7 +278,6 @@ def brand_landing_view(request, brand_slug):
     else:
          meta_desc = f"Все про бренд {brand.name}: країна {brand.country}, для кого підходить, плюси та мінуси. 💰 Каталог шин {brand.name} в наявності."
     
-    # Додаємо перелінковку для сторінки бренду
     cross_links = get_cross_links(None, brand, None, None, None)
 
     return render(request, 'store/brand_detail.html', {
@@ -264,10 +287,10 @@ def brand_landing_view(request, brand_slug):
         'seo_title': seo_title,
         'seo_h1': seo_h1,
         'meta_description': meta_desc,
-        'cross_links': cross_links, # Передаємо лінки в шаблон
+        'cross_links': cross_links,
     })
 
-# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (SEO + ПОШУК + ФІЛЬТРИ) 🔥 ---
+# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР 🔥 ---
 def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     products = get_base_products()
     brand_obj = None
@@ -336,11 +359,8 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     d_int = int(req_diameter) if req_diameter else None
 
     seo_data = generate_seo_content(brand_obj, season_db, w_int, p_int, d_int, int(min_price), int(max_price))
-    
-    # FAQ
     faq_list = get_combined_faq(season_db)
     faq_schema = get_faq_schema_json(faq_list)
-    
     cross_links = get_cross_links(season_slug, brand_obj, w_int, p_int, d_int)
 
     # --- СОРТУВАННЯ ---
@@ -356,8 +376,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     brands = Brand.objects.all().order_by('name')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
-    
-    # 🔥 ГЕНЕРУЄМО РОЗУМНУ ПАГІНАЦІЮ [1, '...', 5, 6, 7, '...', 20] 🔥
     custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
     
     q_params = request.GET.copy()

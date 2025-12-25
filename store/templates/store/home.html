@@ -1,0 +1,297 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Шини R16.com.ua — Купити шини в Києві | Магазин гуми{% endblock %}
+{% block meta_description %}Інтернет-магазин шин R16. Величезний вибір зимової та літньої гуми. 🚚 Доставка по Україні. 💰 Низькі ціни.{% endblock %}
+
+{% block content %}
+<style>
+    /* --- HERO BANNER (Темний фон з картинкою) --- */
+    .hero-section {
+        position: relative;
+        /* Якщо є картинка - буде вона, якщо ні - градієнт */
+        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('{% static "images/hero-bg.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        /* Резервний фон (сірий), якщо картинки немає */
+        background-color: #343a40; 
+        
+        padding: 100px 0 120px 0;
+        border-radius: 0 0 30px 30px;
+        margin-bottom: 50px;
+        color: white;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-weight: 800;
+        font-size: 3rem;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 40px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* --- GLASS SEARCH BOX (Білий блок пошуку) --- */
+    .main-search-container {
+        max_width: 1000px;
+        margin: 0 auto;
+    }
+
+    .glass-search-box {
+        background: rgba(255, 255, 255, 0.95); /* Майже білий для контрасту */
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: left; /* Текст всередині форми зліва */
+    }
+
+    .form-label-custom {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-select-lg-custom {
+        height: 50px;
+        font-weight: 600;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .form-select-lg-custom:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    }
+
+    .btn-search-main {
+        height: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border-radius: 10px;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+    }
+
+    /* Сезонні перемикачі */
+    .season-toggles {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .season-btn {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        backdrop-filter: blur(5px);
+        transition: 0.3s;
+    }
+    .season-btn:hover {
+        background: white;
+        color: #333;
+        transform: translateY(-2px);
+    }
+
+    /* --- ІНШІ СТИЛІ --- */
+    .section-title { font-weight: 800; font-size: 1.8rem; margin-bottom: 30px; text-align: center; }
+    
+    .brand-pill {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: white; border: 1px solid #dee2e6; border-radius: 12px;
+        padding: 10px 20px; height: 60px; min-width: 100px;
+        transition: 0.2s; text-decoration: none; color: #333; font-weight: bold;
+    }
+    .brand-pill:hover { border-color: #0d6efd; box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1); transform: translateY(-2px); }
+    .brands-scroller { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 60px; }
+
+    /* Картки товарів (як було) */
+    .product-card { background: white; border-radius: 16px; padding: 15px; border: 1px solid #f0f0f0; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .product-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 15px; }
+
+    /* Мобільна адаптація */
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2rem; }
+        .hero-section { padding: 60px 0 80px 0; }
+        .glass-search-box { padding: 20px; }
+    }
+</style>
+
+{# --- HERO BLOCK --- #}
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">Твій розмір. Твоя гума.</h1>
+        <p class="hero-subtitle">Швидкий підбір шин від світових брендів за найкращими цінами</p>
+
+        {# Перемикачі сезону (над фільтром) #}
+        <div class="season-toggles">
+            <a href="{% url 'store:seo_universal' 'zimovi' %}" class="season-btn"><i class="bi bi-snow"></i> Зима</a>
+            <a href="{% url 'store:seo_universal' 'litni' %}" class="season-btn"><i class="bi bi-sun-fill"></i> Літо</a>
+            <a href="{% url 'store:seo_universal' 'vsesezonni' %}" class="season-btn"><i class="bi bi-brightness-alt-high"></i> Всесезонні</a>
+        </div>
+
+        <div class="main-search-container">
+            <div class="glass-search-box">
+                <form action="{% url 'store:catalog' %}" method="get">
+                    <div class="row g-3 align-items-end">
+                        
+                        {# 1. ШИРИНА #}
+                        <div class="col-6 col-md-2">
+                            <label class="form-label-custom">Ширина</label>
+                            <select name="width" class="form-select form-select-lg-custom">
+                                <option value="">Всі</option>
+                                {% for w in all_widths %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        
+                        {# 2. ПРОФІЛЬ #}
+                        <div class="col-6 col-md-2">
+                            <label class="form-label-custom">Профіль</label>
+                            <select name="profile" class="form-select form-select-lg-custom">
+                                <option value="">Всі</option>
+                                {% for p in all_profiles %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        
+                        {# 3. ДІАМЕТР #}
+                        <div class="col-6 col-md-2">
+                            <label class="form-label-custom">Діаметр</label>
+                            <select name="diameter" class="form-select form-select-lg-custom">
+                                <option value="">Всі</option>
+                                {% for d in all_diameters %}<option value="{{ d }}">R{{ d }}</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        {# 4. БРЕНД (Додав за твоїм бажанням) #}
+                        <div class="col-12 col-md-3">
+                            <label class="form-label-custom">Бренд</label>
+                            <select name="brand" class="form-select form-select-lg-custom">
+                                <option value="">Всі бренди</option>
+                                {% for b in brands %}
+                                    <option value="{{ b.id }}">{{ b.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# 5. КНОПКА #}
+                        <div class="col-12 col-md-3">
+                            <button type="submit" class="btn btn-primary btn-search-main">
+                                <i class="bi bi-search"></i> Показати
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    {# --- ПЕРЕВАГИ (Іконки) --- #}
+    <div class="row g-4 mb-5 justify-content-center text-center">
+        <div class="col-6 col-md-3">
+            <div class="p-3 border rounded-4 bg-light h-100">
+                <div class="fs-1 text-primary mb-2"><i class="bi bi-truck"></i></div>
+                <div class="fw-bold">Швидка доставка</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3 border rounded-4 bg-light h-100">
+                <div class="fs-1 text-success mb-2"><i class="bi bi-shield-check"></i></div>
+                <div class="fw-bold">Офіційна гарантія</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3 border rounded-4 bg-light h-100">
+                <div class="fs-1 text-warning mb-2"><i class="bi bi-star-fill"></i></div>
+                <div class="fw-bold">Тільки оригінал</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3 border rounded-4 bg-light h-100">
+                <div class="fs-1 text-danger mb-2"><i class="bi bi-arrow-repeat"></i></div>
+                <div class="fw-bold">Легке повернення</div>
+            </div>
+        </div>
+    </div>
+
+    {# --- ХІТИ ПРОДАЖУ (Карусель) --- #}
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <h2 class="h2 fw-bold mb-0">Хіти продажу 🔥</h2>
+        <a href="{% url 'store:catalog' %}" class="text-decoration-none fw-bold">Весь каталог <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
+        {% for product in featured_products %}
+            <div class="col">
+                <div class="product-card position-relative">
+                    {% if product.seasonality == 'winter' %}
+                        <div class="position-absolute top-0 end-0 m-2 badge bg-info rounded-circle p-2"><i class="bi bi-snow text-white"></i></div>
+                    {% elif product.seasonality == 'summer' %}
+                        <div class="position-absolute top-0 end-0 m-2 badge bg-warning rounded-circle p-2"><i class="bi bi-sun-fill text-white"></i></div>
+                    {% endif %}
+                    
+                    <a href="{% url 'store:product_detail' product.slug %}">
+                        <img src="{{ product.photo_url|default:'https://placehold.co/400x400?text=No+Img' }}" 
+                             class="product-img" loading="lazy" alt="{{ product.name }}"
+                             onerror="this.src='{% static 'images/no-image.png' %}'">
+                    </a>
+
+                    <div class="fw-bold small mb-1">
+                        <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                            {{ product.brand.name }} {{ product.display_name }}
+                        </a>
+                    </div>
+                    <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
+                    
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary">{{ product.price }} ₴</span>
+                        <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-sm btn-outline-primary rounded-pill"><i class="bi bi-bag"></i></a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# --- БРЕНДИ (Логотипи) --- #}
+    <h2 class="h4 fw-bold text-center mb-4">Наші бренди</h2>
+    <div class="brands-scroller">
+        {% for brand in brands %}
+            <a href="{% url 'store:brand_landing' brand.slug %}" class="brand-pill">
+                {% if brand.image %}
+                    <img src="{{ brand.image.url }}" alt="{{ brand.name }}" style="max-height: 25px; max-width: 80px;">
+                {% else %}
+                    {{ brand.name }}
+                {% endif %}
+            </a>
+        {% endfor %}
+    </div>
+
+    {# --- SEO ТЕКСТ --- #}
+    <div class="bg-light p-4 rounded-4 text-muted small mt-5 mb-5">
+        <h2 class="h6 fw-bold text-dark mb-2">Інтернет-магазин шин R16.com.ua</h2>
+        <p class="mb-2">Ми пропонуємо широкий вибір автомобільної гуми для будь-якого сезону. У нашому каталозі ви знайдете шини від провідних світових брендів.</p>
+        <p class="mb-0">Замовляйте шини онлайн з доставкою по Києву та Україні. Професійний підбір, гарантія якості та доступні ціни.</p>
+    </div>
+</div>
+{% endblock %}

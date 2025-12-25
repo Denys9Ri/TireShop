@@ -12,9 +12,9 @@ import json
 import requests
 import re
 
-# Імпорти
+# Імпорти (Додав AboutImage)
 from .cart import Cart 
-from .models import Product, Order, OrderItem, Brand, SiteBanner
+from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 
 # --- ⚙️ КОНФІГУРАЦІЯ ---
 SEASONS_MAP = {
@@ -549,7 +549,11 @@ def checkout_view(request):
 
     return render(request, 'store/checkout.html', {'user_data': initial_data})
 
-def about_view(request): return render(request, 'store/about.html')
+# 🔥 ТУТ ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ГАЛЕРЕЇ 🔥
+def about_view(request):
+    photos = AboutImage.objects.all().order_by('-created_at')
+    return render(request, 'store/about.html', {'photos': photos})
+
 def contacts_view(request): return render(request, 'store/contacts.html')
 def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
 def warranty_view(request): return render(request, 'store/warranty.html')

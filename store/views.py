@@ -170,34 +170,26 @@ def get_faq_schema_json(faq_list):
     faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": schema_items}
     return json.dumps(faq)
 
-# 🔥 РОЗУМНА ПЕРЕЛІНКОВКА З КЕШУВАННЯМ (ЩОБ НЕ ПАДАВ СЕРВЕР) 🔥
+# 🔥 РОЗУМНА ПЕРЕЛІНКОВКА З КЕШУВАННЯМ 🔥
 def get_cross_links(current_season_slug, current_brand, w, p, d):
-    # Створюємо унікальний ключ для кешу
     cache_key = f"cross_links_{current_season_slug}_{current_brand}_{w}_{p}_{d}"
-    
-    # Спробуємо дістати дані з пам'яті
     cached_data = cache.get(cache_key)
-    if cached_data:
-        return cached_data
+    if cached_data: return cached_data
 
-    # Якщо в пам'яті немає - рахуємо (це важка операція)
     links = []
-    
     if current_brand and not w:
         sizes = Product.objects.filter(brand=current_brand, stock_quantity__gt=0)\
             .values('width', 'profile', 'diameter')\
             .annotate(count=Count('id'))\
             .order_by('-count')[:15]
-            
         if sizes:
             group = {'title': f'Популярні розміри {current_brand.name}:', 'items': []}
             for s in sizes:
                 sw, sp, sd = s['width'], s['profile'], s['diameter']
-                text = f"{sw}/{sp} R{sd}"
                 url = reverse('store:seo_brand_size', args=[current_brand.slug, sw, sp, sd])
-                group['items'].append({'text': text, 'url': url})
+                group['items'].append({'text': f"{sw}/{sp} R{sd}", 'url': url})
             links.append(group)
-            
+        
         group_seasons = {'title': f'Сезони {current_brand.name}:', 'items': []}
         group_seasons['items'].append({'text': f'Зимові {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'zimovi'])})
         group_seasons['items'].append({'text': f'Літні {current_brand.name}', 'url': reverse('store:seo_brand_season', args=[current_brand.slug, 'litni'])})
@@ -206,68 +198,38 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
     elif w and p and d and not current_brand:
         brands = Brand.objects.filter(product__width=w, product__profile=p, product__diameter=d, product__stock_quantity__gt=0)\
             .distinct().order_by('name')
-            
         if brands:
             group = {'title': f'Бренди у розмірі {w}/{p} R{d}:', 'items': []}
             for b in brands:
-                text = b.name
                 url = reverse('store:seo_brand_size', args=[b.slug, w, p, d])
-                group['items'].append({'text': text, 'url': url})
+                group['items'].append({'text': b.name, 'url': url})
             links.append(group)
-            
+        
         group_seasons = {'title': f'Сезонність {w}/{p} R{d}:', 'items': []}
         group_seasons['items'].append({'text': f'Зимові {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['zimovi', w, p, d])})
         group_seasons['items'].append({'text': f'Літні {w}/{p} R{d}', 'url': reverse('store:seo_season_size', args=['litni', w, p, d])})
         links.append(group_seasons)
 
     if not links:
-        top_sizes = [
-            (175, 70, 13), (185, 65, 14), (185, 65, 15), 
-            (195, 65, 15), (205, 55, 16), (215, 60, 16), 
-            (225, 45, 17), (225, 50, 17), (235, 55, 18)
-        ]
+        top_sizes = [(175, 70, 13), (185, 65, 14), (185, 65, 15), (195, 65, 15), (205, 55, 16), (215, 60, 16), (225, 45, 17), (225, 50, 17), (235, 55, 18)]
         group = {'title': 'Популярні розміри:', 'items': []}
         for sw, sp, sd in top_sizes:
-            text = f"R{sd} {sw}/{sp}"
             url = reverse('store:seo_size', args=[sw, sp, sd])
-            group['items'].append({'text': text, 'url': url})
+            group['items'].append({'text': f"R{sd} {sw}/{sp}", 'url': url})
         links.append(group)
         
-    # Зберігаємо результат в кеш на 1 годину
-    cache.set(cache_key, links, 60 * 60)
-    
+    cache.set(cache_key, links, 3600)
     return links
 
-# 🔥 ROBOTS.TXT (Контроль ботів) 🔥
+# 🔥 ROBOTS.TXT 🔥
 def robots_txt(request):
-    lines = [
-        "User-agent: *",
-        "Disallow: /cart/",
-        "Disallow: /checkout/",
-        "Disallow: /add/",
-        "Disallow: /remove/",
-        "Disallow: /admin/",
-        "Crawl-delay: 5",
-        "",
-        "User-agent: Googlebot",
-        "Disallow: /cart/",
-        "Disallow: /checkout/",
-        "Allow: /",
-        "",
-        "Sitemap: https://r16.com.ua/sitemap.xml" 
-    ]
+    lines = ["User-agent: *", "Disallow: /cart/", "Disallow: /checkout/", "Disallow: /add/", "Disallow: /remove/", "Disallow: /admin/", "Crawl-delay: 5", "", "User-agent: Googlebot", "Disallow: /cart/", "Disallow: /checkout/", "Allow: /", "", "Sitemap: https://r16.com.ua/sitemap.xml"]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
-# 🔥 НОВА ГОЛОВНА СТОРІНКА (ВІТРИНА) 🔥
+# 🔥 ГОЛОВНА СТОРІНКА (HOME) 🔥
 def home_view(request):
-    # 1. Товари для вітрини "Хіти продажу" (беремо 8 штук, які є в наявності)
-    # Можна зробити рандом order_by('?') або просто свіжі order_by('-id')
     featured_products = Product.objects.filter(stock_quantity__gt=4).order_by('-id')[:8]
-
-    # 2. Бренди для слайдера
     brands = Brand.objects.all().order_by('name')
-
-    # 3. Параметри для фільтру (щоб він працював на головній)
     width_list = Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width')
     profile_list = Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile')
     diameter_list = Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter')
@@ -285,48 +247,76 @@ def home_view(request):
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
     if not brand: raise Http404("Бренд не знайдено")
-    
     products = Product.objects.filter(brand=brand, stock_quantity__gt=0).order_by('price')
-    
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
     custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
-
+    
     seo_title = brand.seo_title if brand.seo_title else f"Шини {brand.name} ({brand.country or 'Світ'}) — Купити в Києві | Відгуки, Ціни"
     seo_h1 = brand.seo_h1 if brand.seo_h1 else f"Шини {brand.name}"
+    meta_desc = f"{brand.description[:150]}..." if brand.description else f"Все про бренд {brand.name}: країна {brand.country}. Каталог шин."
     
-    if brand.description:
-         short_desc = brand.description[:150] + "..."
-         meta_desc = f"{short_desc} 💰 Каталог шин {brand.name} в наявності."
-    else:
-         meta_desc = f"Все про бренд {brand.name}: країна {brand.country}, для кого підходить, плюси та мінуси. 💰 Каталог шин {brand.name} в наявності."
-    
-    cross_links = get_cross_links(None, brand, None, None, None)
-
     return render(request, 'store/brand_detail.html', {
-        'brand': brand,
-        'page_obj': page_obj,
-        'custom_page_range': custom_page_range,
-        'seo_title': seo_title,
-        'seo_h1': seo_h1,
-        'meta_description': meta_desc,
-        'cross_links': cross_links,
+        'brand': brand, 'page_obj': page_obj, 'custom_page_range': custom_page_range,
+        'seo_title': seo_title, 'seo_h1': seo_h1, 'meta_description': meta_desc,
+        'cross_links': get_cross_links(None, brand, None, None, None),
     })
 
-# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР 🔥 ---
+# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (З РЕДІРЕКТОМ) 🔥 ---
 def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
+    
+    # 🚀 ПЕРЕХОПЛЮВАЧ (REDIRECT): Якщо це звичайний пошук з параметрами -> кидаємо на SEO URL
+    if not any([slug, brand_slug, season_slug, width]):
+        q_season = request.GET.get('season')
+        q_brand = request.GET.get('brand')
+        q_width = request.GET.get('width')
+        q_profile = request.GET.get('profile')
+        q_diameter = request.GET.get('diameter')
+
+        if q_season or q_brand or (q_width and q_profile and q_diameter):
+            target_season_slug = None
+            if q_season:
+                for k, v in SEASONS_MAP.items():
+                    if v['db'] == q_season:
+                        target_season_slug = k
+                        break
+            
+            target_brand_slug = None
+            if q_brand:
+                try:
+                    b_obj = Brand.objects.filter(id=int(q_brand)).first()
+                    if b_obj: target_brand_slug = b_obj.slug
+                except: pass
+
+            has_size = (q_width and q_profile and q_diameter)
+
+            # ПРІОРИТЕТИ РЕДІРЕКТІВ
+            if target_brand_slug and target_season_slug and has_size:
+                return redirect('store:seo_full', brand_slug=target_brand_slug, season_slug=target_season_slug, width=q_width, profile=q_profile, diameter=q_diameter)
+            elif target_brand_slug and has_size:
+                return redirect('store:seo_brand_size', brand_slug=target_brand_slug, width=q_width, profile=q_profile, diameter=q_diameter)
+            elif target_season_slug and has_size:
+                return redirect('store:seo_season_size', season_slug=target_season_slug, width=q_width, profile=q_profile, diameter=q_diameter)
+            elif target_brand_slug and target_season_slug:
+                return redirect('store:seo_brand_season', brand_slug=target_brand_slug, season_slug=target_season_slug)
+            elif has_size:
+                return redirect('store:seo_size', width=q_width, profile=q_profile, diameter=q_diameter)
+            elif target_brand_slug:
+                return redirect('store:brand_landing', brand_slug=target_brand_slug)
+            elif target_season_slug:
+                return redirect('store:seo_universal', slug=target_season_slug)
+
+    # ДАЛІ СТАНДАРТНА ЛОГІКА
     products = get_base_products()
     brand_obj = None
     season_db = None
 
-    # 1. ОБРОБКА SEO URL
     if slug:
         if slug in SEASONS_MAP: season_slug = slug
         else:
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
             if brand_obj: brand_slug = slug
 
-    # 2. ПОШУК
     query = request.GET.get('query', '').strip()
     if query:
         clean = re.sub(r'[/\sR\-]', '', query, flags=re.IGNORECASE)
@@ -337,7 +327,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         else:
             products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
-    # 3. ФІЛЬТРИ
     if not brand_obj:
         s_brand_id = request.GET.get('brand')
         if s_brand_id: 
@@ -367,7 +356,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     if req_profile: products = products.filter(profile=req_profile)
     if req_diameter: products = products.filter(diameter=req_diameter)
 
-    # --- СТАТИСТИКА ---
     real_products = products.filter(price__gt=0)
     if real_products.exists():
         stats = real_products.aggregate(min_price=Min('price'), max_price=Max('price'))
@@ -376,7 +364,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     else:
         min_price = 0; max_price = 0
 
-    # --- SEO DATA ---
     w_int = int(req_width) if req_width else None
     p_int = int(req_profile) if req_profile else None
     d_int = int(req_diameter) if req_diameter else None
@@ -386,7 +373,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     faq_schema = get_faq_schema_json(faq_list)
     cross_links = get_cross_links(season_slug, brand_obj, w_int, p_int, d_int)
 
-    # --- СОРТУВАННЯ ---
     ordering = request.GET.get('ordering')
     if ordering == 'cheap':
         products = products.filter(stock_quantity__gt=0).order_by('price')
@@ -395,7 +381,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
     else:
         products = products.order_by('status_order', '-id')
 
-    # --- UI ---
     brands = Brand.objects.all().order_by('name')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))

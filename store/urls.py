@@ -4,14 +4,14 @@ from . import views
 app_name = 'store'
 
 urlpatterns = [
-    path('robots.txt', views.robots_txt),
-    path('', views.catalog_view, name='catalog'),
+    # 🔥 НОВА ГОЛОВНА СТОРІНКА 🔥
+    path('', views.home_view, name='home'),
 
-    # 🔥 БРЕНДОВІ СТОРІНКИ (ДОВІРА + SEO) 🔥
-    # Приклад: /shiny/brendy/aplus/
-    path('shiny/brendy/<str:brand_slug>/', views.brand_landing_view, name='brand_landing'),
+    # 📂 КАТАЛОГ (Тепер тут живе повний список)
+    path('catalog/', views.catalog_view, name='catalog'),
 
     # --- SEO MATRIX (Фільтри) ---
+    path('shiny/brendy/<str:brand_slug>/', views.brand_landing_view, name='brand_landing'),
     path('shiny/<str:brand_slug>/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_full'),
     path('shiny/<str:brand_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_brand_size'),
     path('shiny/<str:brand_slug>/<str:season_slug>/', views.seo_matrix_view, name='seo_brand_season'),
@@ -40,4 +40,5 @@ urlpatterns = [
     path('sync-google-sheet/', views.sync_google_sheet_view, name='sync_google_sheet'),
     path('faq/', views.faq_view, name='faq'),
     path('secret-fix-names/', views.fix_product_names_view),
+    path('robots.txt', views.robots_txt),
 ]

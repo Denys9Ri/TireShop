@@ -9,20 +9,33 @@
     /* --- HERO BANNER --- */
     .hero-section {
         position: relative;
-        /* Фон: затемнення + картинка */
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('{% static "images/hero-bg.jpg" %}');
         background-size: cover;
         background-position: center;
         background-color: #343a40; 
-        padding: 60px 0 100px 0; /* Трохи менше відступ зверху для мобілок */
+        padding: 60px 0 100px 0;
         border-radius: 0 0 30px 30px;
         margin-bottom: 40px;
         color: white;
         text-align: center;
     }
     
-    .hero-title { font-weight: 800; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    .hero-subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 30px; max-width: 600px; margin: 0 auto; }
+    .hero-title { 
+        font-weight: 800; 
+        font-size: 2.5rem; 
+        margin-bottom: 10px; 
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5); 
+    }
+    
+    .hero-subtitle { 
+        font-size: 1.1rem; 
+        opacity: 0.9; 
+        /* 🔥 ЗБІЛЬШИВ ВІДСТУП ТУТ (було 30px, стало 60px) 🔥 */
+        margin-bottom: 60px; 
+        max-width: 600px; 
+        margin-left: auto; 
+        margin-right: auto; 
+    }
 
     /* --- FORM CONTAINER --- */
     .main-search-container { max_width: 1000px; margin: 0 auto; }
@@ -40,7 +53,7 @@
     .season-selector {
         display: flex;
         justify-content: center;
-        flex-wrap: wrap; /* Дозволяє переносити на новий рядок на малих екранах */
+        flex-wrap: wrap;
         gap: 10px;
         margin-bottom: 20px;
     }
@@ -157,7 +170,7 @@
                             </select>
                         </div>
                         
-                        {# 3. ПРОФІЛЬ (Половина на мобілці - стане поруч з Шириною) #}
+                        {# 3. ПРОФІЛЬ (Половина на мобілці) #}
                         <div class="col-6 col-md-2">
                             <label class="form-label-custom">Профіль</label>
                             <select name="profile" class="form-select form-select-lg-custom">
@@ -175,7 +188,7 @@
                             </select>
                         </div>
 
-                        {# 5. БРЕНД (Половина на мобілці - стане поруч з Діаметром) #}
+                        {# 5. БРЕНД (Половина на мобілці) #}
                         <div class="col-6 col-md-3">
                             <label class="form-label-custom">Бренд</label>
                             <select name="brand" class="form-select form-select-lg-custom">
@@ -186,7 +199,7 @@
                             </select>
                         </div>
 
-                        {# 6. КНОПКА (На всю ширину на мобілці для зручності) #}
+                        {# 6. КНОПКА (На всю ширину на мобілці) #}
                         <div class="col-12 col-md-3 mt-3 mt-md-0">
                             <button type="submit" class="btn btn-primary btn-search-main">
                                 <i class="bi bi-search"></i> Знайти

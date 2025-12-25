@@ -29,7 +29,7 @@ class OrderAdmin(admin.ModelAdmin):
         return sum(item.get_cost() for item in obj.items.all())
     total_cost.short_description = 'Сума'
 
-# --- ГАЛЕРЕЯ ---
+# --- ГАЛЕРЕЯ ТОВАРУ ---
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
@@ -50,7 +50,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return not SiteSettings.objects.exists()
 
-# --- ФОРМИ ---
+# --- ФОРМИ ІМПОРТУ ---
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField(label="Прайс-лист (Товари)")
     start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
@@ -59,7 +59,6 @@ class ExcelImportForm(forms.Form):
 class PhotoImportForm(forms.Form):
     excel_file = forms.FileField(label="Файл з ФОТО (Brand, Model, URL)")
 
-# 🔥 ОНОВЛЕНА ФОРМА ДЛЯ SEO (З ЛІМІТАМИ) 🔥
 class SeoImportForm(forms.Form):
     excel_file = forms.FileField(label="SEO Файл (.xlsx)")
     start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
@@ -107,7 +106,7 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # --- 1. РОЗУМНИЙ ЕКСПОРТ (УНІКАЛЬНІ МОДЕЛІ) ---
+    # --- 1. ЕКСПОРТ (УНІКАЛЬНІ МОДЕЛІ) ---
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -121,7 +120,6 @@ class ProductAdmin(admin.ModelAdmin):
             brand_name = p.brand.name if p.brand else "Unknown"
             raw_name = p.name
             
-            # Чистимо назву для експорту
             clean = re.sub(r'шина', '', raw_name, flags=re.IGNORECASE)
             clean = re.sub(r'\b\d{3}/\d{2}R?\d{0,2}\b', '', clean) 
             clean = re.sub(r'\bR\d{2}C?\b', '', clean)
@@ -145,7 +143,7 @@ class ProductAdmin(admin.ModelAdmin):
         wb.save(response)
         return response
 
-    # --- 🔥 2. СУПЕР-РОЗУМНИЙ ІМПОРТ ФОТО (ІГНОРУЄ СМІТТЯ) 🔥 ---
+    # --- 2. ІМПОРТ ФОТО ---
     def import_photos(self, request):
         if request.method == "POST":
             excel_file = request.FILES["excel_file"]
@@ -154,15 +152,12 @@ class ProductAdmin(admin.ModelAdmin):
                 sheet = wb.active
                 updated_products = 0
                 
-                # Список слів-паразитів, які треба ігнорувати при пошуку
                 IGNORE_WORDS = [
                     'serbia', 'china', 'korea', 'thailand', 'japan', 'turkey', 'germany', 'poland', 
                     'dot', 'xl', 'new', 'demo', 'usa', 'hungary', 'romania', 'france', 'spain'
                 ]
 
-                # Проходимо по файлу
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    # Пропускаємо пусті рядки
                     if not row or len(row) < 3: continue
                     if not row[0] or not row[1] or not row[2]: continue
                     
@@ -172,31 +167,22 @@ class ProductAdmin(admin.ModelAdmin):
                     
                     if not url_txt.startswith('http'): continue
 
-                    # 1. Фільтруємо по Бренду
                     query = Q(brand__name__icontains=brand_txt)
                     
-                    # 2. Чистимо назву моделі від дужок, ком та іншого сміття
                     clean_model_txt = re.sub(r'[(),]', ' ', model_txt)
-                    
-                    # 3. Розбиваємо на слова
                     model_tokens = clean_model_txt.split()
                     
-                    # 4. Фільтруємо слова: прибираємо країни та коротке сміття
                     valid_tokens = []
                     for token in model_tokens:
                         t_lower = token.lower()
-                        # Ігноруємо короткі (менше 2 букв) і слова з чорного списку
                         if len(token) > 1 and t_lower not in IGNORE_WORDS:
                             valid_tokens.append(token)
                     
-                    # Якщо після чистки нічого не залишилось, пропускаємо
                     if not valid_tokens: continue
 
-                    # 5. Формуємо запит: Товар повинен містити ВСІ "чисті" слова
                     for token in valid_tokens:
                         query &= Q(name__icontains=token)
 
-                    # 6. Оновлюємо
                     count = Product.objects.filter(query).update(photo_url=url_txt)
                     updated_products += count
                 
@@ -208,7 +194,7 @@ class ProductAdmin(admin.ModelAdmin):
         form = PhotoImportForm()
         return render(request, "store/admin_import_photos.html", {"form": form})
 
-    # --- 3. ІМПОРТ ТОВАРІВ (ОСНОВНИЙ ПРАЙС) ---
+    # --- 3. ІМПОРТ ТОВАРІВ ---
     def import_excel(self, request):
         if request.method == "POST":
             form = ExcelImportForm(request.POST, request.FILES)
@@ -305,7 +291,6 @@ class ProductAdmin(admin.ModelAdmin):
                                 'description': f"Шини {brand_name} {model_name}. {size_raw}. {season_raw}."
                             }
                         )
-                        # Якщо фото ще немає, додаємо його
                         if photo_link and not obj.photo_url:
                             obj.photo_url = photo_link
                             obj.save(update_fields=['photo_url'])
@@ -370,7 +355,6 @@ class ProductAdmin(admin.ModelAdmin):
                         seo_h1 = str(row[idx_h1]).strip() if row[idx_h1] else ""
                         seo_text = str(row[idx_text]).strip() if row[idx_text] else ""
 
-                        # Розумний пошук для SEO
                         query = Q(brand__name__icontains=brand_val)
                         for token in model_val.split():
                              if len(token) > 1: query &= Q(name__icontains=token)
@@ -403,18 +387,18 @@ class BrandAdmin(admin.ModelAdmin):
     list_filter = ['category']
     search_fields = ['name']
 
-@admin.register(SiteBanner)
-class SiteBannerAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active']
-
+# 🔥 ФОТОГАЛЕРЕЯ СКЛАДУ (Замість Банерів) 🔥
 @admin.register(AboutImage)
 class AboutImageAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at', 'image_preview']
+    ordering = ['-created_at']
     
     def image_preview(self, obj):
-        if obj.image_url:
-            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image_url)
         if obj.image:
-            return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
+            return format_html('<img src="{}" style="height: 100px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"/>', obj.image.url)
         return "-"
-    image_preview.short_description = "Превью"
+    image_preview.short_description = "Попередній перегляд"
+    
+    # Змінюємо назву в меню, щоб було зрозуміло
+    def has_module_permission(self, request):
+        return True

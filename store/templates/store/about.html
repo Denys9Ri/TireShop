@@ -4,59 +4,120 @@
 {% block title %}Про нас - R16.com.ua{% endblock %}
 
 {% block content %}
-<div class="container py-5" style="max-width: 900px;">
+<div class="container py-5">
     
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
-        <div class="card-body p-4 p-md-5 bg-white">
-            <h1 class="fw-bold text-primary mb-4 text-center">Про компанію R16</h1>
-            
-            <p class="fs-5 text-muted text-center mb-5">
-                Ми — спеціалізований інтернет-магазин шин та дисків. Вже понад 5 років допомагаємо українським водіям підбирати ідеальне взуття для авто під будь-який бюджет.
-            </p>
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-5 text-primary">Про компанію R16</h1>
+        <p class="lead text-muted max-w-700 mx-auto">
+            Ми — спеціалізований інтернет-магазин шин та дисків. Вже понад 5 років допомагаємо українським водіям почуватися впевнено на будь-якій дорозі.
+        </p>
+    </div>
 
-            <div class="row g-4 mb-5">
-                <div class="col-md-4 text-center">
-                    <div class="mb-2 text-primary"><i class="bi bi-collection fs-1"></i></div>
-                    <h5 class="fw-bold">Широкий вибір брендів</h5>
-                    <p class="small text-muted">
-                        В наявності та під замовлення: топ-бренди (Michelin, Hankook, Goodyear) та перевірені бюджетні варіанти (Aplus, Powertrac).
-                    </p>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="h-100 p-4 bg-white rounded-4 shadow-sm border text-center transition-card">
+                <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                    <i class="bi bi-collection"></i>
                 </div>
-                <div class="col-md-4 text-center">
-                    <div class="mb-2 text-primary"><i class="bi bi-box-seam fs-1"></i></div>
-                    <h5 class="fw-bold">Склад у Києві</h5>
-                    <p class="small text-muted">Популярні розміри завжди в наявності. Можливість самовивозу або швидка відправка поштою.</p>
-                </div>
-                <div class="col-md-4 text-center">
-                    <div class="mb-2 text-primary"><i class="bi bi-people fs-1"></i></div>
-                    <h5 class="fw-bold">Допомога з вибором</h5>
-                    <p class="small text-muted">Ми не просто продаємо, а радимо те, що краще ходить нашими дорогами, виходячи з реального досвіду.</p>
-                </div>
+                <h5 class="fw-bold">Широкий вибір</h5>
+                <p class="text-muted small mb-0">
+                    Топ-бренди (Michelin, Hankook) та перевірені бюджетні варіанти. Ми знаємо, що порадити під ваш бюджет.
+                </p>
             </div>
+        </div>
 
-            <hr class="mb-5">
-
-            <h3 class="fw-bold mb-4 text-center">Наш склад і робота</h3>
-            
-            {% if images %}
-            <div class="row g-3">
-                {% for item in images %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="rounded-3 overflow-hidden shadow-sm" style="height: 250px;">
-                        {% if item.image_url %}
-                            <img src="{{ item.image_url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Склад R16">
-                        {% elif item.image %}
-                            <img src="{{ item.image.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Склад R16">
-                        {% endif %}
-                    </div>
+        <div class="col-md-4">
+            <div class="h-100 p-4 bg-white rounded-4 shadow-sm border text-center transition-card">
+                <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                    <i class="bi bi-box-seam"></i>
                 </div>
-                {% endfor %}
+                <h5 class="fw-bold">Власний склад</h5>
+                <p class="text-muted small mb-0">
+                    Більшість популярних розмірів у нас в наявності в Києві. Самовивіз в день замовлення або швидка відправка.
+                </p>
             </div>
-            {% else %}
-            <p class="text-center text-muted">Фото складу завантажуються...</p>
-            {% endif %}
+        </div>
 
+        <div class="col-md-4">
+            <div class="h-100 p-4 bg-white rounded-4 shadow-sm border text-center transition-card">
+                <div class="icon-box bg-warning bg-opacity-10 text-dark rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h5 class="fw-bold">Чесна консультація</h5>
+                <p class="text-muted small mb-0">
+                    Ми не "впарюємо" те, що треба продати. Ми радимо те, що реально ходить нашими дорогами.
+                </p>
+            </div>
         </div>
     </div>
+
+    <hr class="my-5 text-muted opacity-25">
+
+    <div class="mb-5">
+        <div class="d-flex align-items-center justify-content-center mb-4">
+            <h3 class="fw-bold text-center mb-0 me-2">📸 Наш склад і робота</h3>
+            <span class="badge bg-light text-dark border rounded-pill">Живі фото</span>
+        </div>
+
+        {% if photos %}
+        <div class="row g-3">
+            {% for item in photos %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm overflow-hidden rounded-4 gallery-card">
+                    {% if item.image %}
+                        <a href="{{ item.image.url }}" target="_blank">
+                            <img src="{{ item.image.url }}" class="gallery-img" alt="Склад R16">
+                        </a>
+                    {% elif item.image_url %}
+                        <a href="{{ item.image_url }}" target="_blank">
+                            <img src="{{ item.image_url }}" class="gallery-img" alt="Склад R16">
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 bg-light rounded-4">
+            <i class="bi bi-images fs-1 text-muted mb-3 d-block"></i>
+            <p class="text-muted">Галерея наповнюється...</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-5">
+        <h4 class="fw-bold mb-3">Маєте питання?</h4>
+        <a href="{% url 'store:contacts' %}" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg">
+            Зв'язатися з нами <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+    </div>
+
 </div>
+
+<style>
+    /* Анімація для карток переваг */
+    .transition-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .transition-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Стилі для галереї */
+    .gallery-card {
+        position: relative;
+    }
+    .gallery-img {
+        width: 100%;
+        height: 220px; /* Фіксована висота для рівної сітки */
+        object-fit: cover;
+        transition: transform 0.4s ease;
+        cursor: pointer;
+    }
+    /* Зум при наведенні */
+    .gallery-card:hover .gallery-img {
+        transform: scale(1.08);
+    }
+</style>
 {% endblock %}

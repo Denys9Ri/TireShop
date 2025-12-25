@@ -4,85 +4,96 @@
 {% block title %}Контакти - R16.com.ua{% endblock %}
 
 {% block content %}
-<div class="container py-5" style="max-width: 900px;">
-    <h1 class="text-center fw-bold mb-5 text-primary">Зв'яжіться з нами</h1>
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-5 text-primary">Зв'яжіться з нами</h1>
+        <p class="text-muted lead">Ми завжди на зв'язку та готові допомогти з вибором</p>
+    </div>
 
-    <div class="row g-4">
+    <div class="row g-4 justify-content-center">
         
-        <div class="col-md-6">
-            <div class="bg-white p-4 rounded-4 shadow-sm h-100 border">
-                <h4 class="fw-bold mb-4">Наші контакти</h4>
+        <div class="col-lg-5">
+            <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm h-100 border position-relative">
                 
-                <div class="mb-4">
-                    <p class="text-muted mb-1 small text-uppercase fw-bold">Телефон / Viber / Telegram</p>
-                    <a href="tel:+380666881491" class="d-block fs-3 fw-bold text-dark text-decoration-none mb-2">+38 (066) 688-14-91</a>
-                    <p class="text-success fw-bold mb-0">
-                        <i class="bi bi-chat-dots-fill"></i> Пишіть/дзвоніть — допоможу підібрати шини!
-                    </p>
+                <div class="mb-5">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                            <i class="bi bi-telephone-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-uppercase fw-bold text-muted small">Телефон / Консультація</span>
+                            <a href="tel:+380666881491" class="d-block fs-3 fw-bold text-dark text-decoration-none lh-1">+38 (066) 688-14-91</a>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex mt-3">
+                        <a href="viber://chat?number=%2B380666881491" class="btn btn-lg text-white fw-bold flex-grow-1" style="background-color: #7360f2; border-radius: 12px;">
+                            <i class="bi bi-chat-text-fill me-2"></i> Viber
+                        </a>
+                        <a href="https://t.me/+380666881491" class="btn btn-lg text-white fw-bold flex-grow-1" style="background-color: #229ED9; border-radius: 12px;">
+                            <i class="bi bi-telegram me-2"></i> Telegram
+                        </a>
+                    </div>
                 </div>
 
-                <div class="d-flex gap-2 mb-4">
-                    <a href="viber://chat?number=%2B380666881491" class="btn btn-lg flex-grow-1 text-white fw-bold" style="background-color: #665CAC;">
-                        <i class="bi bi-telephone-fill"></i> Viber
-                    </a>
-                    <a href="https://t.me/+380666881491" class="btn btn-lg flex-grow-1 text-white fw-bold" style="background-color: #0088cc;">
-                        <i class="bi bi-telegram"></i> Telegram
-                    </a>
+                <hr class="my-4 text-muted opacity-25">
+
+                <div class="mb-5">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; flex-shrink: 0;">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-uppercase fw-bold text-muted small">Самовивіз у Києві</span>
+                            <p class="fs-5 fw-bold mb-1">вул. Володимира Качали, 3</p>
+                            <p class="text-muted small mb-2">Солом'янський район (Відрадний).<br>В'їзд на територію гаражного кооперативу «Палуба».</p>
+                            <a href="https://www.google.com/maps/dir//50.424928,30.412911/@50.424928,30.412911,17z" target="_blank" class="fw-bold text-primary text-decoration-none">
+                                <i class="bi bi-cursor-fill"></i> Прокласти маршрут
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <p class="text-muted mb-1 small text-uppercase fw-bold">Графік роботи</p>
-                    <p class="mb-0">Пн–Пт: 8:00 – 21:00</p>
-                    <p class="mb-0">Сб: 9:00 – 16:00</p>
-                    <p class="text-muted">Нд: Вихідний</p>
+                <div class="mb-0">
+                    <div class="d-flex align-items-start">
+                        <div class="icon-box bg-warning bg-opacity-10 text-dark rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; flex-shrink: 0;">
+                            <i class="bi bi-clock-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-uppercase fw-bold text-muted small">Графік роботи</span>
+                            <ul class="list-unstyled mb-0 fw-medium mt-1">
+                                <li class="mb-1 d-flex justify-content-between" style="width: 200px;"><span>Пн – Пт:</span> <span>8:00 – 21:00</span></li>
+                                <li class="mb-1 d-flex justify-content-between" style="width: 200px;"><span>Субота:</span> <span>9:00 – 16:00</span></li>
+                                <li class="text-danger d-flex justify-content-between" style="width: 200px;"><span>Неділя:</span> <span>Вихідний</span></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <p class="text-muted mb-1 small text-uppercase fw-bold">Email</p>
-                    <a href="mailto:r16info2025@gmail.com" class="text-decoration-none">r16info2025@gmail.com</a>
-                </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="bg-white p-4 rounded-4 shadow-sm h-100 border">
-                <h4 class="fw-bold mb-4">Самовивіз у Києві</h4>
+        <div class="col-lg-7">
+            <div class="h-100 rounded-4 shadow-sm border overflow-hidden position-relative bg-white" style="min-height: 500px;">
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    style="border:0; min-height: 500px;" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade"
+                    title="Карта проїзду R16.com.ua"
+                    /* Використовуємо твої координати */
+                    src="https://maps.google.com/maps?q=50.424928,30.412911&hl=uk&z=17&output=embed">
+                </iframe>
                 
-                <p class="fs-5 mb-2">вулиця Володимира Качали, 3</p>
-                <p class="text-muted mb-4">Гаражний кооператив «Палуба», Солом'янський район (Відрадний).</p>
-
-                <a href="https://www.google.com/maps/dir//50.4284989,30.4107093/@50.428499,30.410709,16z" target="_blank" class="btn btn-outline-primary w-100 mb-3">
-                    <i class="bi bi-geo-alt-fill"></i> Відкрити навігатор
-                </a>
-
-                <div class="ratio ratio-16x9 rounded-3 overflow-hidden border">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d158.8666084145154!2d30.412864978083196!3d50.42497315699652!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sru!2sua!4v1765028055457!5m2!1sru!2sua" 
-                        width="600" height="450" 
-                        style="border:0;" 
-                        allowfullscreen="" 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+                <div class="position-absolute bottom-0 start-0 m-3 p-3 bg-white rounded-3 shadow-sm d-none d-md-block" style="max-width: 250px; border-left: 5px solid #0d6efd;">
+                    <p class="mb-0 fw-bold small"><i class="bi bi-info-circle-fill text-primary"></i> Орієнтир:</p>
+                    <p class="mb-0 small text-muted">Сині ворота, скажіть охороні, що ви в шинний центр.</p>
                 </div>
             </div>
         </div>
 
     </div>
-
-    <div class="mt-5">
-        <h3 class="fw-bold text-center mb-4">Ми на карті</h3>
-        <div class="rounded-4 overflow-hidden shadow-sm border" style="height: 350px;">
-            <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2541.676939269266!2d30.4107093!3d50.4284989!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40d4cc7d80682099%3A0x421207489345630!2z0LLRg9C70LjRhtGPINCS0L7Qu9C-0LTQuNC80LjRgNCwINCa0LDRh9Cw0LvQuCwgMywg0JrQuZfQsiwgMDIwMDA!5e0!3m2!1suk!2sua!4v1700000000000!5m2!1suk!2sua" 
-                width="100%" 
-                height="100%" 
-                style="border:0;" 
-                allowfullscreen="" 
-                loading="lazy" 
-                referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-        </div>
-    </div>
-
 </div>
 {% endblock %}

@@ -258,6 +258,29 @@ def robots_txt(request):
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
+# 🔥 НОВА ГОЛОВНА СТОРІНКА (ВІТРИНА) 🔥
+def home_view(request):
+    # 1. Товари для вітрини "Хіти продажу" (беремо 8 штук, які є в наявності)
+    # Можна зробити рандом order_by('?') або просто свіжі order_by('-id')
+    featured_products = Product.objects.filter(stock_quantity__gt=4).order_by('-id')[:8]
+
+    # 2. Бренди для слайдера
+    brands = Brand.objects.all().order_by('name')
+
+    # 3. Параметри для фільтру (щоб він працював на головній)
+    width_list = Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width')
+    profile_list = Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile')
+    diameter_list = Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter')
+
+    return render(request, 'store/home.html', {
+        'featured_products': featured_products,
+        'brands': brands,
+        'all_widths': width_list,
+        'all_profiles': profile_list,
+        'all_diameters': diameter_list,
+        'all_seasons': Product.SEASON_CHOICES,
+    })
+
 # 🔥 БРЕНДОВА СТОРІНКА 🔥
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()

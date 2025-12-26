@@ -30,7 +30,6 @@
     .hero-subtitle { 
         font-size: 1.1rem; 
         opacity: 0.9; 
-        /* 🔥 ЗБІЛЬШИВ ВІДСТУП ТУТ (було 30px, стало 60px) 🔥 */
         margin-bottom: 60px; 
         max-width: 600px; 
         margin-left: auto; 
@@ -78,7 +77,6 @@
 
     .season-label:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
 
-    /* Активний стан */
     .season-selector input[type="radio"]:checked + .season-label {
         background: #ffffff;
         color: #333;
@@ -87,7 +85,6 @@
         transform: scale(1.05);
     }
 
-    /* Стилі полів */
     .form-label-custom { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6c757d; margin-bottom: 5px; display: block; }
     
     .form-select-lg-custom { 
@@ -115,7 +112,6 @@
         box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3); 
     }
 
-    /* Адаптація для ПК */
     @media (min-width: 768px) {
         .hero-section { padding: 80px 0 120px 0; }
         .hero-title { font-size: 3.5rem; }
@@ -123,26 +119,67 @@
         .season-label { padding: 10px 30px; font-size: 1rem; }
     }
     
-    /* Інші стилі */
-    .section-title { font-weight: 800; font-size: 1.8rem; margin-bottom: 30px; text-align: center; }
     .brand-pill { display: inline-flex; align-items: center; justify-content: center; background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 10px 20px; height: 60px; min-width: 100px; transition: 0.2s; text-decoration: none; color: #333; font-weight: bold; }
     .brand-pill:hover { border-color: #0d6efd; box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1); transform: translateY(-2px); }
     .brands-scroller { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 60px; }
-    .product-card { background: white; border-radius: 16px; padding: 15px; border: 1px solid #f0f0f0; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; }
-    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-    .product-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 15px; }
+    
+    /* 🔥 КАРТКА ТОВАРУ (ЯК В КАТАЛОЗІ) 🔥 */
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid #f0f0f0;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border-color: #e0e0e0;
+    }
+    .product-img {
+        width: 100%;
+        height: 160px;
+        object-fit: contain;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.05));
+    }
+    .season-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stock-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+    .price-block { margin-top: auto; }
 </style>
 
 {# --- HERO BLOCK --- #}
 <div class="hero-section">
     <div class="container">
-        <h1 class="hero-title">R16.com.ua</h1>
-        <p class="hero-subtitle">Знайди свої шини за хвилину</p>
+        <h1 class="hero-title">Твій розмір. Твоя гума.</h1>
+        <p class="hero-subtitle">Швидкий підбір шин від світових брендів</p>
 
         <div class="main-search-container">
             <form action="{% url 'store:catalog' %}" method="get">
                 
-                {# 1. СЕЗОН (РАДІО КНОПКИ) #}
                 <div class="season-selector">
                     <input type="radio" name="season" value="" id="s_all" checked>
                     <label for="s_all" class="season-label"><i class="bi bi-grid-fill"></i> Всі</label>
@@ -158,10 +195,7 @@
                 </div>
 
                 <div class="glass-search-box">
-                    {# g-2 робить відступи меншими (краще для мобілок) #}
                     <div class="row g-2 align-items-end">
-                        
-                        {# 2. ШИРИНА (Половина на мобілці) #}
                         <div class="col-6 col-md-2">
                             <label class="form-label-custom">Ширина</label>
                             <select name="width" class="form-select form-select-lg-custom">
@@ -169,8 +203,6 @@
                                 {% for w in all_widths %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
                             </select>
                         </div>
-                        
-                        {# 3. ПРОФІЛЬ (Половина на мобілці) #}
                         <div class="col-6 col-md-2">
                             <label class="form-label-custom">Профіль</label>
                             <select name="profile" class="form-select form-select-lg-custom">
@@ -178,8 +210,6 @@
                                 {% for p in all_profiles %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
                             </select>
                         </div>
-                        
-                        {# 4. ДІАМЕТР (Половина на мобілці) #}
                         <div class="col-6 col-md-2">
                             <label class="form-label-custom">Діаметр</label>
                             <select name="diameter" class="form-select form-select-lg-custom">
@@ -187,8 +217,6 @@
                                 {% for d in all_diameters %}<option value="{{ d }}">R{{ d }}</option>{% endfor %}
                             </select>
                         </div>
-
-                        {# 5. БРЕНД (Половина на мобілці) #}
                         <div class="col-6 col-md-3">
                             <label class="form-label-custom">Бренд</label>
                             <select name="brand" class="form-select form-select-lg-custom">
@@ -198,14 +226,11 @@
                                 {% endfor %}
                             </select>
                         </div>
-
-                        {# 6. КНОПКА (На всю ширину на мобілці) #}
                         <div class="col-12 col-md-3 mt-3 mt-md-0">
                             <button type="submit" class="btn btn-primary btn-search-main">
                                 <i class="bi bi-search"></i> Знайти
                             </button>
                         </div>
-
                     </div>
                 </div>
             </form>
@@ -242,7 +267,7 @@
         </div>
     </div>
 
-    {# --- ХІТИ ПРОДАЖУ --- #}
+    {# --- ХІТИ ПРОДАЖУ (ОНОВЛЕНО) --- #}
     <div class="d-flex justify-content-between align-items-end mb-4">
         <h2 class="h2 fw-bold mb-0">Хіти продажу 🔥</h2>
         <a href="{% url 'store:catalog' %}" class="text-decoration-none fw-bold">Весь каталог <i class="bi bi-arrow-right"></i></a>
@@ -251,29 +276,59 @@
     <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
         {% for product in featured_products %}
             <div class="col">
-                <div class="product-card position-relative">
+                <div class="product-card">
+                    {# 1. БЕЙДЖ СЕЗОНУ #}
                     {% if product.seasonality == 'winter' %}
-                        <div class="position-absolute top-0 end-0 m-2 badge bg-info rounded-circle p-2"><i class="bi bi-snow text-white"></i></div>
+                        <div class="season-badge bg-info text-white" title="Зима"><i class="bi bi-snow"></i></div>
                     {% elif product.seasonality == 'summer' %}
-                        <div class="position-absolute top-0 end-0 m-2 badge bg-warning rounded-circle p-2"><i class="bi bi-sun-fill text-white"></i></div>
+                        <div class="season-badge bg-warning text-white" title="Літо"><i class="bi bi-sun-fill"></i></div>
+                    {% else %}
+                        <div class="season-badge bg-success text-white" title="Всесезон"><i class="bi bi-brightness-alt-high"></i></div>
                     {% endif %}
-                    
-                    <a href="{% url 'store:product_detail' product.slug %}">
+
+                    {# 2. БЕЙДЖ НАЯВНОСТІ #}
+                    {% if product.stock_quantity > 4 %}
+                        <div class="position-absolute top-0 start-0 m-2 badge bg-success bg-opacity-75 rounded-pill">В наявності</div>
+                    {% elif product.stock_quantity > 0 %}
+                        <div class="position-absolute top-0 start-0 m-2 badge bg-warning text-dark rounded-pill">Закінчується</div>
+                    {% endif %}
+
+                    <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none">
                         <img src="{{ product.photo_url|default:'https://placehold.co/400x400?text=No+Img' }}" 
                              class="product-img" loading="lazy" alt="{{ product.name }}"
                              onerror="this.src='{% static 'images/no-image.png' %}'">
                     </a>
 
-                    <div class="fw-bold small mb-1">
-                        <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                    <div class="mb-2">
+                        <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark fw-bold small d-block mb-1">
                             {{ product.brand.name }} {{ product.display_name }}
                         </a>
+                        <div class="text-muted small" style="font-size: 0.85rem;">
+                            {{ product.width }}/{{ product.profile }} R{{ product.diameter }}
+                        </div>
                     </div>
-                    <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
                     
-                    <div class="mt-auto d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-primary">{{ product.price }} ₴</span>
-                        <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-sm btn-outline-primary rounded-pill"><i class="bi bi-bag"></i></a>
+                    <div class="price-block d-flex align-items-end justify-content-between mt-auto">
+                        <div>
+                            {% if product.discount_percent > 0 %}
+                                <div class="text-muted text-decoration-line-through small" style="font-size: 0.8rem;">{{ product.old_price }} ₴</div>
+                                <div class="text-danger fw-bold">{{ product.price }} ₴</div>
+                            {% else %}
+                                <div class="fw-bold text-primary">{{ product.price }} ₴</div>
+                            {% endif %}
+                        </div>
+                        
+                        {# КНОПКА КУПИТИ #}
+                        {% if product.stock_quantity > 0 %}
+                            <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form" data-product-id="{{ product.id }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 38px; height: 38px;">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </form>
+                        {% else %}
+                            <button class="btn btn-sm btn-light rounded-circle text-muted" disabled><i class="bi bi-cart-x"></i></button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -298,7 +353,7 @@
     <div class="bg-light p-4 rounded-4 text-muted small mt-5 mb-5">
         <h2 class="h6 fw-bold text-dark mb-2">Інтернет-магазин шин R16.com.ua</h2>
         <p class="mb-2">Ми пропонуємо широкий вибір автомобільної гуми для будь-якого сезону. У нашому каталозі ви знайдете шини від провідних світових брендів.</p>
-        <p class="mb-0">Замовляйте шини онлайн Поштою по Україні, Або Самовивіз в Києві. Професійний підбір, гарантія якості та доступні ціни.</p>
+        <p class="mb-0">Замовляйте шини онлайн з доставкою по Києву та Україні. Професійний підбір, гарантія якості та доступні ціни.</p>
     </div>
 </div>
 {% endblock %}

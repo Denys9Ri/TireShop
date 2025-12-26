@@ -12,7 +12,7 @@ import json
 import requests
 import re
 
-# Імпорти (Додав AboutImage)
+# Імпорти
 from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 
@@ -262,61 +262,70 @@ def brand_landing_view(request, brand_slug):
         'cross_links': get_cross_links(None, brand, None, None, None),
     })
 
-# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (З РЕДІРЕКТОМ) 🔥 ---
+# --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (ВИПРАВЛЕНИЙ ПОШУК) 🔥 ---
 def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     
-    # 🚀 ПЕРЕХОПЛЮВАЧ (REDIRECT): Якщо це звичайний пошук з параметрами -> кидаємо на SEO URL
-    if not any([slug, brand_slug, season_slug, width]):
-        q_season = request.GET.get('season')
-        q_brand = request.GET.get('brand')
-        q_width = request.GET.get('width')
-        q_profile = request.GET.get('profile')
-        q_diameter = request.GET.get('diameter')
+    # -------------------------------------------------------------
+    # 1. ОТРИМУЄМО ПАРАМЕТРИ З URL АБО GET-ЗАПИТУ
+    # -------------------------------------------------------------
+    req_season = request.GET.get('season')
+    req_brand_id = request.GET.get('brand')
+    req_width = width or request.GET.get('width')
+    req_profile = profile or request.GET.get('profile')
+    req_diameter = diameter or request.GET.get('diameter')
 
-        if q_season or q_brand or (q_width and q_profile and q_diameter):
-            target_season_slug = None
-            if q_season:
-                for k, v in SEASONS_MAP.items():
-                    if v['db'] == q_season:
-                        target_season_slug = k
-                        break
-            
-            target_brand_slug = None
-            if q_brand:
-                try:
-                    b_obj = Brand.objects.filter(id=int(q_brand)).first()
-                    if b_obj: target_brand_slug = b_obj.slug
-                except: pass
+    # 🚀 ПЕРЕХОПЛЮВАЧ (REDIRECT): Якщо це пошук через форму -> кидаємо на SEO URL
+    # Робимо це тільки якщо ми не знаходимось вже на SEO сторінці, щоб уникнути циклів
+    if not any([slug, brand_slug, season_slug, width]) and (req_season or req_brand_id or (req_width and req_profile and req_diameter)):
+        
+        target_season_slug = None
+        if req_season:
+            # Шукаємо відповідний slug для сезону (напр. 'summer' -> 'litni')
+            for k, v in SEASONS_MAP.items():
+                if v['db'] == req_season:
+                    target_season_slug = k
+                    break
+        
+        target_brand_slug = None
+        if req_brand_id:
+            try:
+                b_obj = Brand.objects.filter(id=int(req_brand_id)).first()
+                if b_obj: target_brand_slug = b_obj.slug
+            except: pass
 
-            has_size = (q_width and q_profile and q_diameter)
+        has_size = (req_width and req_profile and req_diameter)
 
-            # ПРІОРИТЕТИ РЕДІРЕКТІВ
-            if target_brand_slug and target_season_slug and has_size:
-                return redirect('store:seo_full', brand_slug=target_brand_slug, season_slug=target_season_slug, width=q_width, profile=q_profile, diameter=q_diameter)
-            elif target_brand_slug and has_size:
-                return redirect('store:seo_brand_size', brand_slug=target_brand_slug, width=q_width, profile=q_profile, diameter=q_diameter)
-            elif target_season_slug and has_size:
-                return redirect('store:seo_season_size', season_slug=target_season_slug, width=q_width, profile=q_profile, diameter=q_diameter)
-            elif target_brand_slug and target_season_slug:
-                return redirect('store:seo_brand_season', brand_slug=target_brand_slug, season_slug=target_season_slug)
-            elif has_size:
-                return redirect('store:seo_size', width=q_width, profile=q_profile, diameter=q_diameter)
-            elif target_brand_slug:
-                return redirect('store:brand_landing', brand_slug=target_brand_slug)
-            elif target_season_slug:
-                return redirect('store:seo_universal', slug=target_season_slug)
+        # ЛОГІКА ПРІОРИТЕТІВ РЕДІРЕКТУ
+        if target_brand_slug and target_season_slug and has_size:
+            return redirect('store:seo_full', brand_slug=target_brand_slug, season_slug=target_season_slug, width=req_width, profile=req_profile, diameter=req_diameter)
+        elif target_brand_slug and has_size:
+            return redirect('store:seo_brand_size', brand_slug=target_brand_slug, width=req_width, profile=req_profile, diameter=req_diameter)
+        elif target_season_slug and has_size:
+            return redirect('store:seo_season_size', season_slug=target_season_slug, width=req_width, profile=req_profile, diameter=req_diameter)
+        elif target_brand_slug and target_season_slug:
+            return redirect('store:seo_brand_season', brand_slug=target_brand_slug, season_slug=target_season_slug)
+        elif has_size:
+            return redirect('store:seo_size', width=req_width, profile=req_profile, diameter=req_diameter)
+        elif target_brand_slug:
+            return redirect('store:brand_landing', brand_slug=target_brand_slug)
+        elif target_season_slug:
+            return redirect('store:seo_universal', slug=target_season_slug)
 
-    # ДАЛІ СТАНДАРТНА ЛОГІКА
+    # -------------------------------------------------------------
+    # 2. ФІЛЬТРАЦІЯ ТОВАРІВ (ТЕПЕР ЗАЛІЗНА)
+    # -------------------------------------------------------------
     products = get_base_products()
     brand_obj = None
     season_db = None
 
+    # А. Розбираємо SLUG (URL)
     if slug:
         if slug in SEASONS_MAP: season_slug = slug
         else:
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
             if brand_obj: brand_slug = slug
 
+    # Б. Пошук по тексту (рядок пошуку)
     query = request.GET.get('query', '').strip()
     if query:
         clean = re.sub(r'[/\sR\-]', '', query, flags=re.IGNORECASE)
@@ -327,35 +336,41 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         else:
             products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
-    if not brand_obj:
-        s_brand_id = request.GET.get('brand')
-        if s_brand_id: 
-            products = products.filter(brand__id=s_brand_id)
-            brand_obj = Brand.objects.filter(id=s_brand_id).first()
-    else:
-        products = products.filter(brand=brand_obj)
+    # В. Фільтр по Бренду
+    if brand_slug: # З URL
+        products = products.filter(brand__slug=brand_slug)
+        brand_obj = Brand.objects.filter(slug=brand_slug).first()
+    elif req_brand_id: # З форми
+        products = products.filter(brand__id=req_brand_id)
+        brand_obj = Brand.objects.filter(id=req_brand_id).first()
 
-    if not season_slug:
-        s_season = request.GET.get('season')
-        if s_season:
-            products = products.filter(seasonality=s_season)
-            for k, v in SEASONS_MAP.items():
-                if v['db'] == s_season:
-                    season_slug = k
-                    season_db = s_season
-                    break
-    elif season_slug in SEASONS_MAP:
-        season_db = SEASONS_MAP[season_slug]['db']
-        products = products.filter(seasonality=season_db)
+    # Г. 🔥 Фільтр по СЕЗОНУ (ВИПРАВЛЕНО) 🔥
+    # Пріоритет: 1. URL Slug, 2. GET параметр
+    target_season_val = None
+    
+    if season_slug and season_slug in SEASONS_MAP:
+        target_season_val = SEASONS_MAP[season_slug]['db']
+        season_db = target_season_val
+    elif req_season:
+        target_season_val = req_season
+        season_db = req_season
+        # Спробуємо знайти slug для хлібних крихт
+        for k, v in SEASONS_MAP.items():
+            if v['db'] == req_season:
+                season_slug = k
+                break
 
-    req_width = width or request.GET.get('width')
-    req_profile = profile or request.GET.get('profile')
-    req_diameter = diameter or request.GET.get('diameter')
+    if target_season_val:
+        products = products.filter(seasonality=target_season_val)
 
+    # Д. Фільтр по Розміру
     if req_width: products = products.filter(width=req_width)
     if req_profile: products = products.filter(profile=req_profile)
     if req_diameter: products = products.filter(diameter=req_diameter)
 
+    # -------------------------------------------------------------
+    # 3. ДОДАТКОВІ ДАНІ (Статистика, SEO, UI)
+    # -------------------------------------------------------------
     real_products = products.filter(price__gt=0)
     if real_products.exists():
         stats = real_products.aggregate(min_price=Min('price'), max_price=Max('price'))
@@ -398,7 +413,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'all_profiles': Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile'),
         'all_diameters': Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter'),
         'all_seasons': Product.SEASON_CHOICES,
-        'selected_brand_id': brand_obj.id if brand_obj else (int(request.GET.get('brand')) if request.GET.get('brand') else None),
+        'selected_brand_id': brand_obj.id if brand_obj else (int(req_brand_id) if req_brand_id else None),
         'selected_season': season_db,
         'selected_width': w_int, 'selected_profile': p_int, 'selected_diameter': d_int,
         'search_query': query,

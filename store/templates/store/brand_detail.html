@@ -6,88 +6,68 @@
 
 {% block content %}
 <style>
-    /* --- 1. GLASS HERO SECTION (ЗАЛИШАЄМО ТВІЙ ГАРНИЙ БЛОК БРЕНДУ) --- */
+    /* --- 1. HERO SECTION --- */
     .brand-hero {
         background: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 30px;
-        padding: 40px;
-        margin-bottom: 40px;
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 30px;
+        padding: 40px; margin-bottom: 30px;
         box-shadow: 0 15px 40px rgba(0, 74, 153, 0.08);
-        position: relative;
-        overflow: hidden;
+        position: relative; overflow: hidden;
     }
-    
     .brand-hero::before {
         content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
         background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
         pointer-events: none; z-index: -1;
     }
-
+    .brand-logo-large { max-width: 180px; max-height: 80px; object-fit: contain; margin-bottom: 20px; }
     .brand-meta-tag {
         display: inline-flex; align-items: center; gap: 6px;
         background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(13, 110, 253, 0.2);
-        color: #0d6efd; padding: 6px 14px; border-radius: 50px; font-weight: 600;
-        font-size: 0.9rem; margin-right: 10px; margin-bottom: 10px; backdrop-filter: blur(5px);
-    }
-
-    .brand-logo-large {
-        max-width: 180px; max-height: 80px; object-fit: contain;
-        margin-bottom: 20px; transition: 0.3s;
-    }
-
-    .pros-cons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-    .pros-box, .cons-box {
-        background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);
-    }
-    .pros-title { color: #198754; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .cons-title { color: #dc3545; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-
-    @media (max-width: 768px) {
-        .pros-cons-grid { grid-template-columns: 1fr; }
-        .brand-hero { padding: 25px; }
+        color: #0d6efd; padding: 6px 14px; border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+        margin-right: 10px; margin-bottom: 10px;
     }
     
-    /* --- 2. СТАНДАРТНІ КАРТКИ (ЯК В КАТАЛОЗІ) --- */
+    /* --- 2. 🔥 НОВА ПАНЕЛЬ ФІЛЬТРУ (В СТИЛІ БРЕНДУ) 🔥 --- */
+    .brand-filter-bar {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .filter-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6c757d; margin-bottom: 5px; display: block; }
+    .filter-select { 
+        border: 2px solid #f0f0f0; border-radius: 10px; height: 45px; font-weight: 600; color: #333; cursor: pointer;
+    }
+    .filter-select:focus { border-color: #0d6efd; box-shadow: none; }
+    .btn-filter-go {
+        background: #0d6efd; color: white; border-radius: 10px; height: 45px; width: 100%; font-weight: 700; border: none; text-transform: uppercase;
+        transition: 0.3s;
+    }
+    .btn-filter-go:hover { background: #0b5ed7; box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3); }
+
+    /* --- 3. КАРТКИ --- */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; position: relative; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
-    
-    /* Беджі */
     .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .season-badge.winter { background-color: #0dcaf0; } .season-badge.summer { background-color: #fd7e14; } .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
     .auto-badges-container { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 20; }
     .badge-tag { font-size: 0.65rem; font-weight: 700; padding: 3px 6px; border-radius: 4px; color: white; text-transform: uppercase; }
     .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
-
-    /* Ціна за комплект */
     .set-price-block { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #555; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px; }
     .set-price-block b { color: #333; }
-
-    /* Кнопки +/- (Стандарт) */
     .product-card__cart-form { text-align: center; } 
     .quantity-stepper { display: inline-flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 50px; padding: 3px; margin: 0 auto 10px auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content; }
     .quantity-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
     .quantity-btn:hover { background: #0d6efd; color: white; }
     .quantity-stepper input { width: 35px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; color: #333; outline: none; }
-    
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
-
-    /* SEO текст box */
-    .seo-glass-box {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 24px;
-        padding: 30px;
-        color: #6c757d;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
+    
+    .seo-glass-box { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 24px; padding: 30px; color: #6c757d; font-size: 0.95rem; line-height: 1.6; }
 </style>
 
 <div class="container py-4">
@@ -100,82 +80,106 @@
         </ol>
     </nav>
 
-    {# 🔥 БЛОК БРЕНДУ (ТВІЙ ДИЗАЙН) 🔥 #}
+    {# HERO BLOCK #}
     <div class="brand-hero">
-        <div class="row align-items-start">
+        <div class="row align-items-center">
             <div class="col-lg-8">
                 {% if brand.image %}
                     <img src="{{ brand.image.url }}" alt="{{ brand.name }}" class="brand-logo-large">
                 {% endif %}
-                
                 <h1 class="fw-bold mb-3">{{ seo_h1 }}</h1>
-                
                 <div class="mb-3">
-                    {% if brand.country %}
-                        <span class="brand-meta-tag"><i class="bi bi-geo-alt-fill"></i> Країна: {{ brand.country }}</span>
-                    {% endif %}
-                    {% if brand.category == 'top' %}
-                        <span class="brand-meta-tag" style="background: rgba(243, 229, 245, 0.6); color: #6f42c1;"><i class="bi bi-star-fill"></i> Преміум Клас</span>
-                    {% elif brand.category == 'medium' %}
-                        <span class="brand-meta-tag" style="background: rgba(227, 242, 253, 0.6); color: #0d6efd;"><i class="bi bi-check-circle-fill"></i> Середній Клас</span>
-                    {% else %}
-                        <span class="brand-meta-tag" style="background: rgba(255, 243, 205, 0.6); color: #856404;"><i class="bi bi-wallet2"></i> Бюджетний Клас</span>
-                    {% endif %}
+                    {% if brand.country %} <span class="brand-meta-tag"><i class="bi bi-geo-alt-fill"></i> {{ brand.country }}</span> {% endif %}
+                    {% if brand.category == 'top' %} <span class="brand-meta-tag" style="background: rgba(243, 229, 245, 0.6); color: #6f42c1;">⭐ Преміум</span> {% endif %}
                 </div>
-
-                <div class="text-muted lead fs-6 mb-4">
-                    {% if brand.description %}
-                        {{ brand.description|linebreaksbr }}
-                    {% else %}
-                        Бренд {{ brand.name }} — надійний виробник шин. Перегляньте каталог моделей нижче.
-                    {% endif %}
-                </div>
-
-                {% if brand.target_audience %}
-                    <div class="p-3 rounded-3" style="background: rgba(13, 110, 253, 0.05); border-left: 4px solid #0d6efd;">
-                        <strong>🎯 Для кого підходить:</strong> {{ brand.target_audience }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="col-lg-4">
-                <div class="pros-cons-grid">
-                    <div class="pros-box">
-                        <div class="pros-title"><i class="bi bi-hand-thumbs-up-fill"></i> Сильні сторони</div>
-                        <div class="small text-muted">
-                            {% if brand.pros %}{{ brand.pros|linebreaksbr }}{% else %}• Хороша ціна<br>• Доступність{% endif %}
-                        </div>
-                    </div>
-                    <div class="cons-box">
-                        <div class="cons-title"><i class="bi bi-exclamation-triangle-fill"></i> Слабкі сторони</div>
-                        <div class="small text-muted">
-                            {% if brand.cons %}{{ brand.cons|linebreaksbr }}{% else %}• Гучність на швидкості<br>• Швидкий знос{% endif %}
-                        </div>
-                    </div>
+                <div class="text-muted lead fs-6">
+                    {% if brand.description %} {{ brand.description|truncatewords:40 }} {% else %} Офіційний каталог шин {{ brand.name }}. {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    
-    {# --- ПЕРЕЛІНКОВКА --- #}
+
+    {# 🔥 ФІЛЬТР ПО БРЕНДУ 🔥 #}
+    <div class="brand-filter-bar">
+        <form action="{% url 'store:catalog' %}" method="get">
+            <input type="hidden" name="brand" value="{{ brand.id }}">
+            
+            <div class="row g-2 align-items-end">
+                <div class="col-12 mb-2">
+                    <h5 class="fw-bold m-0"><i class="bi bi-search"></i> Підбір шин {{ brand.name }}</h5>
+                </div>
+
+                {# Сезон #}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="filter-label">Сезон</label>
+                    <select name="season" class="form-select filter-select">
+                        <option value="">Всі</option>
+                        <option value="winter">❄️ Зима</option>
+                        <option value="summer">☀️ Літо</option>
+                        <option value="all-season">🌤️ Всесез.</option>
+                    </select>
+                </div>
+
+                {# Ширина #}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="filter-label">Ширина</label>
+                    <select name="width" class="form-select filter-select">
+                        <option value="">Всі</option>
+                        {% for w in all_widths %}
+                            <option value="{{ w }}">{{ w }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# Профіль #}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="filter-label">Профіль</label>
+                    <select name="profile" class="form-select filter-select">
+                        <option value="">Всі</option>
+                        {% for p in all_profiles %}
+                            <option value="{{ p }}">{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# Діаметр #}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="filter-label">Діаметр</label>
+                    <select name="diameter" class="form-select filter-select">
+                        <option value="">(R)</option>
+                        {% for d in all_diameters %}
+                            <option value="{{ d }}">R{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# Кнопка #}
+                <div class="col-12 col-lg-4">
+                    <button type="submit" class="btn-filter-go">
+                        Показати варіанти
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# ПЕРЕЛІНКОВКА #}
     {% if cross_links %}
         <div class="mb-5">
             {% for group in cross_links %}
                 <h5 class="fw-bold mb-3">{{ group.title }}</h5>
                 <div class="d-flex flex-wrap gap-2 mb-4">
                     {% for item in group.items %}
-                        <a href="{{ item.url }}" class="brand-meta-tag text-decoration-none" style="margin:0;">
-                            {{ item.text }}
-                        </a>
+                        <a href="{{ item.url }}" class="brand-meta-tag text-decoration-none" style="margin:0;">{{ item.text }}</a>
                     {% endfor %}
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <h2 class="h4 fw-bold mb-4">Моделі шин {{ brand.name }} в наявності</h2>
+    <h2 class="h4 fw-bold mb-4">Наявність на складі</h2>
 
-    {# 🔥 СІТКА ТОВАРІВ (НОВИЙ ДИЗАЙН) 🔥 #}
+    {# СІТКА ТОВАРІВ #}
     <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
         {% for product in page_obj %}
             <div class="col">
@@ -184,9 +188,7 @@
                     <div class="auto-badges-container">
                         {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
                         {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
-                        {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ</span>
-                        {% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>
-                        {% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Економ</span>{% endif %}
+                        {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ</span>{% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>{% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Економ</span>{% endif %}
                     </div>
 
                     {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
@@ -285,7 +287,6 @@
     {% endif %}
 </div>
 
-{# СТАНДАРТНИЙ СКРИПТ (Catalog Style) #}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.quantity-stepper').forEach((stepper) => {

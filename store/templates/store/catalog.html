@@ -156,8 +156,9 @@
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="text-muted small">Знайдено: {{ page_obj.paginator.count }} шт.</div>
-                <form method="get" action="{% url 'store:catalog' %}">
-                    {% for key, value in request.GET.items %}
+                
+                {# 🔥 ВИПРАВЛЕНА ФОРМА СОРТУВАННЯ 🔥 #}
+                <form method="get" action=""> {% for key, value in request.GET.items %}
                         {% if key != 'ordering' and key != 'page' %}
                             <input type="hidden" name="{{ key }}" value="{{ value }}">
                         {% endif %}
@@ -193,7 +194,7 @@
                             </a>
 
                             <div class="product-name fw-bold mb-1">
-                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
+                                <a href="{% url 'store:product_detail' product.slug %} class="text-decoration-none text-dark">
                                     {{ product.brand.name }} {{ product.display_name }}
                                 </a>
                             </div>

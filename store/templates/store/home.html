@@ -5,144 +5,76 @@
 
 {% block content %}
 <style>
-    /* --- HERO SECTION: ФОН І СТИЛЬ --- */
+    /* --- HERO BANNER (ТВІЙ СТАРИЙ ДИЗАЙН) --- */
     .hero-section {
         position: relative;
-        /* Твоє локальне зображення */
-        background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('{% static "images/hero-bg.jpg" %}');
+        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('{% static "images/hero-bg.jpg" %}');
         background-size: cover;
         background-position: center;
-        padding: 60px 0 80px 0;
+        background-color: #343a40; 
+        padding: 60px 0 100px 0;
+        border-radius: 0 0 30px 30px;
         margin-bottom: 40px;
-        border-radius: 0 0 20px 20px;
         color: white;
         text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
+    .hero-title { font-weight: 800; font-size: 2.2rem; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); text-transform: uppercase; }
+    .hero-subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-    .hero-title {
-        font-weight: 800;
-        font-size: 2.2rem;
-        margin-bottom: 30px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* --- СКЛЯНІ КНОПКИ СЕЗОНУ (РАДІО) --- */
-    .season-selector-wrapper {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-bottom: 25px;
-        flex-wrap: wrap;
-    }
-
-    .season-radio-input {
-        display: none; /* Ховаємо стандартні кружечки */
-    }
-
-    .season-glass-btn {
-        padding: 12px 30px;
-        border-radius: 50px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        backdrop-filter: blur(5px);
-        font-size: 1.1rem;
-    }
-
-    .season-glass-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-    /* Коли радіо вибрано - змінюємо стиль кнопки */
-    .season-radio-input:checked + .season-glass-btn {
-        background: #0d6efd; /* Синій активний */
-        border-color: #0d6efd;
-        box-shadow: 0 0 15px rgba(13, 110, 253, 0.6);
-        transform: scale(1.05);
-    }
+    .main-search-container { max-width: 1000px; margin: 0 auto; }
     
-    /* Специфічні кольори для сезонів при активації */
-    #seasonSummer:checked + .season-glass-btn { background: #fd7e14; border-color: #fd7e14; box-shadow: 0 0 15px rgba(253, 126, 20, 0.6); }
-    #seasonWinter:checked + .season-glass-btn { background: #0dcaf0; border-color: #0dcaf0; box-shadow: 0 0 15px rgba(13, 202, 240, 0.6); }
-
-    /* --- ПАНЕЛЬ РОЗМІРІВ --- */
-    .search-params-panel {
+    /* Білий блок пошуку */
+    .glass-search-box {
         background: rgba(255, 255, 255, 0.95);
-        padding: 20px;
+        backdrop-filter: blur(10px);
         border-radius: 16px;
-        max-width: 800px;
-        margin: 0 auto;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .form-group-hero {
-        flex: 1;
-        min-width: 140px;
+        padding: 25px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         text-align: left;
     }
 
-    .form-group-hero label {
-        color: #333;
-        font-size: 0.85rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-        display: block;
-        padding-left: 5px;
+    /* Кнопки сезону (Скляні) */
+    .season-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
+    .season-selector input[type="radio"] { display: none; }
+    .season-label {
+        background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white;
+        padding: 10px 25px; border-radius: 50px; font-weight: 600; font-size: 1rem;
+        backdrop-filter: blur(5px); transition: 0.3s; cursor: pointer; display: flex; align-items: center; gap: 8px;
     }
-
-    .form-select-hero {
-        border: 1px solid #dee2e6;
-        padding: 12px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 1rem;
-        width: 100%;
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-
-    .btn-search-main {
-        background: #0d6efd;
-        color: white;
-        font-weight: 700;
-        padding: 12px 40px;
-        border-radius: 10px;
-        border: none;
-        text-transform: uppercase;
-        transition: 0.3s;
-        height: 50px; /* Висота як у селектів */
-        flex: 0 0 auto;
-    }
-    .btn-search-main:hover {
-        background: #0b5ed7;
-        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-    }
-
-    /* Мобільна адаптація */
-    @media (max-width: 768px) {
-        .search-params-panel {
-            flex-direction: column;
-            gap: 15px;
-            padding: 20px;
-        }
-        .form-group-hero { width: 100%; }
-        .btn-search-main { width: 100%; }
-        .season-glass-btn { padding: 10px 20px; font-size: 0.9rem; }
-    }
+    .season-label:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
     
-    /* СТИЛІ КАРТОК (як і було) */
+    /* Активний стан кнопок */
+    .season-selector input[type="radio"]:checked + .season-label {
+        background: #ffffff; color: #333; border-color: #ffffff; box-shadow: 0 0 20px rgba(255,255,255,0.5); transform: scale(1.05);
+    }
+    /* Кольорові іконки при виборі */
+    .season-selector input[value="winter"]:checked + .season-label i { color: #0dcaf0; }
+    .season-selector input[value="summer"]:checked + .season-label i { color: #fd7e14; }
+
+    /* Стилі полів */
+    .form-label-custom { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6c757d; margin-bottom: 5px; display: block; padding-left: 5px; }
+    .form-select-lg-custom { 
+        height: 50px; font-weight: 600; border: 2px solid #e9ecef; border-radius: 10px; 
+        font-size: 1rem; cursor: pointer; transition: 0.2s; padding-top: 5px; padding-bottom: 5px; width: 100%;
+    }
+    .form-select-lg-custom:focus { border-color: #0d6efd; box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1); outline: none; }
+    
+    .btn-search-main { 
+        height: 50px; font-size: 1.1rem; font-weight: 800; border-radius: 10px; width: 100%; 
+        text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3); 
+        background: #0d6efd; color: white; border: none; margin-top: 24px; /* Вирівнювання з полями */
+    }
+    .btn-search-main:hover { background: #0b5ed7; transform: translateY(-2px); }
+
+    @media (min-width: 768px) {
+        .hero-section { padding: 80px 0 120px 0; }
+        .hero-title { font-size: 3.5rem; }
+        .glass-search-box { padding: 30px; }
+        .season-label { padding: 12px 35px; font-size: 1.1rem; }
+    }
+
+    /* --- СТИЛІ КАРТОК (Знизу) --- */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; position: relative; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
@@ -163,68 +95,79 @@
 </style>
 
 <section class="hero-section">
-    <div class="container">
+    <div class="container main-search-container">
         <h1 class="hero-title">Підбір шин</h1>
+        <p class="hero-subtitle">Знайди найкращі шини для свого авто за лічені секунди</p>
         
         <form action="{% url 'store:catalog' %}" method="get">
             
-            {# --- 1. КНОПКИ СЕЗОНУ (ОКРЕМО ВГОРІ) --- #}
-            <div class="season-selector-wrapper">
-                <input type="radio" name="season" value="winter" id="seasonWinter" class="season-radio-input" 
-                       {% if request.GET.season == 'winter' %}checked{% endif %}>
-                <label for="seasonWinter" class="season-glass-btn">
-                    <i class="bi bi-snow"></i> Зима
-                </label>
+            {# --- 1. КНОПКИ СЕЗОНУ (ВГОРІ, СКЛЯНІ) --- #}
+            <div class="season-selector">
+                <input type="radio" name="season" id="seasonWinter" value="winter" {% if request.GET.season == 'winter' %}checked{% endif %}>
+                <label for="seasonWinter" class="season-label"><i class="bi bi-snow"></i> Зимові</label>
 
-                <input type="radio" name="season" value="summer" id="seasonSummer" class="season-radio-input"
-                       {% if request.GET.season == 'summer' %}checked{% endif %}>
-                <label for="seasonSummer" class="season-glass-btn">
-                    <i class="bi bi-sun-fill"></i> Літо
-                </label>
+                <input type="radio" name="season" id="seasonSummer" value="summer" {% if request.GET.season == 'summer' %}checked{% endif %}>
+                <label for="seasonSummer" class="season-label"><i class="bi bi-sun-fill"></i> Літні</label>
 
-                <input type="radio" name="season" value="all-season" id="seasonAll" class="season-radio-input"
-                       {% if request.GET.season == 'all-season' %}checked{% endif %}>
-                <label for="seasonAll" class="season-glass-btn">
-                    <i class="bi bi-brightness-high-fill"></i> Всі сезони
-                </label>
+                <input type="radio" name="season" id="seasonAll" value="all-season" {% if request.GET.season == 'all-season' %}checked{% endif %}>
+                <label for="seasonAll" class="season-label"><i class="bi bi-brightness-high-fill"></i> Всесезонні</label>
             </div>
 
-            {# --- 2. БІЛА ПАНЕЛЬ З РОЗМІРАМИ --- #}
-            <div class="search-params-panel">
-                
-                <div class="form-group-hero">
-                    <label>Ширина</label>
-                    <select name="width" class="form-select-hero">
-                        <option value="">Всі</option>
-                        {% for w in all_widths %}
-                            <option value="{{ w }}">{{ w }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+            {# --- 2. БІЛИЙ БОКС ПОШУКУ (РОЗМІРИ + БРЕНД) --- #}
+            <div class="glass-search-box">
+                <div class="row g-3">
+                    
+                    {# Бренд #}
+                    <div class="col-6 col-md-3">
+                        <label class="form-label-custom">Бренд</label>
+                        <select name="brand" class="form-select form-select-lg-custom">
+                            <option value="">Всі бренди</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}">{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <div class="form-group-hero">
-                    <label>Профіль</label>
-                    <select name="profile" class="form-select-hero">
-                        <option value="">Всі</option>
-                        {% for p in all_profiles %}
-                            <option value="{{ p }}">{{ p }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    {# Ширина #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-custom">Ширина</label>
+                        <select name="width" class="form-select form-select-lg-custom">
+                            <option value="">Всі</option>
+                            {% for w in all_widths %}
+                                <option value="{{ w }}">{{ w }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <div class="form-group-hero">
-                    <label>Діаметр</label>
-                    <select name="diameter" class="form-select-hero">
-                        <option value="">Всі</option>
-                        {% for d in all_diameters %}
-                            <option value="{{ d }}">R{{ d }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    {# Профіль #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-custom">Профіль</label>
+                        <select name="profile" class="form-select form-select-lg-custom">
+                            <option value="">Всі</option>
+                            {% for p in all_profiles %}
+                                <option value="{{ p }}">{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <button type="submit" class="btn-search-main">
-                    <i class="bi bi-search"></i> Підібрати шини
-                </button>
+                    {# Діаметр #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-custom">Діаметр</label>
+                        <select name="diameter" class="form-select form-select-lg-custom">
+                            <option value="">(R)</option>
+                            {% for d in all_diameters %}
+                                <option value="{{ d }}">R{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Кнопка #}
+                    <div class="col-12 col-md-3">
+                        <button type="submit" class="btn btn-search-main">
+                            Знайти
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </form>

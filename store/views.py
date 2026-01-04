@@ -16,19 +16,22 @@ import re
 from .cart import Cart 
 from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
 
-# --- ⚙️ КОНФІГУРАЦІЯ (ВИПРАВЛЕНО ALL-SEASON) ---
+# --- ⚙️ КОНФІГУРАЦІЯ ---
+
+# 1. Головна карта для розшифровки URL (Slug -> DB Value)
 SEASONS_MAP = {
-    # URL (Slug) : { DB Value, Title, Adjective }
-    'zymovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
     'zimovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
-    'winter': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'},
-    
+    'zymovi': {'db': 'winter', 'ua': 'Зимові шини', 'adj': 'зимові'}, # для страховки
     'litni': {'db': 'summer', 'ua': 'Літні шини', 'adj': 'літні'},
-    'summer': {'db': 'summer', 'ua': 'Літні шини', 'adj': 'літні'},
-    
     'vsesezonni': {'db': 'all-season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'},
-    'all-season': {'db': 'all-season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'},
-    'all_season': {'db': 'all-season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'}, # Для сумісності
+}
+
+# 2. 🔥 КАРТА ДЛЯ РЕДІРЕКТІВ (DB Value -> Slug) - ЩОБ ПРАЦЮВАЛО ЧІТКО 🔥
+DB_TO_SLUG_MAP = {
+    'winter': 'zimovi',
+    'summer': 'litni',
+    'all-season': 'vsesezonni',
+    'all_season': 'vsesezonni'
 }
 
 # --- 📚 FAQ DATA ---
@@ -106,7 +109,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     description_html = ""
     seo_h2 = ""
 
-    # (Тут скорочена логіка для економії місця, вона така сама як була)
     if not description_html:
         description_html = f"<p>Великий вибір шин {brand_name} {size_str}. Низькі ціни, доставка по Україні.</p>"
         seo_h2 = f"Купити гуму {brand_name} {size_str}"
@@ -137,7 +139,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
     cache_key = f"cross_links_{current_season_slug}_{current_brand}_{w}_{p}_{d}"
     cached_data = cache.get(cache_key)
     if cached_data: return cached_data
-    # (Логіка перелінкування залишається без змін, для стислості)
     return []
 
 def robots_txt(request):
@@ -168,7 +169,7 @@ def brand_landing_view(request, brand_slug):
     page_obj = paginator.get_page(request.GET.get('page'))
     custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
     
-    seo_data = generate_seo_content(brand, None, None, None, None, 0, 0) # спрощено
+    seo_data = generate_seo_content(brand, None, None, None, None, 0, 0)
     
     return render(request, 'store/brand_detail.html', {
         'brand': brand, 'page_obj': page_obj, 'custom_page_range': custom_page_range,
@@ -181,22 +182,22 @@ def brand_landing_view(request, brand_slug):
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (ВИПРАВЛЕНИЙ) 🔥 ---
 def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     
-    # 1. ОТРИМУЄМО ПАРАМЕТРИ З ФОРМИ (Мають найвищий пріоритет)
+    # 1. ОТРИМУЄМО ПАРАМЕТРИ З ФОРМИ (GET)
     req_season = request.GET.get('season')
     req_brand_id = request.GET.get('brand')
     req_width = width or request.GET.get('width')
     req_profile = profile or request.GET.get('profile')
     req_diameter = diameter or request.GET.get('diameter')
 
-    # РЕДІРЕКТ НА SEO URL (Тільки якщо це пошук з форми)
+    # 🚀 ПЕРЕХОПЛЮВАЧ (REDIRECT): 
+    # Працює ТІЛЬКИ якщо ми не на SEO сторінці (slug=None) і є параметри
     if not any([slug, brand_slug, season_slug, width]) and (req_season or req_brand_id or (req_width and req_profile and req_diameter)):
+        
         target_season_slug = None
         if req_season:
-            # Шукаємо slug для сезону
-            for k, v in SEASONS_MAP.items():
-                if v['db'] == req_season: # Тут тепер точно збігатиметься all-season
-                    target_season_slug = k
-                    break
+            # 🔥 ВИПРАВЛЕННЯ: Беремо slug з карти DB_TO_SLUG_MAP
+            if req_season in DB_TO_SLUG_MAP:
+                target_season_slug = DB_TO_SLUG_MAP[req_season]
         
         target_brand_slug = None
         if req_brand_id:
@@ -207,7 +208,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
 
         has_size = (req_width and req_profile and req_diameter)
 
-        # ЛОГІКА РЕДІРЕКТІВ (Як було, але тепер працюватиме точніше)
+        # ЛОГІКА РЕДІРЕКТІВ (З новими правильними слагами)
         if target_brand_slug and target_season_slug and has_size:
             return redirect('store:seo_full', brand_slug=target_brand_slug, season_slug=target_season_slug, width=req_width, profile=req_profile, diameter=req_diameter)
         elif target_brand_slug and has_size:
@@ -218,22 +219,24 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
             return redirect('store:seo_brand_season', brand_slug=target_brand_slug, season_slug=target_season_slug)
         elif has_size:
             return redirect('store:seo_size', width=req_width, profile=req_profile, diameter=req_diameter)
-        elif target_season_slug:
-            return redirect('store:seo_universal', slug=target_season_slug) # Редірект тільки на сезон
+        elif target_season_slug and not req_width: # Тільки сезон (без розміру)
+            return redirect('store:seo_universal', slug=target_season_slug)
+        elif target_brand_slug:
+            return redirect('store:brand_landing', brand_slug=target_brand_slug)
 
     # 2. ФІЛЬТРАЦІЯ
     products = get_base_products()
     brand_obj = None
     season_db = None
 
-    # Розбираємо URL (якщо ми вже на SEO сторінці)
+    # А. Розбираємо URL (якщо це SEO сторінка)
     if slug:
         if slug in SEASONS_MAP: season_slug = slug
         else:
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
             if brand_obj: brand_slug = slug
 
-    # Текстовий пошук
+    # Б. Текстовий пошук
     query = request.GET.get('query', '').strip()
     if query:
         clean = re.sub(r'[/\sR\-]', '', query, flags=re.IGNORECASE)
@@ -244,7 +247,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         else:
             products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
-    # Фільтр Бренду
+    # В. Фільтр Бренду
     if brand_slug: 
         products = products.filter(brand__slug=brand_slug)
         brand_obj = Brand.objects.filter(slug=brand_slug).first()
@@ -252,22 +255,20 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         products = products.filter(brand__id=req_brand_id)
         brand_obj = Brand.objects.filter(id=req_brand_id).first()
 
-    # 🔥 Фільтр СЕЗОНУ (ВИПРАВЛЕНО) 🔥
-    # Спочатку дивимось GET-параметр (з форми), потім URL
+    # Г. 🔥 Фільтр СЕЗОНУ (ПОТУЖНИЙ ФІКС) 🔥
+    # 1. Пріоритет: GET-параметр (з форми)
     if req_season:
-        # Пряме фільтрування по значенню з форми (winter, summer, all-season)
         products = products.filter(seasonality=req_season)
         season_db = req_season
-        # Спробуємо знайти slug для краси (для хлібних крихт)
-        for k, v in SEASONS_MAP.items():
-            if v['db'] == req_season:
-                season_slug = k
-                break
+        # Підбираємо slug для краси
+        if req_season in DB_TO_SLUG_MAP:
+            season_slug = DB_TO_SLUG_MAP[req_season]
+    # 2. Якщо в URL є slug (напр /shiny/zimovi/), беремо з нього
     elif season_slug and season_slug in SEASONS_MAP:
         season_db = SEASONS_MAP[season_slug]['db']
         products = products.filter(seasonality=season_db)
 
-    # Фільтр Розміру
+    # Д. Фільтр Розміру
     if req_width: products = products.filter(width=req_width)
     if req_profile: products = products.filter(profile=req_profile)
     if req_diameter: products = products.filter(diameter=req_diameter)

@@ -482,3 +482,66 @@ def fix_product_names_view(request):
     next_page = page + 1
     next_link = f"{request.path}?page={next_page}"
     return JsonResponse({'status': 'processing', 'current_page': page, 'fixed_in_this_batch': count, 'NEXT_STEP': f"Перейдіть сюди: {next_link}", 'log': log[:20]})
+# --- store/views.py --- (Додати в кінець файлу)
+
+def sitemap_xml_view(request):
+    """
+    Генерує динамічну карту сайту з усіма SEO-посиланнями
+    """
+    base_url = "https://r16.com.ua"
+    urls = []
+
+    # 1. Статичні сторінки
+    static_pages = ['home', 'store:catalog', 'store:about', 'store:contacts', 'store:delivery', 'store:warranty', 'store:faq']
+    for name in static_pages:
+        try:
+            if ':' in name:
+                path = reverse(name)
+            else:
+                path = reverse(f"store:{name}") if name != 'home' else reverse('store:home')
+            urls.append({'loc': f"{base_url}{path}", 'priority': '0.5', 'freq': 'daily'})
+        except: pass
+
+    # 2. Бренди
+    for brand in Brand.objects.all():
+        urls.append({'loc': f"{base_url}/shiny/brendy/{brand.slug}/", 'priority': '0.7', 'freq': 'weekly'})
+
+    # 3. Товари
+    for product in Product.objects.all():
+        urls.append({'loc': f"{base_url}/product/{product.slug}/", 'priority': '0.8', 'freq': 'weekly'})
+
+    # 4. 🔥 SEO МАТРИЦЯ (РОЗМІРИ ТА СЕЗОНИ) 🔥
+    # Знаходимо всі унікальні розміри, де є хоч 1 шина
+    sizes = Product.objects.filter(stock_quantity__gt=0).values('width', 'profile', 'diameter').distinct()
+
+    for s in sizes:
+        w, p, d = s['width'], s['profile'], s['diameter']
+        
+        # A. Просто розмір (/shiny/205-55-r16/)
+        urls.append({'loc': f"{base_url}/shiny/{w}-{p}-r{d}/", 'priority': '0.9', 'freq': 'daily'})
+
+        # B. Сезон + Розмір (/shiny/zimovi/205-55-r16/)
+        # Додаємо всі три сезони для кожного розміру
+        seasons = ['zimovi', 'litni', 'vsesezonni']
+        for seas in seasons:
+            urls.append({'loc': f"{base_url}/shiny/{seas}/{w}-{p}-r{d}/", 'priority': '0.9', 'freq': 'daily'})
+
+    # 5. Загальні сезони
+    urls.append({'loc': f"{base_url}/shiny/zimovi/", 'priority': '0.8', 'freq': 'daily'})
+    urls.append({'loc': f"{base_url}/shiny/litni/", 'priority': '0.8', 'freq': 'daily'})
+    urls.append({'loc': f"{base_url}/shiny/vsesezonni/", 'priority': '0.8', 'freq': 'daily'})
+
+    # ФОРМУВАННЯ XML
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for u in urls:
+        xml_content += f"""  <url>
+    <loc>{u['loc']}</loc>
+    <changefreq>{u['freq']}</changefreq>
+    <priority>{u['priority']}</priority>
+  </url>\n"""
+    
+    xml_content += '</urlset>'
+
+    return HttpResponse(xml_content, content_type="application/xml")

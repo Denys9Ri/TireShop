@@ -1,102 +1,196 @@
 {% extends 'store/base.html' %}
 {% load static %}
 
-{% block title %}Головна | R16.com.ua{% endblock %}
+{% block title %}Шини R16 | Головна{% endblock %}
 
 {% block content %}
 <style>
-    /* --- СТИЛІ ДЛЯ КАРТОК (Ідентичні каталогу) --- */
-    .product-card { 
-        background: white; 
-        border-radius: 16px; 
-        padding: 15px; 
-        transition: transform 0.2s; 
-        height: 100%; 
-        display: flex; 
-        flex-direction: column; 
-        border: 1px solid #f0f0f0; 
+    /* --- 1. HERO SECTION (ПОШУК З ФОНОМ) --- */
+    .hero-section {
         position: relative;
+        /* ФОН: Можеш замінити URL на своє фото */
+        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1920&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        padding: 80px 0;
+        margin-bottom: 40px;
+        border-radius: 0 0 20px 20px;
+        color: white;
+        text-align: center;
     }
-    .product-card:hover { 
-        transform: translateY(-5px); 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+
+    .hero-title {
+        font-weight: 800;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    .product-image { 
-        width: 100%; 
-        height: 180px; 
-        object-fit: contain; 
-        margin-bottom: 15px; 
+
+    /* Скло для форми підбору */
+    .search-glass-panel {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 900px;
+        margin: 0 auto;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .form-label-light {
+        color: #fff;
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .form-select-hero {
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.5);
+        background-color: rgba(255,255,255,0.95);
+        font-weight: 600;
+        color: #333;
+        padding: 10px;
     }
     
-    /* БЕДЖІ (Сезонність та Маркери) */
-    .season-badge { 
-        position: absolute; top: 10px; right: 10px; z-index: 20; 
-        width: 34px; height: 34px; border-radius: 50%; 
-        display: flex; align-items: center; justify-content: center; 
-        color: white; border: 2px solid white; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+    .btn-search-hero {
+        background-color: #fd7e14; /* Помаранчевий акцент */
+        color: white;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 0;
+        width: 100%;
+        transition: 0.3s;
+        text-transform: uppercase;
+        margin-top: 24px; /* Вирівнювання з полями */
     }
+    .btn-search-hero:hover {
+        background-color: #e36a09;
+        box-shadow: 0 0 15px rgba(253, 126, 20, 0.6);
+    }
+
+    /* --- 2. СТИЛІ КАРТОК (Ті самі, що затвердили) --- */
+    .product-card { 
+        background: white; border-radius: 16px; padding: 15px; 
+        transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; 
+        border: 1px solid #f0f0f0; position: relative;
+    }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
+    
+    /* Беджі */
+    .season-badge { position: absolute; top: 10px; right: 10px; z-index: 20; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .season-badge.winter { background-color: #0dcaf0; } 
     .season-badge.summer { background-color: #fd7e14; } 
     .season-badge.all-season { background: linear-gradient(135deg, #fd7e14 50%, #0dcaf0 50%); }
 
-    .auto-badges-container { 
-        position: absolute; top: 10px; left: 10px; 
-        display: flex; flex-direction: column; gap: 4px; z-index: 20; 
-    }
-    .badge-tag { 
-        font-size: 0.65rem; font-weight: 700; padding: 3px 6px; 
-        border-radius: 4px; color: white; text-transform: uppercase; 
-    }
-    .badge-fresh { background: #20c997; } 
-    .badge-top { background: #6610f2; } 
-    .badge-taxi { background: #fd7e14; } 
-    .badge-sale { background: #dc3545; }
+    .auto-badges-container { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 20; }
+    .badge-tag { font-size: 0.65rem; font-weight: 700; padding: 3px 6px; border-radius: 4px; color: white; text-transform: uppercase; }
+    .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
 
-    /* ЦІНА ЗА КОМПЛЕКТ */
-    .set-price-block { 
-        background: #f8f9fa; border-radius: 8px; padding: 6px 10px; 
-        font-size: 0.8rem; color: #555; text-align: center; 
-        border: 1px dashed #ccc; margin-bottom: 10px; 
-    }
+    /* Ціна за комплект */
+    .set-price-block { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #555; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px; }
     .set-price-block b { color: #333; }
 
-    /* КНОПКИ ТА INPUT КІЛЬКОСТІ */
+    /* Кнопки +/- */
     .product-card__cart-form { text-align: center; } 
-    .quantity-stepper { 
-        display: inline-flex; align-items: center; justify-content: space-between; 
-        background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px);
-        border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 50px; 
-        padding: 3px; margin: 0 auto 10px auto; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content;
-    }
-    .quantity-btn { 
-        width: 28px; height: 28px; border-radius: 50%; border: none; 
-        background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-weight: bold; 
-        cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; 
-    }
+    .quantity-stepper { display: inline-flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 50px; padding: 3px; margin: 0 auto 10px auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content; }
+    .quantity-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
     .quantity-btn:hover { background: #0d6efd; color: white; }
-    .quantity-stepper input { 
-        width: 35px; border: none; text-align: center; font-weight: bold; 
-        font-size: 0.95rem; background: transparent; color: #333; outline: none; 
-    }
+    .quantity-stepper input { width: 35px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; color: #333; outline: none; }
     
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
+
+    /* Адаптив Hero */
+    @media (max-width: 768px) {
+        .hero-section { padding: 40px 0; border-radius: 0; }
+        .hero-title { font-size: 1.8rem; }
+        .search-glass-panel { padding: 20px; }
+    }
 </style>
+
+{# --- ГОЛОВНИЙ БЛОК З ПОШУКОМ --- #}
+<section class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">Знайди ідеальні шини для свого авто</h1>
+        
+        <div class="search-glass-panel">
+            <form action="{% url 'store:catalog' %}" method="get">
+                <div class="row g-2">
+                    
+                    {# Ширина #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-light">Ширина</label>
+                        <select name="width" class="form-select form-select-hero">
+                            <option value="">Всі</option>
+                            {% for w in all_widths %}
+                                <option value="{{ w }}">{{ w }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Профіль #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-light">Профіль</label>
+                        <select name="profile" class="form-select form-select-hero">
+                            <option value="">Всі</option>
+                            {% for p in all_profiles %}
+                                <option value="{{ p }}">{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Діаметр #}
+                    <div class="col-6 col-md-2">
+                        <label class="form-label-light">Діаметр</label>
+                        <select name="diameter" class="form-select form-select-hero">
+                            <option value="">Всі (R)</option>
+                            {% for d in all_diameters %}
+                                <option value="{{ d }}">R{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Сезон #}
+                    <div class="col-6 col-md-3">
+                        <label class="form-label-light">Сезон</label>
+                        <select name="season" class="form-select form-select-hero">
+                            <option value="">Будь-який</option>
+                            <option value="zimovi">Зимові</option>
+                            <option value="litni">Літні</option>
+                            <option value="vsesezonni">Всесезонні</option>
+                        </select>
+                    </div>
+
+                    {# Кнопка #}
+                    <div class="col-12 col-md-3">
+                        <button type="submit" class="btn btn-search-hero">
+                            <i class="bi bi-search"></i> Знайти шини
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 
 <div class="container py-4">
     
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 fw-bold">🔥 Популярні пропозиції</h1>
+        <h2 class="h3 fw-bold text-dark">🔥 Популярні пропозиції</h2>
         <a href="{% url 'store:catalog' %}" class="btn btn-outline-primary rounded-pill">
-            В каталoг <i class="bi bi-arrow-right"></i>
+            В каталог <i class="bi bi-arrow-right"></i>
         </a>
     </div>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         
-        {# Використовуємо featured_products з твого views.py #}
         {% for product in featured_products %}
             <div class="col">
                 <div class="product-card position-relative">
@@ -174,28 +268,19 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-      // Знаходимо всі степери на сторінці
       document.querySelectorAll('.quantity-stepper').forEach((stepper) => {
         const input = stepper.querySelector('input[name="quantity"]');
         const buttons = stepper.querySelectorAll('.quantity-btn');
-        
         buttons.forEach((button) => {
           button.addEventListener('click', (e) => {
             e.preventDefault(); 
             const direction = button.dataset.direction;
             let current = parseInt(input.value, 10) || 1;
-            
-            // Логіка збільшення
             if (direction === 'increase') {
                 const max = parseInt(input.getAttribute('max'));
-                if (!max || current < max) {
-                    input.value = current + 1;
-                }
+                if (!max || current < max) input.value = current + 1;
             }
-            // Логіка зменшення
-            if (direction === 'decrease' && current > 1) {
-                input.value = current - 1;
-            }
+            if (direction === 'decrease' && current > 1) input.value = current - 1;
           });
         });
       });

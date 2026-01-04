@@ -164,6 +164,7 @@ def home_view(request):
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
     if not brand: raise Http404("Бренд не знайдено")
+    
     products = Product.objects.filter(brand=brand, stock_quantity__gt=0).order_by('price')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -171,12 +172,21 @@ def brand_landing_view(request, brand_slug):
     
     seo_data = generate_seo_content(brand, None, None, None, None, 0, 0)
     
+    # --- 🔥 ДОДАНО ДЛЯ ФІЛЬТРА НА СТОРІНЦІ БРЕНДУ 🔥 ---
+    width_list = Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width')
+    profile_list = Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile')
+    diameter_list = Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter')
+    
     return render(request, 'store/brand_detail.html', {
         'brand': brand, 'page_obj': page_obj, 'custom_page_range': custom_page_range,
         'seo_title': brand.seo_title or seo_data['title'], 
         'seo_h1': brand.seo_h1 or seo_data['h1'], 
         'meta_description': brand.description,
-        'cross_links': []
+        'cross_links': [],
+        # Передаємо списки в шаблон
+        'all_widths': width_list,
+        'all_profiles': profile_list,
+        'all_diameters': diameter_list,
     })
 
 # --- 🔥 ГОЛОВНИЙ КОНТРОЛЕР (ВИПРАВЛЕНИЙ) 🔥 ---
@@ -482,7 +492,6 @@ def fix_product_names_view(request):
     next_page = page + 1
     next_link = f"{request.path}?page={next_page}"
     return JsonResponse({'status': 'processing', 'current_page': page, 'fixed_in_this_batch': count, 'NEXT_STEP': f"Перейдіть сюди: {next_link}", 'log': log[:20]})
-# --- store/views.py --- (Додати в кінець файлу)
 
 def sitemap_xml_view(request):
     """

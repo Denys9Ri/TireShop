@@ -5,9 +5,10 @@
 
 {% block content %}
 <style>
-    /* --- HERO BANNER (ТВІЙ СТАРИЙ ДИЗАЙН) --- */
+    /* --- HERO BANNER --- */
     .hero-section {
         position: relative;
+        /* Твоя картинка */
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('{% static "images/hero-bg.jpg" %}');
         background-size: cover;
         background-position: center;
@@ -96,12 +97,12 @@
 
 <section class="hero-section">
     <div class="container main-search-container">
-        <h1 class="hero-title">Підбір шин</h1>
+        <h1 class="hero-title">R16.com.ua</h1>
         <p class="hero-subtitle">Знайди найкращі шини для свого авто за лічені секунди</p>
         
         <form action="{% url 'store:catalog' %}" method="get">
             
-            {# --- 1. КНОПКИ СЕЗОНУ (ВГОРІ, СКЛЯНІ) --- #}
+            {# --- 1. КНОПКИ СЕЗОНУ (ВГОРІ) --- #}
             <div class="season-selector">
                 <input type="radio" name="season" id="seasonWinter" value="winter" {% if request.GET.season == 'winter' %}checked{% endif %}>
                 <label for="seasonWinter" class="season-label"><i class="bi bi-snow"></i> Зимові</label>
@@ -113,22 +114,11 @@
                 <label for="seasonAll" class="season-label"><i class="bi bi-brightness-high-fill"></i> Всесезонні</label>
             </div>
 
-            {# --- 2. БІЛИЙ БОКС ПОШУКУ (РОЗМІРИ + БРЕНД) --- #}
+            {# --- 2. БІЛИЙ БОКС ПОШУКУ --- #}
             <div class="glass-search-box">
                 <div class="row g-3">
                     
-                    {# Бренд #}
-                    <div class="col-6 col-md-3">
-                        <label class="form-label-custom">Бренд</label>
-                        <select name="brand" class="form-select form-select-lg-custom">
-                            <option value="">Всі бренди</option>
-                            {% for brand in brands %}
-                                <option value="{{ brand.id }}">{{ brand.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    {# Ширина #}
+                    {# 1. Ширина #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Ширина</label>
                         <select name="width" class="form-select form-select-lg-custom">
@@ -139,7 +129,7 @@
                         </select>
                     </div>
 
-                    {# Профіль #}
+                    {# 2. Профіль #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Профіль</label>
                         <select name="profile" class="form-select form-select-lg-custom">
@@ -150,7 +140,7 @@
                         </select>
                     </div>
 
-                    {# Діаметр #}
+                    {# 3. Діаметр #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Діаметр</label>
                         <select name="diameter" class="form-select form-select-lg-custom">
@@ -161,7 +151,18 @@
                         </select>
                     </div>
 
-                    {# Кнопка #}
+                    {# 4. Бренд (ПЕРЕНЕСЕНО СЮДИ) #}
+                    <div class="col-6 col-md-3">
+                        <label class="form-label-custom">Бренд</label>
+                        <select name="brand" class="form-select form-select-lg-custom">
+                            <option value="">Всі бренди</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}">{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# 5. Кнопка #}
                     <div class="col-12 col-md-3">
                         <button type="submit" class="btn btn-search-main">
                             Знайти

@@ -5,10 +5,10 @@
 
 {% block content %}
 <style>
-    /* --- 1. HERO SECTION (ПОШУК З ФОНОМ) --- */
+    /* --- HERO SECTION (БАНЕР З ФОНОМ) --- */
     .hero-section {
         position: relative;
-        /* ФОН: Можеш замінити URL на своє фото */
+        /* 👇 ТУТ ТВОЄ ФОТО 👇 */
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1920&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -22,11 +22,11 @@
     .hero-title {
         font-weight: 800;
         font-size: 2.5rem;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
-    /* Скло для форми підбору */
+    /* Скляна панель пошуку */
     .search-glass-panel {
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(10px);
@@ -42,10 +42,12 @@
     .form-label-light {
         color: #fff;
         font-weight: 600;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         display: block;
         text-align: left;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .form-select-hero {
@@ -54,27 +56,30 @@
         background-color: rgba(255,255,255,0.95);
         font-weight: 600;
         color: #333;
-        padding: 10px;
+        padding: 12px;
+        font-size: 1rem;
+        cursor: pointer;
     }
     
     .btn-search-hero {
-        background-color: #fd7e14; /* Помаранчевий акцент */
+        background-color: #fd7e14;
         color: white;
         font-weight: 700;
         border: none;
         border-radius: 8px;
-        padding: 10px 0;
+        padding: 12px 0;
         width: 100%;
         transition: 0.3s;
         text-transform: uppercase;
-        margin-top: 24px; /* Вирівнювання з полями */
+        margin-top: 29px; /* Вирівнювання з полями */
+        font-size: 1rem;
     }
     .btn-search-hero:hover {
         background-color: #e36a09;
         box-shadow: 0 0 15px rgba(253, 126, 20, 0.6);
     }
 
-    /* --- 2. СТИЛІ КАРТОК (Ті самі, що затвердили) --- */
+    /* --- СТИЛІ КАРТОК --- */
     .product-card { 
         background: white; border-radius: 16px; padding: 15px; 
         transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; 
@@ -107,7 +112,6 @@
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
 
-    /* Адаптив Hero */
     @media (max-width: 768px) {
         .hero-section { padding: 40px 0; border-radius: 0; }
         .hero-title { font-size: 1.8rem; }
@@ -115,16 +119,25 @@
     }
 </style>
 
-{# --- ГОЛОВНИЙ БЛОК З ПОШУКОМ --- #}
 <section class="hero-section">
     <div class="container">
-        <h1 class="hero-title">Знайди ідеальні шини для свого авто</h1>
+        <h1 class="hero-title">Знайди ідеальні шини</h1>
         
         <div class="search-glass-panel">
             <form action="{% url 'store:catalog' %}" method="get">
-                <div class="row g-2">
+                <div class="row g-3">
                     
-                    {# Ширина #}
+                    {# СЕЗОН ОКРЕМО І ПЕРШИМ #}
+                    <div class="col-6 col-md-3">
+                        <label class="form-label-light"><i class="bi bi-calendar3"></i> Сезон</label>
+                        <select name="season" class="form-select form-select-hero">
+                            <option value="">Всі сезони</option>
+                            <option value="zimovi">❄️ Зимові</option>
+                            <option value="litni">☀️ Літні</option>
+                            <option value="vsesezonni">🌤️ Всесезонні</option>
+                        </select>
+                    </div>
+
                     <div class="col-6 col-md-2">
                         <label class="form-label-light">Ширина</label>
                         <select name="width" class="form-select form-select-hero">
@@ -135,7 +148,6 @@
                         </select>
                     </div>
 
-                    {# Профіль #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-light">Профіль</label>
                         <select name="profile" class="form-select form-select-hero">
@@ -146,32 +158,19 @@
                         </select>
                     </div>
 
-                    {# Діаметр #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-light">Діаметр</label>
                         <select name="diameter" class="form-select form-select-hero">
-                            <option value="">Всі (R)</option>
+                            <option value="">(R)</option>
                             {% for d in all_diameters %}
                                 <option value="{{ d }}">R{{ d }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    {# Сезон #}
-                    <div class="col-6 col-md-3">
-                        <label class="form-label-light">Сезон</label>
-                        <select name="season" class="form-select form-select-hero">
-                            <option value="">Будь-який</option>
-                            <option value="zimovi">Зимові</option>
-                            <option value="litni">Літні</option>
-                            <option value="vsesezonni">Всесезонні</option>
-                        </select>
-                    </div>
-
-                    {# Кнопка #}
                     <div class="col-12 col-md-3">
                         <button type="submit" class="btn btn-search-hero">
-                            <i class="bi bi-search"></i> Знайти шини
+                            <i class="bi bi-search"></i> Знайти
                         </button>
                     </div>
                 </div>
@@ -181,20 +180,15 @@
 </section>
 
 <div class="container py-4">
-    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 fw-bold text-dark">🔥 Популярні пропозиції</h2>
-        <a href="{% url 'store:catalog' %}" class="btn btn-outline-primary rounded-pill">
-            В каталог <i class="bi bi-arrow-right"></i>
-        </a>
+        <a href="{% url 'store:catalog' %}" class="btn btn-outline-primary rounded-pill">В каталог <i class="bi bi-arrow-right"></i></a>
     </div>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-        
         {% for product in featured_products %}
             <div class="col">
                 <div class="product-card position-relative">
-                    
                     <div class="auto-badges-container">
                         {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
                         {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
@@ -240,9 +234,7 @@
                             </div>
                         {% endif %}
 
-                        <div class="set-price-block">
-                            Комплект 4 шт: <b>{% widthratio product.price 1 4 %} ₴</b>
-                        </div>
+                        <div class="set-price-block">Комплект 4 шт: <b>{% widthratio product.price 1 4 %} ₴</b></div>
 
                         <form action="{% url 'store:cart_add' product.id %}" method="post" class="ajax-cart-form product-card__cart-form" data-product-id="{{ product.id }}">
                             {% csrf_token %}
@@ -286,5 +278,4 @@
       });
   });
 </script>
-
 {% endblock %}

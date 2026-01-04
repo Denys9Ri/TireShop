@@ -1,98 +1,69 @@
-<form method="get" action="{% url 'store:catalog' %}">
-    {# Зберігаємо пошуковий запит і сортування #}
-    {% if search_query %}<input type="hidden" name="query" value="{{ search_query }}">{% endif %}
-    {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
-
-    <div class="accordion" id="filterAccordion">
-        
-        {# 1. СЕЗОН #}
-        <div class="filter-group">
-            <h2 class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeason">
-                    Сезон
-                </button>
-            </h2>
-            <div id="collapseSeason" class="accordion-collapse collapse show">
-                <div class="accordion-body">
-                    {# 🔥 ПРИБРАЛИ onchange="this.form.submit()" 🔥 #}
-                    <select name="season" class="form-select form-select-sm">
-                        <option value="">Будь-який</option>
-                        {% for value, display in all_seasons %}
-                            <option value="{{ value }}" {% if value|stringformat:"s" == selected_season|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        {# 2. РОЗМІР (Ширина / Профіль / Діаметр) #}
-        <div class="filter-group">
-            <h2 class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSize">
-                    Розмір
-                </button>
-            </h2>
-            <div id="collapseSize" class="accordion-collapse collapse show">
-                <div class="accordion-body">
-                    <div class="mb-2">
-                        <label class="small text-muted">Ширина</label>
-                        {# 🔥 ПРИБРАЛИ onchange 🔥 #}
-                        <select name="width" class="form-select form-select-sm">
-                            <option value="">Всі</option>
-                            {% for w in all_widths %}
-                                <option value="{{ w }}" {% if w|stringformat:"s" == selected_width|stringformat:"s" %}selected{% endif %}>{{ w }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="small text-muted">Профіль</label>
-                        {# 🔥 ПРИБРАЛИ onchange 🔥 #}
-                        <select name="profile" class="form-select form-select-sm">
-                            <option value="">Всі</option>
-                            {% for p in all_profiles %}
-                                <option value="{{ p }}" {% if p|stringformat:"s" == selected_profile|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="small text-muted">Діаметр</label>
-                        {# 🔥 ПРИБРАЛИ onchange 🔥 #}
-                        <select name="diameter" class="form-select form-select-sm">
-                            <option value="">Всі</option>
-                            {% for d in all_diameters %}
-                                <option value="{{ d }}" {% if d|stringformat:"s" == selected_diameter|stringformat:"s" %}selected{% endif %}>R{{ d }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {# 3. БРЕНД #}
-        <div class="filter-group border-bottom-0">
-             <h2 class="accordion-header">
-                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBrand">
-                     Бренд
-                 </button>
-             </h2>
-             <div id="collapseBrand" class="accordion-collapse collapse {% if selected_brand_id %}show{% endif %}">
-                <div class="accordion-body">
-                    {# 🔥 ПРИБРАЛИ onchange 🔥 #}
-                    <select name="brand" class="form-select form-select-sm">
-                        <option value="">Всі бренди</option>
-                        {% for brand in all_brands %}
-                            <option value="{{ brand.id }}" {% if brand.id|stringformat:"s" == selected_brand_id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-             </div>
-        </div>
-
-    </div>
+<form action="{% url 'store:catalog' %}" method="get" id="filterForm">
     
-    <div class="d-grid gap-2 mt-3">
-        {# Тепер фільтрація спрацює ТІЛЬКИ після натискання цієї кнопки #}
-        <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold">Застосувати</button>
-        <a href="{% url 'store:catalog' %}" class="btn btn-light btn-sm rounded-pill text-muted border">Скинути</a>
+    {# 1. СЕЗОННІСТЬ #}
+    <div class="filter-group mb-3">
+        <label class="fw-bold mb-2 small">Сезон</label>
+        <select name="season" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Всі сезони</option>
+            <option value="zimovi" {% if selected_season == 'winter' or request.GET.season == 'zimovi' %}selected{% endif %}>❄️ Зимові</option>
+            <option value="litni" {% if selected_season == 'summer' or request.GET.season == 'litni' %}selected{% endif %}>☀️ Літні</option>
+            <option value="vsesezonni" {% if selected_season == 'all-season' or request.GET.season == 'vsesezonni' %}selected{% endif %}>🌤️ Всесезонні</option>
+        </select>
     </div>
+
+    {# 2. ПАРАМЕТРИ ШИН (Ширина / Профіль / Діаметр) #}
+    <div class="filter-group mb-3">
+        <label class="fw-bold mb-2 small">Параметри</label>
+        
+        <div class="mb-2">
+            <select name="width" class="form-select form-select-sm">
+                <option value="">Ширина...</option>
+                {% for w in all_widths %}
+                    <option value="{{ w }}" {% if selected_width == w %}selected{% endif %}>{{ w }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <select name="profile" class="form-select form-select-sm">
+                <option value="">Профіль...</option>
+                {% for p in all_profiles %}
+                    <option value="{{ p }}" {% if selected_profile == p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <select name="diameter" class="form-select form-select-sm">
+                <option value="">Діаметр (R)...</option>
+                {% for d in all_diameters %}
+                    <option value="{{ d }}" {% if selected_diameter == d %}selected{% endif %}>R{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {# 3. БРЕНД #}
+    <div class="filter-group mb-3">
+        <label class="fw-bold mb-2 small">Виробник</label>
+        <select name="brand" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Всі бренди</option>
+            {% for brand in all_brands %}
+                <option value="{{ brand.id }}" {% if selected_brand_id == brand.id %}selected{% endif %}>
+                    {{ brand.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {# КНОПКИ #}
+    <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold">
+            <i class="bi bi-funnel"></i> Застосувати
+        </button>
+        <a href="{% url 'store:catalog' %}" class="btn btn-light btn-sm rounded-pill border">
+            <i class="bi bi-x-circle"></i> Скинути
+        </a>
+    </div>
+
 </form>

@@ -1,22 +1,41 @@
-from django.urls import path
+from django.urls import path, re_path  # 👈 Додали re_path
 from . import views
 
 app_name = 'store'
 
 urlpatterns = [
-    # 🔥 НОВА ГОЛОВНА СТОРІНКА 🔥
+    # 🔥 ГОЛОВНА ТА КАТАЛОГ 🔥
     path('', views.home_view, name='home'),
-
-    # 📂 КАТАЛОГ (Тепер тут живе повний список)
     path('catalog/', views.catalog_view, name='catalog'),
 
-    # --- SEO MATRIX (Фільтри) ---
+    # --- SEO MATRIX (Виправлений порядок) ---
+    
+    # 1. Лендінг бренду (shiny/brendy/michelin/)
     path('shiny/brendy/<str:brand_slug>/', views.brand_landing_view, name='brand_landing'),
+
+    # 2. ПОВНА МАТРИЦЯ: Бренд + Сезон + Розмір
+    # (shiny/michelin/zimovi/205-55-r16/)
     path('shiny/<str:brand_slug>/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_full'),
+
+    # 3. 🔥 ФІКС 🔥: СЕЗОН + РОЗМІР
+    # Використовуємо re_path, щоб перехопити ТІЛЬКИ зимові/літні/всесезонні
+    # Цей рядок ОБОВ'ЯЗКОВО має бути ВИЩЕ, ніж seo_brand_size
+    re_path(r'^shiny/(?P<season_slug>zimovi|litni|vsesezonni)/(?P<width>\d+)-(?P<profile>\d+)-r(?P<diameter>\d+)/$', views.seo_matrix_view, name='seo_season_size'),
+
+    # 4. БРЕНД + РОЗМІР
+    # Сюди потрапить все інше (наприклад, michelin/205-55-r16/), що не підпало під правило вище
     path('shiny/<str:brand_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_brand_size'),
+
+    # 5. БРЕНД + СЕЗОН
+    # (shiny/michelin/zimovi/)
     path('shiny/<str:brand_slug>/<str:season_slug>/', views.seo_matrix_view, name='seo_brand_season'),
-    path('shiny/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_season_size'),
+
+    # 6. ТІЛЬКИ РОЗМІР
+    # (shiny/205-55-r16/)
     path('shiny/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_size'),
+
+    # 7. УНІВЕРСАЛЬНИЙ (Тільки Сезон АБО Тільки Бренд)
+    # (shiny/zimovi/ АБО shiny/michelin/)
     path('shiny/<str:slug>/', views.seo_matrix_view, name='seo_universal'), 
     
     # Технічні дублі

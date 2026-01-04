@@ -5,15 +5,16 @@
         <label class="fw-bold mb-2 small">Сезон</label>
         <select name="season" class="form-select form-select-sm">
             <option value="">Всі сезони</option>
-            <option value="zimovi" {% if selected_season == 'winter' or request.GET.season == 'zimovi' %}selected{% endif %}>❄️ Зимові</option>
-            <option value="litni" {% if selected_season == 'summer' or request.GET.season == 'litni' %}selected{% endif %}>☀️ Літні</option>
-            <option value="vsesezonni" {% if selected_season == 'all-season' or request.GET.season == 'vsesezonni' %}selected{% endif %}>🌤️ Всесезонні</option>
+            <option value="winter" {% if selected_season == 'winter' %}selected{% endif %}>❄️ Зимові</option>
+            <option value="summer" {% if selected_season == 'summer' %}selected{% endif %}>☀️ Літні</option>
+            <option value="all-season" {% if selected_season == 'all-season' %}selected{% endif %}>🌤️ Всесезонні</option>
         </select>
     </div>
 
     {# 2. ПАРАМЕТРИ #}
     <div class="filter-group mb-3">
         <label class="fw-bold mb-2 small">Параметри</label>
+        
         <div class="mb-2">
             <select name="width" class="form-select form-select-sm">
                 <option value="">Ширина...</option>
@@ -22,6 +23,7 @@
                 {% endfor %}
             </select>
         </div>
+
         <div class="mb-2">
             <select name="profile" class="form-select form-select-sm">
                 <option value="">Профіль...</option>
@@ -30,6 +32,7 @@
                 {% endfor %}
             </select>
         </div>
+
         <div class="mb-2">
             <select name="diameter" class="form-select form-select-sm">
                 <option value="">Діаметр (R)...</option>

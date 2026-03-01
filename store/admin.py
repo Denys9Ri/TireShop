@@ -7,24 +7,28 @@ from django.http import HttpResponse, FileResponse
 from django.utils.html import format_html
 from django.template.loader import render_to_string
 from django.db.models import Q 
+from django.conf import settings # Додано для шляху
 import openpyxl
 import re
 import gc
 import io
 import os
 import urllib.request
-import tempfile
 import traceback
 from xhtml2pdf import pisa
+
+# 🔥 Нові імпорти для ЖОРСТКОГО підключення шрифту 🔥
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from .models import Product, Brand, Order, OrderItem, ProductImage, SiteSettings, AboutImage
 
 # ==========================================
-# 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА (З ВИПРАВЛЕНИМ ШРИФТОМ) 🔥
+# 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА (100% КИРИЛИЦЯ) 🔥
 # ==========================================
 def generate_order_pdf(order):
-    # 1. Автоматично завантажуємо шрифт з кирилицею у тимчасову папку сервера
-    font_path = os.path.join(tempfile.gettempdir(), 'DejaVuSans.ttf')
+    # 1. Завантажуємо шрифт прямо в корінь проекту (якщо його там ще немає)
+    font_path = os.path.join(settings.BASE_DIR, 'DejaVuSans.ttf')
     if not os.path.exists(font_path):
         try:
             url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
@@ -32,21 +36,30 @@ def generate_order_pdf(order):
         except Exception as e:
             print("Помилка завантаження шрифту:", e)
 
-    # Нормалізуємо шлях для Windows/Linux
-    font_path = font_path.replace('\\', '/')
+    # 2. Реєструємо шрифт в ядро ReportLab (обхід CSS)
+    if os.path.exists(font_path):
+        try:
+            # Називаємо його 'DejaVuCustom'
+            pdfmetrics.registerFont(TTFont('DejaVuCustom', font_path))
+        except Exception as e:
+            print("Помилка реєстрації шрифту:", e)
 
     total_cost = sum(item.get_cost() for item in order.items.all())
     
-    # Передаємо шлях до шрифту в HTML-шаблон
     context = {
         'order': order, 
         'total_cost': total_cost,
-        'font_path': font_path  
     }
     
     html_string = render_to_string('store/pdf/invoice.html', context)
     result = io.BytesIO()
-    pisa_status = pisa.CreatePDF(io.BytesIO(html_string.encode("UTF-8")), dest=result, encoding='UTF-8')
+    
+    # Конвертуємо
+    pisa_status = pisa.CreatePDF(
+        io.BytesIO(html_string.encode("UTF-8")), 
+        dest=result, 
+        encoding='UTF-8'
+    )
     
     if pisa_status.err:
         return None
@@ -74,7 +87,6 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ['status']
     readonly_fields = ['created_at', 'total_cost_detailed']
 
-    # 🔥 ВИРІШЕННЯ ПРОБЛЕМИ 2: Жорстко фіксуємо ширину списку статусів 🔥
     def get_changelist_form(self, request, **kwargs):
         form = super().get_changelist_form(request, **kwargs)
         if 'status' in form.base_fields:
@@ -98,22 +110,17 @@ class OrderAdmin(admin.ModelAdmin):
         return f"{sum_val:.2f} грн"
     total_cost_detailed.short_description = 'Разом до сплати'
 
-    # 🔥 ВИРІШЕННЯ ПРОБЛЕМИ 3: Красивий і зрозумілий список товарів 🔥
     def order_items_summary(self, obj):
         items = obj.items.all()
         result = []
         for item in items:
             if item.product:
                 brand = item.product.brand.name if item.product.brand else "Без бренду"
-                name = item.product.display_name # Використовуємо очищену назву
-                
-                # Формат: [Бренд] | [Кількість шт.] \n [Назва моделі]
+                name = item.product.display_name 
                 row = f"<span style='color:#0d6efd;'><b>{brand}</b></span> &nbsp;|&nbsp; <b>{item.quantity} шт.</b><br><span style='font-size:0.9em; color:#555;'>{name}</span>"
                 result.append(row)
             else:
                 result.append(f"Видалений товар ({item.quantity} шт.)")
-                
-        # Розділяємо товари лінією, якщо їх більше одного
         return format_html("<hr style='margin:5px 0;'>".join(result))
     order_items_summary.short_description = 'Що замовили'
 

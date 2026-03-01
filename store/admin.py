@@ -11,20 +11,43 @@ import openpyxl
 import re
 import gc
 import io
-import traceback # Для відлову помилок 500
+import os
+import urllib.request
+import tempfile
+import traceback
 from xhtml2pdf import pisa
 
 from .models import Product, Brand, Order, OrderItem, ProductImage, SiteSettings, AboutImage
 
 # ==========================================
-# 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА 🔥
+# 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА (З ВИПРАВЛЕНИМ ШРИФТОМ) 🔥
 # ==========================================
 def generate_order_pdf(order):
+    # 1. Автоматично завантажуємо шрифт з кирилицею у тимчасову папку сервера
+    font_path = os.path.join(tempfile.gettempdir(), 'DejaVuSans.ttf')
+    if not os.path.exists(font_path):
+        try:
+            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
+            urllib.request.urlretrieve(url, font_path)
+        except Exception as e:
+            print("Помилка завантаження шрифту:", e)
+
+    # Нормалізуємо шлях для Windows/Linux
+    font_path = font_path.replace('\\', '/')
+
     total_cost = sum(item.get_cost() for item in order.items.all())
-    context = {'order': order, 'total_cost': total_cost}
+    
+    # Передаємо шлях до шрифту в HTML-шаблон
+    context = {
+        'order': order, 
+        'total_cost': total_cost,
+        'font_path': font_path  
+    }
+    
     html_string = render_to_string('store/pdf/invoice.html', context)
     result = io.BytesIO()
     pisa_status = pisa.CreatePDF(io.BytesIO(html_string.encode("UTF-8")), dest=result, encoding='UTF-8')
+    
     if pisa_status.err:
         return None
     result.seek(0)
@@ -50,12 +73,13 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
     list_editable = ['status']
     readonly_fields = ['created_at', 'total_cost_detailed']
-    
-    # 🔥 ПІДКЛЮЧАЄМО CSS ДЛЯ АДАПТАЦІЇ ВАШОГО ДРОПДАУНУ 🔥
-    class Media:
-        css = {
-            'all': ('css/admin_custom.css',)
-        }
+
+    # 🔥 ВИРІШЕННЯ ПРОБЛЕМИ 2: Жорстко фіксуємо ширину списку статусів 🔥
+    def get_changelist_form(self, request, **kwargs):
+        form = super().get_changelist_form(request, **kwargs)
+        if 'status' in form.base_fields:
+            form.base_fields['status'].widget.attrs['style'] = 'min-width: 170px;'
+        return form
 
     fieldsets = (
         ('Статус та Доставка', {'fields': ('status', 'shipping_type', 'created_at')}),
@@ -74,27 +98,28 @@ class OrderAdmin(admin.ModelAdmin):
         return f"{sum_val:.2f} грн"
     total_cost_detailed.short_description = 'Разом до сплати'
 
-    # 🔥 ПРОБЛЕМА 1 ВИРІШЕНА: Красивий вивід товарів 🔥
+    # 🔥 ВИРІШЕННЯ ПРОБЛЕМИ 3: Красивий і зрозумілий список товарів 🔥
     def order_items_summary(self, obj):
         items = obj.items.all()
         result = []
         for item in items:
             if item.product:
                 brand = item.product.brand.name if item.product.brand else "Без бренду"
-                # Забираємо бренд з назви, якщо він там дублюється, щоб було чисто
-                clean_name = item.product.name.replace(brand, "").strip()
-                # Формат: <b>Michelin</b> — 4 шт. — Alpin 6 205/55 R16
-                result.append(f"<b>{brand}</b> — {item.quantity} шт. — {clean_name}")
+                name = item.product.display_name # Використовуємо очищену назву
+                
+                # Формат: [Бренд] | [Кількість шт.] \n [Назва моделі]
+                row = f"<span style='color:#0d6efd;'><b>{brand}</b></span> &nbsp;|&nbsp; <b>{item.quantity} шт.</b><br><span style='font-size:0.9em; color:#555;'>{name}</span>"
+                result.append(row)
             else:
-                result.append(f"Видалений товар — {item.quantity} шт.")
-        # Кожен товар з нового рядка
-        return format_html("<br><br>".join(result))
-    order_items_summary.short_description = 'Товари'
+                result.append(f"Видалений товар ({item.quantity} шт.)")
+                
+        # Розділяємо товари лінією, якщо їх більше одного
+        return format_html("<hr style='margin:5px 0;'>".join(result))
+    order_items_summary.short_description = 'Що замовили'
 
-    # КНОПКА ДРУКУ
     def print_invoice_button(self, obj):
         return format_html(
-            '<a class="button" href="{}/print/" target="_blank" style="background-color: #0d6efd; padding: 5px 10px; border-radius: 4px; color: white;">📄 Чек</a>',
+            '<a class="button" href="{}/print/" target="_blank" style="background-color: #0d6efd; padding: 5px 10px; border-radius: 4px; color: white; white-space: nowrap;">📄 Чек</a>',
             obj.id
         )
     print_invoice_button.short_description = 'Друк'
@@ -104,7 +129,6 @@ class OrderAdmin(admin.ModelAdmin):
         my_urls = [path('<int:order_id>/print/', self.admin_print_invoice, name="order_print_invoice")]
         return my_urls + urls
 
-    # 🔥 ПРОБЛЕМА 3: Ловимо помилку 500, щоб побачити причину 🔥
     def admin_print_invoice(self, request, order_id):
         try:
             order = get_object_or_404(Order, id=order_id)
@@ -117,19 +141,9 @@ class OrderAdmin(admin.ModelAdmin):
                 return HttpResponse("Помилка: Бібліотека PDF повернула пустий файл.")
         except Exception as e:
             error_trace = traceback.format_exc()
-            return HttpResponse(f"""
-                <h2 style='color:red;'>Сталася помилка при створенні PDF!</h2>
-                <p><b>Найчастіші причини:</b></p>
-                <ol>
-                    <li>Ви не створили файл <b>invoice.html</b> в папці <b>templates/store/pdf/</b></li>
-                    <li>Сервер заблокував завантаження шрифту.</li>
-                </ol>
-                <hr>
-                <b>Технічний звіт для розробника:</b><br>
-                <pre style='background:#f4f4f4; padding:15px;'>{error_trace}</pre>
-            """)
+            return HttpResponse(f"<h2 style='color:red;'>Помилка PDF</h2><pre>{error_trace}</pre>")
 
-# --- ГАЛЕРЕЯ ТОВАРУ ---
+# --- ІНШІ НАЛАШТУВАННЯ АДМІНКИ ---
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
@@ -140,13 +154,11 @@ class ProductImageInline(admin.TabularInline):
         if obj.image: return format_html('<img src="{}" style="height: 50px; border-radius: 4px;"/>', obj.image.url)
         return "-"
 
-# --- НАЛАШТУВАННЯ САЙТУ ---
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ['global_markup']
     def has_add_permission(self, request): return not SiteSettings.objects.exists()
 
-# --- ФОРМИ ІМПОРТУ ---
 class ExcelImportForm(forms.Form):
     excel_file = forms.FileField(label="Прайс-лист (Товари)")
     start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
@@ -158,7 +170,6 @@ class SeoImportForm(forms.Form):
     start_row = forms.IntegerField(initial=2, min_value=2, label="Почати з рядка")
     end_row = forms.IntegerField(initial=500, min_value=2, label="Закінчити рядком")
 
-# --- ТОВАР ---
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['name', 'brand', 'width', 'profile', 'diameter', 'price_display', 'discount_percent', 'stock_quantity', 'photo_preview']
@@ -196,7 +207,6 @@ class ProductAdmin(admin.ModelAdmin):
     def import_excel(self, request): pass
     def import_seo(self, request): pass
 
-# --- БРЕНД ---
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'category', 'country'] 
@@ -204,7 +214,6 @@ class BrandAdmin(admin.ModelAdmin):
     list_filter = ['category']
     search_fields = ['name']
 
-# --- ФОТОГАЛЕРЕЯ СКЛАДУ ---
 @admin.register(AboutImage)
 class AboutImageAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at', 'image_preview']

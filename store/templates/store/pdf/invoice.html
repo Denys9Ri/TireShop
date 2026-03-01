@@ -10,65 +10,51 @@
             font-weight: normal;
             font-style: normal;
         }
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm;
+        }
         body {
-            font-family: 'DejaVu Sans', sans-serif; /* Для підтримки кирилиці в PDF */
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 12px;
             color: #333;
-            line-height: 1.4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            line-height: 1.5;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #0d6efd;
+            border-bottom: 1px solid #0d6efd;
             padding-bottom: 10px;
+            margin-bottom: 20px;
         }
         .brand-logo {
             font-size: 28px;
             font-weight: bold;
             color: #0d6efd;
-            margin-bottom: 5px;
         }
         .doc-title {
             font-size: 18px;
             font-weight: bold;
-            text-transform: uppercase;
-            margin: 10px 0;
-        }
-        .details-row {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .details-col {
-            width: 48%;
-            vertical-align: top;
+            margin-top: 10px;
         }
         .details-label {
             font-weight: bold;
             color: #555;
-            margin-bottom: 3px;
         }
         table.items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         table.items-table th, table.items-table td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 6px;
             text-align: left;
         }
         table.items-table th {
             background-color: #f8f9fa;
             font-weight: bold;
         }
-        table.items-table td.money, table.items-table th.money {
+        .money {
             text-align: right;
             white-space: nowrap;
         }
@@ -76,57 +62,52 @@
             text-align: right;
             font-size: 16px;
             font-weight: bold;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 2px solid #ddd;
+            margin-top: 20px;
         }
         .total-price {
             color: #0d6efd;
-            font-size: 20px;
+            font-size: 18px;
         }
         .warranty-box {
             background-color: #f0f7ff;
             border: 1px solid #cce0ff;
-            border-radius: 8px;
-            padding: 15px;
+            padding: 10px;
             margin-top: 30px;
             font-size: 11px;
-            color: #444;
+            border-radius: 5px;
         }
         .footer {
             text-align: center;
-            margin-top: 40px;
+            margin-top: 30px;
             font-size: 10px;
             color: #888;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
         }
     </style>
 </head>
 <body>
-<div class="container">
     <div class="header">
         <div class="brand-logo">R16.ua</div>
         <div class="doc-title">Товарний чек № {{ order.id }}</div>
         <div>від {{ order.created_at|date:"d F Y" }} р.</div>
     </div>
 
-    <table class="details-row">
+    <table width="100%">
         <tr>
-            <td class="details-col">
+            <td width="48%" valign="top">
                 <div class="details-label">Продавець:</div>
                 <div><strong>ФОП Рябуха Д.О.</strong></div>
                 <div>ІПН: 3644805072</div>
                 <div>Тел: +38 (066) 688-14-91</div>
                 <div>Адреса: м. Київ, вул. Володимира Качали, 3</div>
             </td>
-            <td style="width: 4%;"></td> <td class="details-col">
+            <td width="4%"></td>
+            <td width="48%" valign="top">
                 <div class="details-label">Покупець:</div>
-                <div><strong>{{ order.full_name }}</strong></div>
-                <div>Тел: {{ order.phone }}</div>
+                <div><strong>{{ order.full_name|default:"Клієнт" }}</strong></div>
+                <div>Тел: {{ order.phone|default:"-" }}</div>
                 <div>Доставка: 
                     {% if order.shipping_type == 'nova_poshta' %}
-                        Нова Пошта, {{ order.city }}, {{ order.nova_poshta_branch }}
+                        Нова Пошта, {{ order.city|default:"" }}, {{ order.nova_poshta_branch|default:"" }}
                     {% else %}
                         Самовивіз (ВК3)
                     {% endif %}
@@ -135,25 +116,22 @@
         </tr>
     </table>
 
-    <table class="items-table">
-        <thead>
+    <table class="items-table" repeat="1">
         <tr>
-            <th style="width: 5%;">№</th>
-            <th>Найменування товару</th>
-            <th style="width: 10%;">К-сть</th>
-            <th style="width: 10%;">Од.</th>
-            <th class="money" style="width: 15%;">Ціна (грн)</th>
-            <th class="money" style="width: 15%;">Сума (грн)</th>
+            <th width="5%">№</th>
+            <th width="45%">Найменування товару</th>
+            <th width="10%">К-сть</th>
+            <th width="10%">Од.</th>
+            <th width="15%" class="money">Ціна (грн)</th>
+            <th width="15%" class="money">Сума (грн)</th>
         </tr>
-        </thead>
-        <tbody>
         {% for item in order.items.all %}
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>
-                {{ item.product.brand.name }} 
-                {% if item.product.display_name %}{{ item.product.display_name }}{% else %}{{ item.product.name }}{% endif %}
-                ({{ item.product.get_seasonality_display }})
+                {{ item.product.brand.name|default:"" }} 
+                {% if item.product.display_name %}{{ item.product.display_name }}{% else %}{{ item.product.name|default:"Товар" }}{% endif %}
+                ({% if item.product.seasonality == 'winter' %}Зимові{% elif item.product.seasonality == 'summer' %}Літні{% else %}Всесезонні{% endif %})
             </td>
             <td>{{ item.quantity }}</td>
             <td>шт.</td>
@@ -161,7 +139,6 @@
             <td class="money">{{ item.get_cost|floatformat:2 }}</td>
         </tr>
         {% endfor %}
-        </tbody>
     </table>
 
     <div class="total-row">
@@ -169,13 +146,12 @@
     </div>
 
     <div class="warranty-box">
-        <strong>⚠️ Гарантійні зобов'язання:</strong><br>
+        <strong>Гарантійні зобов'язання:</strong><br>
         Гарантія на заводський брак діє згідно із законодавством України. Товар підлягає обміну або поверненню протягом 14 днів з моменту покупки за умови збереження повного товарного вигляду, комплектації та за відсутності слідів монтажу (шини не монтувалися на диски).
     </div>
 
     <div class="footer">
         Дякуємо за покупку на R16.ua! Повертайтеся до нас знову.
     </div>
-</div>
 </body>
 </html>

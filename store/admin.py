@@ -19,7 +19,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'status', 'created_at', 'full_name', 'phone', 'shipping_type', 'total_cost']
+    list_display = ['id', 'status', 'created_at', 'full_name', 'phone', 'shipping_type', 'order_items_summary', 'total_cost']
     list_filter = ['status', 'created_at', 'shipping_type']
     search_fields = ['id', 'full_name', 'phone', 'email']
     inlines = [OrderItemInline]
@@ -28,6 +28,16 @@ class OrderAdmin(admin.ModelAdmin):
     def total_cost(self, obj):
         return sum(item.get_cost() for item in obj.items.all())
     total_cost.short_description = 'Сума'
+
+    # 🔥 НОВА ФУНКЦІЯ: Збирає назви шин і виводить у таблицю
+    def order_items_summary(self, obj):
+        items = obj.items.all()
+        result = []
+        for item in items:
+            name = item.product.name if item.product else "Видалений товар"
+            result.append(f"{name} ({item.quantity} шт.)")
+        return ", ".join(result)
+    order_items_summary.short_description = 'Що замовили'
 
 # --- ГАЛЕРЕЯ ТОВАРУ ---
 class ProductImageInline(admin.TabularInline):

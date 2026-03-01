@@ -7,58 +7,86 @@ from django.http import HttpResponse, FileResponse
 from django.utils.html import format_html
 from django.template.loader import render_to_string
 from django.db.models import Q 
-from django.conf import settings # Додано для шляху
 import openpyxl
 import re
 import gc
 import io
 import os
+import tempfile
 import urllib.request
 import traceback
 from xhtml2pdf import pisa
-
-# 🔥 Нові імпорти для ЖОРСТКОГО підключення шрифту 🔥
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 from .models import Product, Brand, Order, OrderItem, ProductImage, SiteSettings, AboutImage
 
 # ==========================================
-# 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА (100% КИРИЛИЦЯ) 🔥
+# 🔥 УЛЬТИМАТИВНА ГЕНЕРАЦІЯ PDF З КИРИЛИЦЕЮ 🔥
 # ==========================================
-def generate_order_pdf(order):
-    # 1. Завантажуємо шрифт прямо в корінь проекту (якщо його там ще немає)
-    font_path = os.path.join(settings.BASE_DIR, 'DejaVuSans.ttf')
+
+def get_cyrillic_font_path():
+    """ Шукає або завантажує шрифт, який підтримує кирилицю """
+    # 1. Шукаємо в системі сервера (Linux/Ubuntu)
+    sys_fonts = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
+    ]
+    for f in sys_fonts:
+        if os.path.exists(f):
+            return f
+            
+    # 2. Якщо немає — качаємо Roboto у тимчасову папку
+    font_path = os.path.join(tempfile.gettempdir(), 'Roboto-Regular.ttf')
     if not os.path.exists(font_path):
         try:
-            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
+            url = "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf"
             urllib.request.urlretrieve(url, font_path)
         except Exception as e:
             print("Помилка завантаження шрифту:", e)
+            
+    return font_path if os.path.exists(font_path) else None
 
-    # 2. Реєструємо шрифт в ядро ReportLab (обхід CSS)
-    if os.path.exists(font_path):
+def link_callback(uri, rel):
+    """ Допомагає xhtml2pdf читати файли з жорсткого диска сервера """
+    if uri.startswith('file://'):
+        return uri.replace('file://', '')
+    return uri
+
+def generate_order_pdf(order):
+    font_path = get_cyrillic_font_path()
+    font_uri = ""
+    
+    if font_path:
+        # Реєструємо прямо в ядро ReportLab
         try:
-            # Називаємо його 'DejaVuCustom'
-            pdfmetrics.registerFont(TTFont('DejaVuCustom', font_path))
-        except Exception as e:
-            print("Помилка реєстрації шрифту:", e)
+            pdfmetrics.registerFont(TTFont('CyrillicFont', font_path))
+        except:
+            pass
+        
+        # Формуємо шлях для CSS
+        clean_path = font_path.replace('\\', '/')
+        if not clean_path.startswith('/'):
+            clean_path = '/' + clean_path
+        font_uri = 'file://' + clean_path
 
     total_cost = sum(item.get_cost() for item in order.items.all())
     
     context = {
         'order': order, 
         'total_cost': total_cost,
+        'font_uri': font_uri 
     }
     
     html_string = render_to_string('store/pdf/invoice.html', context)
     result = io.BytesIO()
     
-    # Конвертуємо
     pisa_status = pisa.CreatePDF(
         io.BytesIO(html_string.encode("UTF-8")), 
         dest=result, 
-        encoding='UTF-8'
+        encoding='UTF-8',
+        link_callback=link_callback # 🔥 ТУТ МАГІЯ: дозволяємо читати локальний шрифт
     )
     
     if pisa_status.err:

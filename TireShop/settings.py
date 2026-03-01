@@ -7,47 +7,42 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
 
 # --- ЛОГІКА DEBUG ТА ДОМЕНІВ ---
-# Якщо ми на Render:
 if 'RENDER' in os.environ:
-    # 🔥 НА ЖИВОМУ САЙТІ ВИМИКАЄМО DEBUG (Критично для швидкості та кешу)
     DEBUG = False 
     
     ALLOWED_HOSTS = [
-        os.environ.get('RENDER_EXTERNAL_HOSTNAME'), # Адреса від Render
-        'r16.com.ua',        # ВАШ ДОМЕН
-        'www.r16.com.ua',    # WWW ВЕРСІЯ
+        os.environ.get('RENDER_EXTERNAL_HOSTNAME'), 
+        'r16.com.ua',        
+        'www.r16.com.ua',    
     ]
     
-    # 🔥 БЕЗПЕКА І HTTPS (Google це любить)
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 рік
+    SECURE_HSTS_SECONDS = 31536000  
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 else:
-    # Вдома на комп'ютері
     DEBUG = True
     ALLOWED_HOSTS = ['*']
 
 # --- ДОДАТКИ ---
 INSTALLED_APPS = [
+    'jazzmin',  # 🔥 СУЧАСНА CRM-АДМІНКА (Має бути ПЕРЕД django.contrib.admin)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sitemaps', # Для карти сайту (Google)
+    'django.contrib.sitemaps', 
     
     'store.apps.StoreConfig', 
     'users.apps.UsersConfig', 
-    # 'whitenoise.runserver_nostatic', # Можна додати для тесту локально, але не обов'язково
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # 🔥 WHITENOISE (Має бути відразу після Security)
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware', 
     'django.middleware.common.CommonMiddleware',
@@ -81,7 +76,7 @@ WSGI_APPLICATION = 'TireShop.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600 # Тримати з'єднання 10 хв (швидше для PostgreSQL)
+        conn_max_age=600 
     )
 }
 
@@ -97,16 +92,12 @@ TIME_ZONE = 'Europe/Kyiv'
 USE_I18N = True
 USE_TZ = True
 
-# --- СТАТИКА (CSS, JS, IMAGES) ---
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# 🔥 МАКСИМАЛЬНА ОПТИМІЗАЦІЯ WHITENOISE 🔥
-# CompressedManifest... стискає файли (Gzip/Brotli) і додає хеш до імені.
-# Це дозволяє браузеру кешувати їх "назавжди" (вирішує проблему PageSpeed про кеш).
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MANIFEST_STRICT = False
 
@@ -121,7 +112,6 @@ LOGOUT_REDIRECT_URL = 'catalog'
 
 GSPREAD_CREDENTIALS_PATH = '/etc/secrets/credentials.json'
 
-# --- ТЕЛЕГРАМ БОТ ---
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
@@ -149,3 +139,39 @@ LOGGING = {
     },
 }
 
+# ==========================================
+# 🔥 НАЛАШТУВАННЯ CRM (JAZZMIN) 🔥
+# ==========================================
+JAZZMIN_SETTINGS = {
+    "site_title": "R16 CRM",
+    "site_header": "R16.ua",
+    "site_brand": "Управління R16",
+    "welcome_sign": "Вхід у CRM систему R16.ua",
+    
+    # Моделі, які можна шукати з головного меню:
+    "search_model": ["store.Order", "store.Product"],
+    
+    # Показувати бокове меню
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    
+    # Іконки для кожної таблиці
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "store.Order": "fas fa-shopping-cart",
+        "store.Product": "fas fa-box",
+        "store.Brand": "fas fa-copyright",
+        "store.SiteSettings": "fas fa-cogs",
+        "store.SiteBanner": "fas fa-images",
+        "store.AboutImage": "fas fa-camera",
+    },
+    
+    # Порядок сортування в меню
+    "order_with_respect_to": ["store.Order", "store.Product", "store.Brand", "store.SiteBanner"],
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "pulse",          # Сучасна, чиста світла тема
+    "dark_mode_theme": "darkly", # Приємна темна тема
+}

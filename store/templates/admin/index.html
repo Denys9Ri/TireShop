@@ -1,0 +1,145 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static dashboard_tags %}
+
+{% block content %}
+{% get_admin_stats as stats %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="content-wrapper p-4">
+    <h2 class="mb-4 font-weight-bold" style="color: #333;">📊 Аналітика R16 (Цього місяця)</h2>
+    
+    <div class="row">
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="small-box shadow-sm" style="background-color: #28a745; color: white; border-radius: 15px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="inner">
+                    <h3>{{ stats.revenue|floatformat:0 }} <sup style="font-size: 20px">грн</sup></h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 0;">Виручка за місяць</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 10px; right: 20px; font-size: 60px; opacity: 0.2;">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="small-box shadow-sm" style="background-color: #17a2b8; color: white; border-radius: 15px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="inner">
+                    <h3>{{ stats.profit|floatformat:0 }} <sup style="font-size: 20px">грн</sup></h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 0;">Чистий прибуток</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 10px; right: 20px; font-size: 60px; opacity: 0.2;">
+                    <i class="fas fa-piggy-bank"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="small-box shadow-sm" style="background-color: #ffc107; color: white; border-radius: 15px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="inner">
+                    <h3>{{ stats.month_orders }}</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 0;">Успішних замовлень</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 10px; right: 20px; font-size: 60px; opacity: 0.2;">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="small-box shadow-sm" style="background-color: #dc3545; color: white; border-radius: 15px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="inner">
+                    <h3>{{ stats.new_orders }}</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 0;">Нові (Треба дзвонити)</p>
+                </div>
+                <div class="icon" style="position: absolute; top: 10px; right: 20px; font-size: 60px; opacity: 0.2;">
+                    <i class="fas fa-bell"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h4 class="font-weight-bold"><i class="fas fa-chart-line text-primary mr-2"></i> Динаміка продажів (Останні 7 днів)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; height: 100%;">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h4 class="font-weight-bold"><i class="fas fa-clock text-warning mr-2"></i> Останні дії</h4>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush mt-2">
+                        {% for ord in stats.recent_orders %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <a href="{% url 'admin:store_order_change' ord.id %}" class="font-weight-bold text-decoration-none" style="font-size: 1.1rem;">Замовлення №{{ ord.id }}</a>
+                                <br>
+                                <small class="text-muted">{{ ord.created_at|date:"d M Y, H:i" }} | {{ ord.full_name|default:"Клієнт" }}</small>
+                            </div>
+                            <div>
+                                {% if ord.status == 'new' %}<span class="badge badge-danger p-2">Нове</span>
+                                {% elif ord.status == 'completed' %}<span class="badge badge-success p-2">Успішно</span>
+                                {% elif ord.status == 'pickup_vk3' %}<span class="badge badge-info p-2">Самовивіз</span>
+                                {% else %}<span class="badge badge-secondary p-2">{{ ord.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="text-center p-3 mt-auto">
+                        <a href="{% url 'admin:store_order_changelist' %}" class="btn btn-outline-primary w-100" style="border-radius: 10px;">Відкрити всі замовлення</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Отримуємо дані з Python
+        const labels = {{ stats.chart_labels|safe }};
+        const data = {{ stats.chart_data|safe }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Виручка (грн)',
+                    data: data,
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: 'rgba(13, 110, 253, 1)',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    fill: true,
+                    tension: 0.4 // Робить графік плавним
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

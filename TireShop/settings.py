@@ -148,14 +148,17 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Управління R16",
     "welcome_sign": "Вхід у CRM систему R16.ua",
     
-    # Моделі, які можна шукати з головного меню:
-    "search_model": ["store.Order", "store.Product"],
+    # Переклад головних розділів меню
+    "custom_app_labels": {
+        "store": "Керування Магазином",
+        "auth": "Права доступу",
+        "users": "Клієнти",
+    },
     
-    # Показувати бокове меню
+    "search_model": ["store.Order", "store.Product"],
     "show_sidebar": True,
     "navigation_expanded": True,
     
-    # Іконки для кожної таблиці
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -167,11 +170,5 @@ JAZZMIN_SETTINGS = {
         "store.AboutImage": "fas fa-camera",
     },
     
-    # Порядок сортування в меню
     "order_with_respect_to": ["store.Order", "store.Product", "store.Brand", "store.SiteBanner"],
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "theme": "pulse",          # Сучасна, чиста світла тема
-    "dark_mode_theme": "darkly", # Приємна темна тема
 }

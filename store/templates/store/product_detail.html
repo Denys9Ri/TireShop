@@ -4,7 +4,6 @@
 {# ================== SEO HEAD ================== #}
 
 {% block title %}
-    {# Використовуємо красиву назву для вкладки браузера #}
     {% if seo_title %}
         {{ seo_title }}
     {% else %}
@@ -24,7 +23,7 @@
   "@type": "Product",
   "name": "{{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}",
   "image": [
-    "{% if product.photo_url %}{{ product.photo_url }}{% elif product.photo %}{{ product.photo.url }}{% else %}https://r16.com.ua/static/images/no-image.png{% endif %}"
+    "{% if product.photo_url %}{{ product.photo_url }}{% elif product.photo %}https://r16.com.ua{{ product.photo.url }}{% else %}https://r16.com.ua/static/images/no-image.png{% endif %}"
   ],
   "description": "Купити шини {{ product.brand.name }} {{ product.display_name }}. Розмір: {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Індекси: {{ product.load_index }}{{ product.speed_index }}. Рік: {{ product.year }}.",
   "brand": {
@@ -150,7 +149,6 @@
         object-fit: contain;
     }
 
-    /* Стрілочки */
     .carousel-control-prev, .carousel-control-next {
         width: 15%;
         opacity: 0;
@@ -243,18 +241,20 @@
     .similar-title { font-size: 1rem; font-weight: 700; color: #333; text-decoration: none; }
     .similar-price { color: #0d6efd; font-weight: 800; }
 
-    /* --- СТИЛІ ДЛЯ ЦІНИ --- */
+    /* --- СТИЛІ ДЛЯ ЦІНИ ТА КНОПОК --- */
     .price-regular { color: #0d6efd; font-weight: 700; font-size: 2rem; }
     .price-new { color: #dc3545; font-weight: 700; font-size: 2rem; }
     .price-old { text-decoration: line-through; color: #888; font-size: 1.2rem; margin-top: 5px; }
 
-    /* АДАПТАЦІЯ */
     .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
     .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f7ff; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-    .qty-btn:hover { background: #0d6efd; color: white; }
+    .qty-btn:hover:not(:disabled) { background: #0d6efd; color: white; }
+    .qty-btn:disabled { color: #ccc; cursor: not-allowed; }
     .qty-input { width: 40px; text-align: center; border: none; font-weight: bold; font-size: 1.1rem; color: #333; background: transparent; }
+    
     .btn-buy-glass { padding: 12px 25px; border-radius: 50px; font-weight: 700; text-transform: uppercase; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); width: 100%; transition: transform 0.2s; white-space: nowrap; }
-    .btn-buy-glass:hover { transform: translateY(-2px); }
+    .btn-buy-glass:hover:not(:disabled) { transform: translateY(-2px); }
+    
     .action-row { display: flex; gap: 15px; align-items: center; flex-wrap: nowrap; }
     .specs-box { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); border-radius: 16px; padding: 20px; margin-top: 20px; }
     .specs-list { list-style: none; padding: 0; margin: 0; }
@@ -294,7 +294,6 @@
                 </li>
             {% endif %}
 
-            {# 🔥 ТУТ ВИПРАВЛЕНО: Використовуємо display_name в хлібних крихтах #}
             <li class="breadcrumb-item active" aria-current="page" style="color: #333; font-weight: 600;">
                 {{ product.brand.name }} {{ product.display_name }}
             </li>
@@ -378,7 +377,6 @@
                     {% endif %}
                 </div>
 
-                {# 🔥 ТУТ ВИПРАВЛЕНО: H1 використовує display_name #}
                 <h1 class="fw-bold mb-2 lh-sm">
                     {% if product.seo_h1 %}
                         {{ product.seo_h1 }}
@@ -409,21 +407,43 @@
                 <form action="{% url 'store:cart_add' product.id %}" method="post" class="mb-3 ajax-cart-form" data-product-id="{{ product.id }}">
                     {% csrf_token %}
                     <div class="action-row">
-                        <div class="quantity-selector">
-                            <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
-                            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="{{ product.stock_quantity }}" class="qty-input" readonly>
-                            <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
+                        <div class="quantity-selector" {% if product.stock_quantity <= 0 %}style="opacity: 0.5;"{% endif %}>
+                            <button type="button" class="qty-btn" onclick="updateQty(-1)" {% if product.stock_quantity <= 0 %}disabled{% endif %}>−</button>
+                            <input type="number" name="quantity" id="qtyInput" value="{% if product.stock_quantity > 0 %}1{% else %}0{% endif %}" min="1" max="{{ product.stock_quantity }}" class="qty-input" readonly>
+                            <button type="button" class="qty-btn" onclick="updateQty(1)" {% if product.stock_quantity <= 0 %}disabled{% endif %}>+</button>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-buy-glass" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
-                            <i class="bi bi-cart2 me-2"></i> В кошик
+                        
+                        <button type="submit" class="btn {% if product.stock_quantity > 0 %}btn-primary{% else %}btn-danger{% endif %} btn-buy-glass" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
+                            <i class="bi bi-cart2 me-2"></i> 
+                            {% if product.stock_quantity > 0 %}В кошик{% else %}Немає в наявності{% endif %}
                         </button>
                     </div>
                 </form>
 
-                <div class="trust-badges">
+                <div class="delivery-info-box mt-4 p-3 rounded-4" style="background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.9);">
+                    <div class="d-flex mb-3 align-items-center">
+                        <div class="me-3" style="min-width: 40px; height: 40px; background: #e9f2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d6efd;">
+                            <i class="bi bi-shop fs-5"></i>
+                        </div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold text-dark">Самовивіз у Києві <span class="badge bg-success bg-opacity-75 ms-1">Безкоштовно</span></div>
+                            <div class="small text-muted mt-1">вул. Володимира Качали, 3</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="me-3" style="min-width: 40px; height: 40px; background: #e9f2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d6efd;">
+                            <i class="bi bi-truck fs-5"></i>
+                        </div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold text-dark">Нова Пошта по Україні</div>
+                            <div class="small text-muted mt-1">За тарифами перевізника</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trust-badges mt-4">
                     <div class="badge-item"><i class="bi bi-shield-check badge-icon"></i> Гарантія</div>
                     <div class="badge-item"><i class="bi bi-arrow-repeat badge-icon"></i> Обмін 14 днів</div>
-                    <div class="badge-item"><i class="bi bi-truck badge-icon"></i> Доставка по Україні</div>
                 </div>
 
                 <div class="specs-box">
@@ -434,7 +454,7 @@
                         <li class="specs-item"><span class="specs-label">Профіль</span><span class="specs-dots"></span><span class="specs-value">{{ product.profile }}</span></li>
                         <li class="specs-item"><span class="specs-label">Діаметр</span><span class="specs-dots"></span><span class="specs-value">R{{ product.diameter }}</span></li>
                         <li class="specs-item"><span class="specs-label">Сезон</span><span class="specs-dots"></span><span class="specs-value">{% if product.seasonality == 'winter' %}❄️ Зимові{% elif product.seasonality == 'summer' %}☀️ Літні{% else %}🌤 Всесезонні{% endif %}</span></li>
-                        <li class="specs-item"><span class="specs-label">Країна / Рік</span><span class="specs-dots"></span><span class="specs-value">{{ product.country|default:"-" }} / {{ product.year }}</span></li>
+                        <li class="specs-item"><span class="specs-label">Країна / Рік</span><span class="specs-dots"></span><span class="specs-value">{% if product.country %}{{ product.country }}{% else %}Не вказано{% endif %} / {{ product.year }}</span></li>
                         <li class="specs-item"><span class="specs-label">Індекси</span><span class="specs-dots"></span><span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></li>
                         <li class="specs-item"><span class="specs-label">Шипи</span><span class="specs-dots"></span><span class="specs-value">{{ product.stud_type }}</span></li>
                         <li class="specs-item"><span class="specs-label">Тип авто</span><span class="specs-dots"></span><span class="specs-value">{{ product.vehicle_type }}</span></li>
@@ -470,7 +490,6 @@
                             <span class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill small">-{{ sim.discount_percent }}%</span>
                         {% endif %}
 
-                        {# 🔥 ТУТ ВИПРАВЛЕНО: Схожі товари теж з гарною назвою #}
                         <a href="{% url 'store:product_detail' sim.slug %}" class="similar-title mt-2 stretched-link">
                             {{ sim.brand.name }} {{ sim.display_name }}
                         </a>

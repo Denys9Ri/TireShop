@@ -1,0 +1,5 @@
+/* Робимо так, щоб випадаючий список статусів ніколи не стискався */
+td.field-status select {
+    min-width: 170px !important;
+    width: max-content;
+}

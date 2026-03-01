@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Товарний чек № {{ order.id }}</title>
+    <style>
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: url('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/DejaVuSans.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            font-family: 'DejaVu Sans', sans-serif; /* Для підтримки кирилиці в PDF */
+            font-size: 12px;
+            color: #333;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+        }
+        .brand-logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 5px;
+        }
+        .doc-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 10px 0;
+        }
+        .details-row {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .details-col {
+            width: 48%;
+            vertical-align: top;
+        }
+        .details-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 3px;
+        }
+        table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table.items-table th, table.items-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        table.items-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        table.items-table td.money, table.items-table th.money {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .total-row {
+            text-align: right;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #ddd;
+        }
+        .total-price {
+            color: #0d6efd;
+            font-size: 20px;
+        }
+        .warranty-box {
+            background-color: #f0f7ff;
+            border: 1px solid #cce0ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 11px;
+            color: #444;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 10px;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="brand-logo">R16.ua</div>
+        <div class="doc-title">Товарний чек № {{ order.id }}</div>
+        <div>від {{ order.created_at|date:"d F Y" }} р.</div>
+    </div>
+
+    <table class="details-row">
+        <tr>
+            <td class="details-col">
+                <div class="details-label">Продавець:</div>
+                <div><strong>ФОП Рябуха Д.О.</strong></div>
+                <div>ІПН: 3644805072</div>
+                <div>Тел: +38 (066) 688-14-91</div>
+                <div>Адреса: м. Київ, вул. Володимира Качали, 3</div>
+            </td>
+            <td style="width: 4%;"></td> <td class="details-col">
+                <div class="details-label">Покупець:</div>
+                <div><strong>{{ order.full_name }}</strong></div>
+                <div>Тел: {{ order.phone }}</div>
+                <div>Доставка: 
+                    {% if order.shipping_type == 'nova_poshta' %}
+                        Нова Пошта, {{ order.city }}, {{ order.nova_poshta_branch }}
+                    {% else %}
+                        Самовивіз (ВК3)
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+        <tr>
+            <th style="width: 5%;">№</th>
+            <th>Найменування товару</th>
+            <th style="width: 10%;">К-сть</th>
+            <th style="width: 10%;">Од.</th>
+            <th class="money" style="width: 15%;">Ціна (грн)</th>
+            <th class="money" style="width: 15%;">Сума (грн)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in order.items.all %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+                {{ item.product.brand.name }} 
+                {% if item.product.display_name %}{{ item.product.display_name }}{% else %}{{ item.product.name }}{% endif %}
+                ({{ item.product.get_seasonality_display }})
+            </td>
+            <td>{{ item.quantity }}</td>
+            <td>шт.</td>
+            <td class="money">{{ item.price_at_purchase|floatformat:2 }}</td>
+            <td class="money">{{ item.get_cost|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-row">
+        Разом до сплати: <span class="total-price">{{ total_cost|floatformat:2 }} грн</span>
+    </div>
+
+    <div class="warranty-box">
+        <strong>⚠️ Гарантійні зобов'язання:</strong><br>
+        Гарантія на заводський брак діє згідно із законодавством України. Товар підлягає обміну або поверненню протягом 14 днів з моменту покупки за умови збереження повного товарного вигляду, комплектації та за відсутності слідів монтажу (шини не монтувалися на диски).
+    </div>
+
+    <div class="footer">
+        Дякуємо за покупку на R16.ua! Повертайтеся до нас знову.
+    </div>
+</div>
+</body>
+</html>

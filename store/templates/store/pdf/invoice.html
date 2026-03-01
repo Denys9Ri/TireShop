@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <title>Товарний чек № {{ order.id }}</title>
     <style>
+        /* 🔥 ПІДКЛЮЧЕННЯ ЛОКАЛЬНОГО ШРИФТУ З ПАМ'ЯТІ СЕРВЕРА 🔥 */
         @font-face {
-            font-family: 'DejaVu Sans';
-            src: url('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/standard_fonts/DejaVuSans.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
+            font-family: 'DejaVu';
+            src: url('{{ font_path }}');
         }
         @page {
             size: a4 portrait;
             margin: 1.5cm;
         }
         body {
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'DejaVu', sans-serif;
             font-size: 12px;
             color: #333;
             line-height: 1.5;

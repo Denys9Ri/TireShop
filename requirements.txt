@@ -10,3 +10,4 @@ oauth2client
 pandas
 openpyxl
 django-jazzmin
+xhtml2pdf

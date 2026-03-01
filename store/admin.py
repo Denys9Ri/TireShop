@@ -83,7 +83,7 @@ class OrderAdmin(admin.ModelAdmin):
     # 1. Загальна сума в списку
     def total_cost(self, obj):
         sum_val = sum(item.get_cost() for item in obj.items.all())
-        return format_html("<b>{:.2f} грн</b>", sum_val)
+        return format_html("<b>{} грн</b>", f"{sum_val:.2f}")
     total_cost.short_description = 'Сума'
 
     # 2. Детальна сума всередині картки

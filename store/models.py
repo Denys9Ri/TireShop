@@ -8,7 +8,10 @@ import re
 class SiteSettings(models.Model):
     global_markup = models.DecimalField(max_digits=5, decimal_places=2, default='1.30', verbose_name="Націнка")
 
-    class Meta: verbose_name = "Налаштування"
+    class Meta: 
+        verbose_name = "Налаштування"
+        verbose_name_plural = "Налаштування"
+
     def __str__(self): return f"Націнка: {self.global_markup}"
 
     @classmethod
@@ -166,6 +169,10 @@ class Product(models.Model):
 
     def __str__(self): return self.slug
 
+    class Meta:
+        verbose_name = "Товар"
+        verbose_name_plural = "Товари"
+
 # --- 3. ЗАМОВЛЕННЯ (🔥 ОНОВЛЕНА ВОРОНКА СТАТУСІВ 🔥) ---
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -192,6 +199,10 @@ class Order(models.Model):
     
     def __str__(self): return f"Замовлення #{self.id}"
 
+    class Meta:
+        verbose_name = "Замовлення"
+        verbose_name_plural = "Замовлення"
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
@@ -200,11 +211,19 @@ class OrderItem(models.Model):
     def get_cost(self): return self.price_at_purchase * self.quantity
     def __str__(self): return f"{self.quantity} x {self.product}"
 
+    class Meta:
+        verbose_name = "Товар у замовленні"
+        verbose_name_plural = "Товари у замовленнях"
+
 # --- 4. ДОДАТКОВІ ---
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='product_gallery/', blank=True, null=True)
     image_url = models.URLField(max_length=1024, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Фото галереї"
+        verbose_name_plural = "Фото галереї"
 
 class SiteBanner(models.Model):
     title = models.CharField(max_length=100)
@@ -215,7 +234,15 @@ class SiteBanner(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self): return self.title
 
+    class Meta:
+        verbose_name = "Банер"
+        verbose_name_plural = "Банери"
+
 class AboutImage(models.Model):
     image = models.ImageField(upload_to='about_us/')
     image_url = models.URLField(max_length=1024, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Фото про нас"
+        verbose_name_plural = "Фото про нас"

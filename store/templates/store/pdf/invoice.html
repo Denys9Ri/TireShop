@@ -4,17 +4,25 @@
     <meta charset="UTF-8">
     <title>Товарний чек № {{ order.id }}</title>
     <style>
-        /* 🔥 ОСЬ ВІН! СЕКРЕТ КИРИЛИЦІ В PDF 🔥 */
+        {% if font_uri %}
         @font-face {
-            font-family: 'DejaVuSans';
-            src: url('{{ font_path }}');
+            font-family: 'CyrillicFont';
+            src: url('{{ font_uri }}');
         }
+        body {
+            font-family: 'CyrillicFont', sans-serif;
+        }
+        {% else %}
+        body {
+            font-family: sans-serif;
+        }
+        {% endif %}
+        
         @page {
             size: a4 portrait;
             margin: 1.5cm;
         }
         body {
-            font-family: 'DejaVuSans', sans-serif;
             font-size: 12px;
             color: #333;
             line-height: 1.5;

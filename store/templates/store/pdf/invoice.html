@@ -4,17 +4,13 @@
     <meta charset="UTF-8">
     <title>Товарний чек № {{ order.id }}</title>
     <style>
-        /* 🔥 ПІДКЛЮЧЕННЯ ЛОКАЛЬНОГО ШРИФТУ З ПАМ'ЯТІ СЕРВЕРА 🔥 */
-        @font-face {
-            font-family: 'DejaVu';
-            src: url('{{ font_path }}');
-        }
         @page {
             size: a4 portrait;
             margin: 1.5cm;
         }
+        /* ВАЖЛИВО: використовуємо DejaVuCustom, який ми зареєстрували в Python */
         body {
-            font-family: 'DejaVu', sans-serif;
+            font-family: 'DejaVuCustom', sans-serif;
             font-size: 12px;
             color: #333;
             line-height: 1.5;
@@ -85,7 +81,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="brand-logo">R16.ua</div>
+        <div class="brand-logo">R16.com.ua</div>
         <div class="doc-title">Товарний чек № {{ order.id }}</div>
         <div>від {{ order.created_at|date:"d F Y" }} р.</div>
     </div>
@@ -150,7 +146,7 @@
     </div>
 
     <div class="footer">
-        Дякуємо за покупку на R16.ua! Повертайтеся до нас знову.
+        Дякуємо за покупку на R16.com.ua! Повертайтеся до нас знову.
     </div>
 </body>
 </html>

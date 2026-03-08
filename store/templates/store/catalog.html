@@ -14,7 +14,7 @@
 
 {% block content %}
 <style>
-    /* --- СТИЛІ ДЛЯ САЙДБАРУ --- */
+    /* --- САЙДБАР --- */
     .filter-sidebar { background: #fff; border-radius: 12px; border: 1px solid #eee; padding: 20px; position: sticky; top: 90px; }
     .accordion-button:not(.collapsed) { color: #0d6efd; background-color: #f8f9fa; box-shadow: none; font-weight: 600; }
     .accordion-button { padding: 12px 0; font-size: 0.95rem; background: none; box-shadow: none; color: #333; }
@@ -22,16 +22,16 @@
     .accordion-body { padding: 10px 0; }
     .filter-group { border-bottom: 1px solid #eee; margin-bottom: 5px; }
     .form-select-sm { border-radius: 8px; font-size: 0.9rem; padding: 8px; border-color: #dee2e6; }
-    
+
     /* --- СОРТУВАННЯ --- */
     .sort-select { border: none; background: transparent; font-weight: 600; font-size: 0.9rem; text-align: right; cursor: pointer; outline: none; }
 
-    /* АДАПТИВНІСТЬ */
+    /* --- АДАПТИВНІСТЬ --- */
     @media (max-width: 991px) {
-        .desktop-sidebar-col { display: none; } /* Ховаємо сайдбар на мобілках */
+        .desktop-sidebar-col { display: none; }
     }
-    
-    /* КАРТКА ТОВАРУ */
+
+    /* --- КАРТКА ТОВАРУ --- */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
@@ -40,67 +40,44 @@
     .auto-badges-container { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 20; }
     .badge-tag { font-size: 0.65rem; font-weight: 700; padding: 3px 6px; border-radius: 4px; color: white; text-transform: uppercase; }
     .badge-fresh { background: #20c997; } .badge-top { background: #6610f2; } .badge-taxi { background: #fd7e14; } .badge-sale { background: #dc3545; }
-    
-    /* Ціна за комплект (СІРИЙ ФОН) */
+
+    /* --- ЦІНА ЗА КОМПЛЕКТ --- */
     .set-price-block { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; color: #555; text-align: center; border: 1px dashed #ccc; margin-bottom: 10px; }
     .set-price-block b { color: #333; }
 
-    /* ВИБІР КІЛЬКОСТІ (СКЛЯНИЙ СТИЛЬ) */
-    .product-card__cart-form { text-align: center; } 
-    .quantity-stepper { 
-        display: inline-flex; align-items: center; justify-content: space-between; 
-        background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px);
-        border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 50px; 
-        padding: 3px; margin: 0 auto 10px auto; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content;
-    }
-    .quantity-btn { 
-        width: 28px; height: 28px; border-radius: 50%; border: none; 
-        background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-weight: bold; 
-        cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; 
-    }
+    /* --- КІЛЬКІСТЬ --- */
+    .product-card__cart-form { text-align: center; }
+    .quantity-stepper { display: inline-flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); border: 1px solid rgba(13,110,253,0.2); border-radius: 50px; padding: 3px; margin: 0 auto 10px auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: fit-content; }
+    .quantity-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(13,110,253,0.1); color: #0d6efd; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
     .quantity-btn:hover { background: #0d6efd; color: white; }
     .quantity-stepper input { width: 35px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; color: #333; outline: none; }
 
-    /* БАНЕР */
-    .banner-wrapper { margin: 0 auto 30px auto; max-width: 1000px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    .banner-img { width: 100%; height: auto; display: block; }
+    /* --- НАЗВА ТОВАРУ --- */
+    .product-name { font-size: 1.05rem; line-height: 1.3; }
+    .product-name a { text-decoration: none; color: inherit; }
+    .product-name a:hover { color: #0d6efd; }
 
-    /* ХМАРА ТЕГІВ */
+    /* --- ХМАРА ТЕГІВ --- */
     .tag-cloud-btn { transition: all 0.2s; font-size: 0.85rem; }
     .tag-cloud-btn:hover { background-color: #0d6efd; color: white; border-color: #0d6efd; }
-    
-    .product-name a { text-decoration: none; color: inherit; }
-    .product-name { font-size: 1.05rem; line-height: 1.3; }
 
-    /* --- 🔥 FAQ СТИЛЬ (СКЛО) 🔥 --- */
-    .glass-faq-container {
-        background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        word-wrap: break-word; overflow-wrap: break-word;
-    }
-    .custom-accordion .accordion-item { background: transparent; border: none; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+    /* --- FAQ СКЛО --- */
+    .glass-faq-container { background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.8); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31,38,135,0.05); word-wrap: break-word; overflow-wrap: break-word; }
+    .custom-accordion .accordion-item { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .custom-accordion .accordion-button { background: transparent; box-shadow: none; color: #004a99; font-weight: 700; padding: 15px 0; }
     .custom-accordion .accordion-button:not(.collapsed) { color: #dc3545; }
     .custom-accordion .accordion-button:focus { box-shadow: none; }
     .custom-accordion .accordion-body { padding: 0 0 15px 0; color: #555; font-size: 0.95rem; line-height: 1.6; }
 
-    /* --- 🔥 ПАГІНАЦІЯ СТИЛЬ (СКЛО) 🔥 --- */
-    .pagination .page-link {
-        border-radius: 50%; width: 40px; height: 40px;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 4px; border: none; color: #333; font-weight: 600;
-        background: rgba(255,255,255,0.7); backdrop-filter: blur(4px);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
-    }
+    /* --- ПАГІНАЦІЯ СКЛО --- */
+    .pagination .page-link { border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0 4px; border: none; color: #333; font-weight: 600; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; }
     .pagination .page-link:hover { background: #fff; color: #0d6efd; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .pagination .page-item.active .page-link { background: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); }
+    .pagination .page-item.active .page-link { background: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13,110,253,0.3); }
     .pagination .page-item.disabled .page-link { background: rgba(255,255,255,0.3); color: #ccc; box-shadow: none; }
 </style>
 
 <div class="container py-3">
-    
+
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small mb-3" style="background: transparent; padding-left: 0;">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
@@ -109,56 +86,46 @@
     </nav>
 
     <div class="row">
-        
-        {# ============ ЛІВА КОЛОНКА (САЙДБАР) ============ #}
+
+        {# ============ САЙДБАР ============ #}
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
                 <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
-                {% include "store/includes/filter_form.html" %} 
+                {% include "store/includes/filter_form.html" %}
             </div>
         </aside>
 
-        {# ============ ПРАВА КОЛОНКА (ТОВАРИ) ============ #}
+        {# ============ ТОВАРИ ============ #}
         <div class="col-lg-9">
-            
+
+            {# ПОШУК #}
             <div class="mb-3">
                 <form action="{% url 'store:catalog' %}" method="get" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <button class="btn btn-outline-primary d-lg-none fw-bold" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilter" style="white-space: nowrap;">
                         <i class="bi bi-sliders"></i> Фільтри
                     </button>
-                    <input type="text" name="query" style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none; min-width: 150px;" placeholder="Пошук (Michelin, 205/55R16)..." value="{{ search_query }}">
-                    <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота"><i class="bi bi-robot"></i></div>
-                    <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;"><i class="bi bi-search"></i></button>
+                    <input type="text" name="query"
+                           style="flex-grow: 1; padding: 10px 20px; border-radius: 50px; border: 1px solid #ccc; font-size: 1rem; outline: none; min-width: 150px;"
+                           placeholder="Пошук (Michelin, 205/55R16)..."
+                           value="{{ search_query }}">
+                    <div class="tire-bot-btn" onclick="openChat()" style="width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;" title="Допомога робота">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="border-radius: 50px; padding: 0 20px; height: 44px; font-weight: bold;">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </form>
             </div>
 
-            {% if show_banner and banners %}
-                <div class="banner-wrapper">
-                    <div id="mainBannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-                        <div class="carousel-inner">
-                            {% for banner in banners %}
-                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    {% if banner.link %}<a href="{{ banner.link }}" style="display: block;">{% endif %}
-                                        {% if banner.image %}
-                                            <img src="{{ banner.image.url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
-                                        {% elif banner.image_url %}
-                                            <img src="{{ banner.image_url }}" class="banner-img" alt="{{ banner.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
-                                        {% endif %}
-                                    {% if banner.link %}</a>{% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+            {# ❌ ВИДАЛЕНО: мертвий блок каруселі (show_banner / banners більше не передаються з views.py) #}
 
             <h1 class="h4 fw-bold mb-3">{{ seo_h1 }}</h1>
 
+            {# СОРТУВАННЯ #}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="text-muted small">Знайдено: {{ page_obj.paginator.count }} шт.</div>
-                
-                {# 🔥 ВИПРАВЛЕНА ФОРМА СОРТУВАННЯ 🔥 #}
-                <form method="get" action=""> {% for key, value in request.GET.items %}
+                <form method="get" action="">
+                    {% for key, value in request.GET.items %}
                         {% if key != 'ordering' and key != 'page' %}
                             <input type="hidden" name="{{ key }}" value="{{ value }}">
                         {% endif %}
@@ -176,41 +143,49 @@
                 {% for product in page_obj %}
                     <div class="col">
                         <div class="product-card position-relative">
-                            
+
                             <div class="auto-badges-container">
                                 {% if product.discount_percent > 0 %}<span class="badge-tag badge-sale">-{{ product.discount_percent }}%</span>{% endif %}
                                 {% if product.year >= 2025 %}<span class="badge-tag badge-fresh">🔥 Свіжа {{ product.year }}</span>{% endif %}
-                                {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ</span>{% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>{% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Економ</span>{% endif %}
+                                {% if product.brand.category == 'top' %}<span class="badge-tag badge-top">💎 Топ</span>
+                                {% elif product.brand.category == 'medium' %}<span class="badge-tag" style="background:#0d6efd;">⚖️ Хіт</span>
+                                {% elif product.brand.category == 'budget' %}<span class="badge-tag badge-taxi">💰 Економ</span>{% endif %}
                             </div>
 
-                            {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
-                            {% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
-                            {% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem;"></i></div>{% endif %}
+                            {% if product.seasonality == 'winter' %}
+                                <div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>
+                            {% elif product.seasonality == 'summer' %}
+                                <div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>
+                            {% else %}
+                                <div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem;"></i></div>
+                            {% endif %}
 
+                            {# ФОТО #}
                             <a href="{% url 'store:product_detail' product.slug %}">
-                                <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}" 
+                                <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}"
                                      class="product-image" loading="lazy" alt="{{ product.name }}"
                                      onerror="this.src='{% static 'images/no-image.png' %}'">
                             </a>
 
+                            {# ✅ ВИПРАВЛЕНО: відсутня закриваюча " після product.slug %} #}
                             <div class="product-name fw-bold mb-1">
-                                <a href="{% url 'store:product_detail' product.slug %} class="text-decoration-none text-dark">
+                                <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
                                     {{ product.brand.name }} {{ product.display_name }}
                                 </a>
                             </div>
-                            
+
                             <div class="text-muted small mb-2">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</div>
 
                             <div class="mt-auto">
                                 <div class="mb-1">
                                     {% if product.discount_percent > 0 %}
-                                        <span class="text-danger fw-bold fs-5">{{ product.price }} ₴</span> 
+                                        <span class="text-danger fw-bold fs-5">{{ product.price }} ₴</span>
                                         <small class="text-muted text-decoration-line-through">{{ product.old_price }}</small>
                                     {% else %}
                                         <span class="text-primary fw-bold fs-5">{{ product.price }} ₴</span>
                                     {% endif %}
                                 </div>
-                                
+
                                 {% if product.stock_quantity > 0 %}
                                     <div class="text-success small mb-2" style="font-size: 0.8rem;">
                                         <i class="bi bi-check-circle-fill"></i> В наявності: {{ product.stock_quantity }} шт.
@@ -239,6 +214,7 @@
                                     {% endif %}
                                 </form>
                             </div>
+
                         </div>
                     </div>
                 {% empty %}
@@ -246,12 +222,11 @@
                 {% endfor %}
             </div>
 
-            {# 🔥 РОЗУМНА ПАГІНАЦІЯ 🔥 #}
+            {# ПАГІНАЦІЯ #}
             {% if page_obj.has_other_pages %}
-                 <nav class="mt-5" aria-label="Page navigation">
+                <nav class="mt-5" aria-label="Page navigation">
                     <ul class="pagination justify-content-center flex-wrap gap-1">
-                        
-                        {# Назад #}
+
                         {% if page_obj.has_previous %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}" aria-label="Previous">←</a>
@@ -260,7 +235,6 @@
                             <li class="page-item disabled"><span class="page-link">←</span></li>
                         {% endif %}
 
-                        {# 🔥 ЦИКЛ ПО РОЗУМНОМУ ДІАПАЗОНУ 🔥 #}
                         {% for num in custom_page_range %}
                             {% if num == page_obj.number %}
                                 <li class="page-item active"><span class="page-link">{{ num }}</span></li>
@@ -273,7 +247,6 @@
                             {% endif %}
                         {% endfor %}
 
-                        {# Вперед #}
                         {% if page_obj.has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}" aria-label="Next">→</a>
@@ -282,18 +255,17 @@
                             <li class="page-item disabled"><span class="page-link">→</span></li>
                         {% endif %}
                     </ul>
-                    
                     <div class="text-center text-muted small mt-3">
                         Сторінка <b>{{ page_obj.number }}</b> із <b>{{ page_obj.paginator.num_pages }}</b>
                     </div>
-                 </nav>
+                </nav>
             {% endif %}
-            
-            {# FAQ (Скляний) #}
+
+            {# FAQ #}
             <div class="glass-faq-container mt-5 p-4">
                 <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
                 <div class="text-muted small mb-4">{{ seo_text_html|safe }}</div>
-                
+
                 {% if faq_list %}
                 <div class="mt-4">
                     <h4 class="fw-bold mb-3"><i class="bi bi-question-circle-fill text-primary"></i> Часті питання (FAQ)</h4>
@@ -306,16 +278,14 @@
                                 </button>
                             </h2>
                             <div id="q{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq">
-                                <div class="accordion-body">
-                                    {{ answer|safe }}
-                                </div>
+                                <div class="accordion-body">{{ answer|safe }}</div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
-                
+
                 {% if cross_links %}
                 <div class="mt-4 pt-3 border-top border-white">
                     {% for group in cross_links %}
@@ -332,33 +302,39 @@
                 {% endif %}
             </div>
 
-        </div> </div> </div>
+        </div>{# /col-lg-9 #}
+    </div>{# /row #}
+</div>{# /container #}
 
+{# МОБІЛЬНИЙ ФІЛЬТР #}
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter">
     <div class="offcanvas-header bg-light">
         <h5 class="offcanvas-title fw-bold"><i class="bi bi-sliders"></i> Фільтри</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-         {% include "store/includes/filter_form.html" %}
+        {% include "store/includes/filter_form.html" %}
     </div>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.quantity-stepper').forEach((stepper) => {
-        const input = stepper.querySelector('input[name="quantity"]');
-        const buttons = stepper.querySelectorAll('.quantity-btn');
-        buttons.forEach((button) => {
-          button.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            const direction = button.dataset.direction;
-            let current = parseInt(input.value, 10) || 1;
-            if (direction === 'increase') input.value = current + 1;
-            if (direction === 'decrease' && current > 1) input.value = current - 1;
-          });
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.quantity-stepper').forEach((stepper) => {
+            const input = stepper.querySelector('input[name="quantity"]');
+            const buttons = stepper.querySelectorAll('.quantity-btn');
+            buttons.forEach((button) => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const direction = button.dataset.direction;
+                    // ✅ ВИПРАВЛЕНО: перевірка max щоб не перевищувати кількість на складі
+                    const max = parseInt(input.getAttribute('max')) || 99;
+                    let current = parseInt(input.value, 10) || 1;
+                    if (direction === 'increase' && current < max) input.value = current + 1;
+                    if (direction === 'decrease' && current > 1) input.value = current - 1;
+                });
+            });
         });
-      });
-  });
+    });
 </script>
+
 {% endblock %}

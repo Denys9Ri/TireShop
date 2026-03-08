@@ -885,7 +885,7 @@ def sitemap_xml_view(request):
 
 
 # =========================================================
-# 🔥 ОНОВЛЕНИЙ XML ФІД ДЛЯ GOOGLE SHOPPING (ЛІМІТ 100) 🔥
+# 🔥 ОНОВЛЕНИЙ XML ФІД ДЛЯ GOOGLE SHOPPING (ЛІМІТ 10) 🔥
 # =========================================================
 def google_shopping_feed(request):
     """
@@ -895,13 +895,13 @@ def google_shopping_feed(request):
     from django.utils.xmlutils import SimplerXMLGenerator
     from io import StringIO
 
-    # 🔥 СТРАТЕГІЯ: Віддаємо Гуглу тільки 100 товарів для перевірки 🔥
+    # 🔥 ЖОРСТКА СТРАТЕГІЯ "ПІСОЧНИЦІ": Віддаємо лише 10 товарів 🔥
     products = (
         Product.objects
         .filter(price__gt=0, stock_quantity__gt=0, slug__isnull=False, seasonality='summer')
         .exclude(slug='')
         .select_related('brand')
-        .order_by('-id')[:100]  # <--- ЛІМІТ 100 ТОВАРІВ
+        .order_by('-id')[:10]  # <--- ЛІМІТ РІВНО 10 ТОВАРІВ
     )
 
     out = StringIO()

@@ -2,14 +2,61 @@
 {% load static %}
 
 {% block title %}{{ seo_title|default:"Купити шини | R16.com.ua" }}{% endblock %}
-{% block meta_description %}{{ seo_description|default:"Купити шини в інтернет-магазині R16..." }}{% endblock %}
+{% block meta_description %}{{ seo_description|default:"Купити шини в інтернет-магазині R16. Зимові, літні, всесезонні шини з доставкою по Україні." }}{% endblock %}
 
+{# Canonical — для сторінок з фільтрами прибираємо page= але зберігаємо фільтри #}
 {% block extra_head %}
+{% if canonical_url %}
+<link rel="canonical" href="{{ canonical_url }}">
+{% else %}
 <link rel="canonical" href="https://r16.com.ua{{ request.path }}">
-{% if faq_schema %}<script type="application/ld+json" id="faq-json">{{ faq_schema|safe }}</script>{% endif %}
+{% endif %}
+
+{# noindex для сторінок пагінації 2+ і рідкісних комбінацій фільтрів #}
+{% if page_obj.number > 1 %}
+<meta name="robots" content="noindex, follow">
+{% endif %}
+
+{# FAQ Schema — якщо є FAQ від views.py #}
+{% if faq_schema %}
+<script type="application/ld+json" id="faq-json">{{ faq_schema|safe }}</script>
+{% endif %}
+
+{# BreadcrumbList Schema #}
 <script type="application/ld+json">
-{ "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Головна", "item": "https://r16.com.ua/" }, { "@type": "ListItem", "position": 2, "name": "{{ seo_h1 }}", "item": "https://r16.com.ua{{ request.path }}" }] }
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Головна", "item": "https://r16.com.ua/" },
+    { "@type": "ListItem", "position": 2, "name": "Каталог шин", "item": "https://r16.com.ua{% url 'store:catalog' %}" }
+    {% if seo_h1 and seo_h1 != "Каталог шин" %}
+    ,{ "@type": "ListItem", "position": 3, "name": "{{ seo_h1 }}", "item": "https://r16.com.ua{{ request.path }}{% if filter_query_string %}?{{ filter_query_string }}{% endif %}" }
+    {% endif %}
+  ]
+}
 </script>
+
+{# ItemList Schema — список товарів для Google Shopping #}
+{% if page_obj %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "{{ seo_h1 }}",
+  "numberOfItems": {{ page_obj.paginator.count }},
+  "itemListElement": [
+    {% for product in page_obj %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter }},
+      "url": "https://r16.com.ua{% url 'store:product_detail' product.slug %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -27,9 +74,7 @@
     .sort-select { border: none; background: transparent; font-weight: 600; font-size: 0.9rem; text-align: right; cursor: pointer; outline: none; }
 
     /* --- АДАПТИВНІСТЬ --- */
-    @media (max-width: 991px) {
-        .desktop-sidebar-col { display: none; }
-    }
+    @media (max-width: 991px) { .desktop-sidebar-col { display: none; } }
 
     /* --- КАРТКА ТОВАРУ --- */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; }
@@ -69,19 +114,28 @@
     .custom-accordion .accordion-button:focus { box-shadow: none; }
     .custom-accordion .accordion-body { padding: 0 0 15px 0; color: #555; font-size: 0.95rem; line-height: 1.6; }
 
-    /* --- ПАГІНАЦІЯ СКЛО --- */
+    /* --- ПАГІНАЦІЯ --- */
     .pagination .page-link { border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0 4px; border: none; color: #333; font-weight: 600; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; }
     .pagination .page-link:hover { background: #fff; color: #0d6efd; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     .pagination .page-item.active .page-link { background: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13,110,253,0.3); }
     .pagination .page-item.disabled .page-link { background: rgba(255,255,255,0.3); color: #ccc; box-shadow: none; }
+
+    /* --- ШВИДКІ ФІЛЬТРИ (хмара розмірів) --- */
+    .quick-sizes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .quick-size-link { display: inline-block; padding: 5px 14px; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; font-size: 0.82rem; font-weight: 600; color: #555; text-decoration: none; transition: 0.2s; }
+    .quick-size-link:hover, .quick-size-link.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
 </style>
 
 <div class="container py-3">
 
+    {# ХЛІБНІ КРИХТИ #}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small mb-3" style="background: transparent; padding-left: 0;">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Головна</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-decoration-none text-muted">Каталог шин</a></li>
+            {% if seo_h1 and seo_h1 != "Каталог шин" %}
             <li class="breadcrumb-item active" aria-current="page">{{ seo_h1 }}</li>
+            {% endif %}
         </ol>
     </nav>
 
@@ -90,7 +144,7 @@
         {# ============ САЙДБАР ============ #}
         <aside class="col-lg-3 desktop-sidebar-col">
             <div class="filter-sidebar shadow-sm">
-                <h5 class="fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h5>
+                <h2 class="h5 fw-bold mb-3"><i class="bi bi-sliders"></i> Фільтри</h2>
                 {% include "store/includes/filter_form.html" %}
             </div>
         </aside>
@@ -117,13 +171,29 @@
                 </form>
             </div>
 
-            {# ❌ ВИДАЛЕНО: мертвий блок каруселі (show_banner / banners більше не передаються з views.py) #}
+            {# ШВИДКІ ПОСИЛАННЯ НА ПОПУЛЯРНІ РОЗМІРИ (тільки на незафільтрованому каталозі) #}
+            {% if not request.GET.width and not request.GET.profile and not request.GET.diameter and not request.GET.brand and not request.GET.season %}
+            <div class="quick-sizes mb-3">
+                <span class="text-muted small fw-bold me-1">Популярні:</span>
+                <a href="?width=205&profile=55&diameter=16" class="quick-size-link">205/55 R16</a>
+                <a href="?width=195&profile=65&diameter=15" class="quick-size-link">195/65 R15</a>
+                <a href="?width=225&profile=45&diameter=17" class="quick-size-link">225/45 R17</a>
+                <a href="?width=215&profile=60&diameter=16" class="quick-size-link">215/60 R16</a>
+                <a href="?width=185&profile=65&diameter=15" class="quick-size-link">185/65 R15</a>
+                <a href="?width=235&profile=45&diameter=18" class="quick-size-link">235/45 R18</a>
+                <a href="?season=winter" class="quick-size-link">❄️ Зимові</a>
+                <a href="?season=summer" class="quick-size-link">☀️ Літні</a>
+            </div>
+            {% endif %}
 
-            <h1 class="h4 fw-bold mb-3">{{ seo_h1 }}</h1>
+            <h1 class="h4 fw-bold mb-1">{{ seo_h1 }}</h1>
+            {% if page_obj.number > 1 %}
+            <p class="text-muted small mb-3">Сторінка {{ page_obj.number }}</p>
+            {% endif %}
 
             {# СОРТУВАННЯ #}
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="text-muted small">Знайдено: {{ page_obj.paginator.count }} шт.</div>
+                <div class="text-muted small">Знайдено: <b>{{ page_obj.paginator.count }}</b> шт.</div>
                 <form method="get" action="">
                     {% for key, value in request.GET.items %}
                         {% if key != 'ordering' and key != 'page' %}
@@ -160,14 +230,13 @@
                                 <div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem;"></i></div>
                             {% endif %}
 
-                            {# ФОТО #}
                             <a href="{% url 'store:product_detail' product.slug %}">
                                 <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}"
-                                     class="product-image" loading="lazy" alt="{{ product.name }}"
+                                     class="product-image" loading="lazy"
+                                     alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
                                      onerror="this.src='{% static 'images/no-image.png' %}'">
                             </a>
 
-                            {# ✅ ВИПРАВЛЕНО: відсутня закриваюча " після product.slug %} #}
                             <div class="product-name fw-bold mb-1">
                                 <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">
                                     {{ product.brand.name }} {{ product.display_name }}
@@ -226,10 +295,9 @@
             {% if page_obj.has_other_pages %}
                 <nav class="mt-5" aria-label="Page navigation">
                     <ul class="pagination justify-content-center flex-wrap gap-1">
-
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}" aria-label="Previous">←</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_query_string }}" aria-label="Попередня">←</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">←</span></li>
@@ -249,7 +317,7 @@
 
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}" aria-label="Next">→</a>
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_query_string }}" aria-label="Наступна">→</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled"><span class="page-link">→</span></li>
@@ -261,22 +329,24 @@
                 </nav>
             {% endif %}
 
-            {# FAQ #}
+            {# SEO-ТЕКСТ + FAQ #}
             <div class="glass-faq-container mt-5 p-4">
                 <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
                 <div class="text-muted small mb-4">{{ seo_text_html|safe }}</div>
 
                 {% if faq_list %}
                 <div class="mt-4">
-                    <h4 class="fw-bold mb-3"><i class="bi bi-question-circle-fill text-primary"></i> Часті питання (FAQ)</h4>
+                    <h3 class="h5 fw-bold mb-3"><i class="bi bi-question-circle-fill text-primary"></i> Часті питання</h3>
                     <div class="accordion custom-accordion" id="dynamicFaq">
                         {% for question, answer in faq_list %}
                         <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q{{ forloop.counter }}">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#q{{ forloop.counter }}"
+                                        aria-expanded="false" aria-controls="q{{ forloop.counter }}">
                                     {{ question }}
                                 </button>
-                            </h2>
+                            </h3>
                             <div id="q{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#dynamicFaq">
                                 <div class="accordion-body">{{ answer|safe }}</div>
                             </div>
@@ -289,7 +359,7 @@
                 {% if cross_links %}
                 <div class="mt-4 pt-3 border-top border-white">
                     {% for group in cross_links %}
-                        <h6 class="fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h6>
+                        <h4 class="h6 fw-bold mb-3 text-secondary text-uppercase small">{{ group.title }}</h4>
                         <div class="d-flex flex-wrap gap-2 mb-4">
                             {% for link in group.items %}
                                 <a href="{{ link.url }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 tag-cloud-btn bg-white border-0 shadow-sm">
@@ -307,10 +377,10 @@
 </div>{# /container #}
 
 {# МОБІЛЬНИЙ ФІЛЬТР #}
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter">
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter" aria-labelledby="offcanvasFilterLabel">
     <div class="offcanvas-header bg-light">
-        <h5 class="offcanvas-title fw-bold"><i class="bi bi-sliders"></i> Фільтри</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        <h5 class="offcanvas-title fw-bold" id="offcanvasFilterLabel"><i class="bi bi-sliders"></i> Фільтри</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрити"></button>
     </div>
     <div class="offcanvas-body">
         {% include "store/includes/filter_form.html" %}
@@ -326,7 +396,6 @@
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     const direction = button.dataset.direction;
-                    // ✅ ВИПРАВЛЕНО: перевірка max щоб не перевищувати кількість на складі
                     const max = parseInt(input.getAttribute('max')) || 99;
                     let current = parseInt(input.value, 10) || 1;
                     if (direction === 'increase' && current < max) input.value = current + 1;

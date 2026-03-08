@@ -3,6 +3,8 @@
 
 {% block title %}Про нас - R16.com.ua{% endblock %}
 
+{% block meta_description %}R16.com.ua — інтернет-магазин шин у Києві. Понад 5 років на ринку. Власний склад, доставка Новою Поштою по Україні. Адреса: вул. Володимира Качали, 3, Київ.{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     
@@ -53,6 +55,85 @@
 
     <hr class="my-5 text-muted opacity-25">
 
+    {# ===== БЛОК РЕКВІЗИТІВ — обов'язковий для Google Merchant Center ===== #}
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="bg-light rounded-4 p-4 border">
+                <h2 class="fw-bold fs-5 mb-4">
+                    <i class="bi bi-building me-2 text-primary"></i>Інформація про компанію
+                </h2>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-person-badge text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Продавець</div>
+                                <div class="fw-semibold">ФОП Рябуха Денис Олександрович</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-geo-alt text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Адреса складу / самовивіз</div>
+                                <div class="fw-semibold">м. Київ, вул. Володимира Качали, 3</div>
+                                <div class="text-muted small">Солом'янський район (Відрадний)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-telephone text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Телефон</div>
+                                <a href="tel:+380666881491" class="fw-semibold text-decoration-none text-dark">
+                                    +38 (066) 688-14-91
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-envelope text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Email</div>
+                                <a href="mailto:r16info2025@gmail.com" class="fw-semibold text-decoration-none text-dark">
+                                    r16info2025@gmail.com
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-clock text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Графік роботи</div>
+                                <div class="fw-semibold">Пн–Пт: 8:00 – 21:00</div>
+                                <div class="fw-semibold">Сб: 9:00 – 16:00</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-arrow-return-left text-primary mt-1"></i>
+                            <div>
+                                <div class="text-muted small">Повернення товару</div>
+                                <div class="fw-semibold">14 днів згідно із Законом України</div>
+                                <a href="{% url 'store:warranty' %}" class="small text-primary">
+                                    Умови повернення →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {# ===== КІНЕЦЬ БЛОКУ РЕКВІЗИТІВ ===== #}
+
+    <hr class="my-5 text-muted opacity-25">
+
     <div class="mb-5">
         <div class="d-flex align-items-center justify-content-center mb-4">
             <h3 class="fw-bold text-center mb-0 me-2">📸 Наш склад і робота</h3>
@@ -66,11 +147,11 @@
                 <div class="card h-100 border-0 shadow-sm overflow-hidden rounded-4 gallery-card">
                     {% if item.image %}
                         <a href="{{ item.image.url }}" target="_blank">
-                            <img src="{{ item.image.url }}" class="gallery-img" alt="Склад R16">
+                            <img src="{{ item.image.url }}" class="gallery-img" alt="Склад R16 — шини в наявності">
                         </a>
                     {% elif item.image_url %}
                         <a href="{{ item.image_url }}" target="_blank">
-                            <img src="{{ item.image_url }}" class="gallery-img" alt="Склад R16">
+                            <img src="{{ item.image_url }}" class="gallery-img" alt="Склад R16 — шини в наявності">
                         </a>
                     {% endif %}
                 </div>
@@ -95,7 +176,6 @@
 </div>
 
 <style>
-    /* Анімація для карток переваг */
     .transition-card {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
@@ -103,19 +183,16 @@
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
     }
-
-    /* Стилі для галереї */
     .gallery-card {
         position: relative;
     }
     .gallery-img {
         width: 100%;
-        height: 220px; /* Фіксована висота для рівної сітки */
+        height: 220px;
         object-fit: cover;
         transition: transform 0.4s ease;
         cursor: pointer;
     }
-    /* Зум при наведенні */
     .gallery-card:hover .gallery-img {
         transform: scale(1.08);
     }

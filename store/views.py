@@ -895,13 +895,15 @@ def google_shopping_feed(request):
     from django.utils.xmlutils import SimplerXMLGenerator
     from io import StringIO
 
-    # 🔥 ФІЛЬТР 1: Тільки товари в наявності (stock_quantity > 0)
+    # 🔥 СТРАТЕГІЯ ПРОХОДЖЕННЯ КВОТИ ГУГЛА 🔥
+    # 1. seasonality='summer' (Тільки літні шини)
+    # 2. [:800] - Беремо максимум 800 товарів, щоб новий акаунт не заблокували за перевищення ліміту.
     products = (
         Product.objects
-        .filter(price__gt=0, stock_quantity__gt=0, slug__isnull=False)
+        .filter(price__gt=0, stock_quantity__gt=0, slug__isnull=False, seasonality='summer')
         .exclude(slug='')
         .select_related('brand')
-        .order_by('-id')
+        .order_by('-id')[:800]  # <--- Ось цей ліміт врятує від помилки квоти
     )
 
     out = StringIO()
@@ -924,7 +926,10 @@ def google_shopping_feed(request):
     el('description', 'Інтернет-магазин автомобільних шин R16. Зимові, літні, всесезонні шини.')
 
     for p in products:
-        title = f"Шина {p.brand.name} {p.display_name} {p.width}/{p.profile} R{p.diameter}"
+        # Підстраховка: якщо бренд не вказано, пишемо "R16"
+        brand_name = p.brand.name if p.brand else "R16"
+        
+        title = f"Шина {brand_name} {p.display_name} {p.width}/{p.profile} R{p.diameter}"
         if len(title) > 150:
             title = title[:150]
 
@@ -935,14 +940,14 @@ def google_shopping_feed(request):
         }.get(p.seasonality, 'Автомобільна')
 
         description = (
-            f"{season_ua} шина {p.brand.name} {p.display_name}. "
+            f"{season_ua} шина {brand_name} {p.display_name}. "
             f"Розмір: {p.width}/{p.profile} R{p.diameter}. "
             f"В наявності. Доставка по Україні Новою Поштою або самовивіз у Києві."
         )
 
         product_url = f"https://r16.com.ua/product/{p.slug}/"
 
-        # 🔥 ФІЛЬТР 2: Надійні абсолютні посилання на картинки
+        # Формуємо правильне посилання на картинку
         image_url = 'https://r16.com.ua/static/images/no-image.png'
         if getattr(p, 'photo_url', None):
             raw_url = str(p.photo_url).strip()
@@ -955,7 +960,8 @@ def google_shopping_feed(request):
         elif getattr(p, 'photo', None) and p.photo:
             image_url = f"https://r16.com.ua{p.photo.url}"
 
-        price_str = f"{p.price:.2f} UAH"
+        # Гугл вимагає крапку для копійок
+        price_str = f"{float(p.price):.2f} UAH"
 
         handler.startElement('item', {})
 
@@ -968,11 +974,11 @@ def google_shopping_feed(request):
         el('g:availability', 'in_stock')
         el('g:price',        price_str)
         el('g:condition',    'new')
-        el('g:brand',        p.brand.name)
+        el('g:brand',        brand_name)
 
-        # 🔥 ФІЛЬТР 3: Правильне відключення GTIN
-        el('g:identifier_exists', 'false')
-        el('g:mpn', str(p.id))
+        # Гугл свариться через "не відповідає вимогам" найчастіше саме через ці два теги
+        el('g:identifier_exists', 'false') # Пишемо 'false' (без великих літер), це каже Гуглу не шукати штрихкод
+        el('g:mpn', str(p.id)) # Артикул
 
         el('g:google_product_category', 'Vehicles & Parts > Vehicle Parts & Accessories > Tire & Wheel Accessories > Tires')
         el('g:product_type', f"Шини > {season_ua} шини")
@@ -985,7 +991,7 @@ def google_shopping_feed(request):
 
         el('g:custom_label_0', p.seasonality or 'unknown')
         el('g:custom_label_1', str(p.diameter))
-        el('g:custom_label_2', p.brand.name)
+        el('g:custom_label_2', brand_name)
 
         handler.endElement('item')
 

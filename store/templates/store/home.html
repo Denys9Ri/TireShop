@@ -1,14 +1,15 @@
 {% extends 'store/base.html' %}
 {% load static %}
 
-{% block title %}Шини R16 | Головна{% endblock %}
+{% block title %}Купити шини в Україні з доставкою — Зимові, Літні, Всесезонні | R16.com.ua{% endblock %}
+
+{% block meta_description %}Інтернет-магазин шин R16.com.ua — широкий вибір зимових, літніх та всесезонних шин. 🚚 Доставка Новою Поштою по всій Україні. 📍 Самовивіз у Києві. Низькі ціни, гарантія якості.{% endblock %}
 
 {% block content %}
 <style>
     /* --- HERO BANNER --- */
     .hero-section {
         position: relative;
-        /* Твоя картинка */
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('{% static "images/hero-bg.jpg" %}');
         background-size: cover;
         background-position: center;
@@ -25,7 +26,6 @@
 
     .main-search-container { max-width: 1000px; margin: 0 auto; }
     
-    /* Білий блок пошуку */
     .glass-search-box {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
@@ -35,7 +35,6 @@
         text-align: left;
     }
 
-    /* Кнопки сезону (Скляні) */
     .season-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }
     .season-selector input[type="radio"] { display: none; }
     .season-label {
@@ -44,16 +43,12 @@
         backdrop-filter: blur(5px); transition: 0.3s; cursor: pointer; display: flex; align-items: center; gap: 8px;
     }
     .season-label:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
-    
-    /* Активний стан кнопок */
     .season-selector input[type="radio"]:checked + .season-label {
         background: #ffffff; color: #333; border-color: #ffffff; box-shadow: 0 0 20px rgba(255,255,255,0.5); transform: scale(1.05);
     }
-    /* Кольорові іконки при виборі */
     .season-selector input[value="winter"]:checked + .season-label i { color: #0dcaf0; }
     .season-selector input[value="summer"]:checked + .season-label i { color: #fd7e14; }
 
-    /* Стилі полів */
     .form-label-custom { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6c757d; margin-bottom: 5px; display: block; padding-left: 5px; }
     .form-select-lg-custom { 
         height: 50px; font-weight: 600; border: 2px solid #e9ecef; border-radius: 10px; 
@@ -64,7 +59,7 @@
     .btn-search-main { 
         height: 50px; font-size: 1.1rem; font-weight: 800; border-radius: 10px; width: 100%; 
         text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3); 
-        background: #0d6efd; color: white; border: none; margin-top: 24px; /* Вирівнювання з полями */
+        background: #0d6efd; color: white; border: none; margin-top: 24px;
     }
     .btn-search-main:hover { background: #0b5ed7; transform: translateY(-2px); }
 
@@ -75,7 +70,7 @@
         .season-label { padding: 12px 35px; font-size: 1.1rem; }
     }
 
-    /* --- СТИЛІ КАРТОК (Знизу) --- */
+    /* --- КАРТКИ --- */
     .product-card { background: white; border-radius: 16px; padding: 15px; transition: transform 0.2s; height: 100%; display: flex; flex-direction: column; border: 1px solid #f0f0f0; position: relative; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .product-image { width: 100%; height: 180px; object-fit: contain; margin-bottom: 15px; }
@@ -93,16 +88,24 @@
     .quantity-stepper input { width: 35px; border: none; text-align: center; font-weight: bold; font-size: 0.95rem; background: transparent; color: #333; outline: none; }
     .product-name a { text-decoration: none; color: inherit; }
     .product-name { font-size: 1.05rem; line-height: 1.3; }
+
+    /* --- ПОПУЛЯРНІ КАТЕГОРІЇ --- */
+    .category-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+    .category-link {
+        display: inline-block; padding: 8px 18px; background: #fff; border: 1px solid #dee2e6;
+        border-radius: 50px; font-size: 0.9rem; font-weight: 600; color: #0d6efd;
+        text-decoration: none; transition: 0.2s;
+    }
+    .category-link:hover { background: #0d6efd; color: #fff; border-color: #0d6efd; }
 </style>
 
 <section class="hero-section">
     <div class="container main-search-container">
-        <h1 class="hero-title">R16.com.ua</h1>
-        <p class="hero-subtitle">Знайди найкращі шини для свого авто за лічені секунди</p>
+        {# H1 з ключовими словами замість назви бренду #}
+        <h1 class="hero-title">Шини з доставкою по всій Україні</h1>
+        <p class="hero-subtitle">Зимові, літні та всесезонні шини — знайди свій розмір за лічені секунди</p>
         
         <form action="{% url 'store:catalog' %}" method="get">
-            
-            {# --- 1. КНОПКИ СЕЗОНУ (ВГОРІ) --- #}
             <div class="season-selector">
                 <input type="radio" name="season" id="seasonWinter" value="winter" {% if request.GET.season == 'winter' %}checked{% endif %}>
                 <label for="seasonWinter" class="season-label"><i class="bi bi-snow"></i> Зимові</label>
@@ -114,11 +117,8 @@
                 <label for="seasonAll" class="season-label"><i class="bi bi-brightness-high-fill"></i> Всесезонні</label>
             </div>
 
-            {# --- 2. БІЛИЙ БОКС ПОШУКУ --- #}
             <div class="glass-search-box">
                 <div class="row g-3">
-                    
-                    {# 1. Ширина #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Ширина</label>
                         <select name="width" class="form-select form-select-lg-custom">
@@ -129,7 +129,6 @@
                         </select>
                     </div>
 
-                    {# 2. Профіль #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Профіль</label>
                         <select name="profile" class="form-select form-select-lg-custom">
@@ -140,7 +139,6 @@
                         </select>
                     </div>
 
-                    {# 3. Діаметр #}
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Діаметр</label>
                         <select name="diameter" class="form-select form-select-lg-custom">
@@ -151,7 +149,6 @@
                         </select>
                     </div>
 
-                    {# 4. Бренд (ПЕРЕНЕСЕНО СЮДИ) #}
                     <div class="col-6 col-md-3">
                         <label class="form-label-custom">Бренд</label>
                         <select name="brand" class="form-select form-select-lg-custom">
@@ -162,20 +159,32 @@
                         </select>
                     </div>
 
-                    {# 5. Кнопка #}
                     <div class="col-12 col-md-3">
-                        <button type="submit" class="btn btn-search-main">
-                            Знайти
-                        </button>
+                        <button type="submit" class="btn btn-search-main">Знайти</button>
                     </div>
                 </div>
             </div>
-
         </form>
     </div>
 </section>
 
-<div class="container py-4">
+<div class="container py-2">
+
+    {# ===== ПОПУЛЯРНІ КАТЕГОРІЇ (внутрішні посилання) ===== #}
+    <h2 class="h5 fw-bold text-dark mb-3">Популярні розміри та категорії</h2>
+    <nav class="category-links" aria-label="Популярні категорії шин">
+        <a href="{% url 'store:catalog' %}?width=205&profile=55&diameter=16" class="category-link">Шини 205/55 R16</a>
+        <a href="{% url 'store:catalog' %}?width=195&profile=65&diameter=15" class="category-link">Шини 195/65 R15</a>
+        <a href="{% url 'store:catalog' %}?width=225&profile=45&diameter=17" class="category-link">Шини 225/45 R17</a>
+        <a href="{% url 'store:catalog' %}?width=215&profile=60&diameter=16" class="category-link">Шини 215/60 R16</a>
+        <a href="{% url 'store:catalog' %}?width=185&profile=65&diameter=15" class="category-link">Шини 185/65 R15</a>
+        <a href="{% url 'store:catalog' %}?width=235&profile=45&diameter=18" class="category-link">Шини 235/45 R18</a>
+        <a href="{% url 'store:catalog' %}?season=winter" class="category-link">❄️ Зимові шини</a>
+        <a href="{% url 'store:catalog' %}?season=summer" class="category-link">☀️ Літні шини</a>
+        <a href="{% url 'store:catalog' %}?season=all-season" class="category-link">🌤 Всесезонні шини</a>
+    </nav>
+
+    {# ===== ПОПУЛЯРНІ ПРОПОЗИЦІЇ ===== #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 fw-bold text-dark">🔥 Популярні пропозиції</h2>
         <a href="{% url 'store:catalog' %}" class="btn btn-outline-primary rounded-pill">В каталог <i class="bi bi-arrow-right"></i></a>
@@ -199,7 +208,8 @@
 
                     <a href="{% url 'store:product_detail' product.slug %}">
                         <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}" 
-                             class="product-image" loading="lazy" alt="{{ product.name }}"
+                             class="product-image" loading="lazy"
+                             alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
                              onerror="this.src='{% static 'images/no-image.png' %}'">
                     </a>
 

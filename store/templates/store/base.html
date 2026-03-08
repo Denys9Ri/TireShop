@@ -7,6 +7,18 @@
     
     <link rel="canonical" href="https://r16.com.ua{{ request.path }}">
 
+    {# ================== OpenGraph / Social ================== #}
+    <meta property="og:site_name" content="R16.com.ua">
+    <meta property="og:locale" content="uk_UA">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{% block title %}Купити шини в Україні — доставка Новою Поштою | R16.com.ua{% endblock %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{% block meta_description %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві, доставка по Україні. Низькі ціни, широкий вибір.{% endblock %}{% endblock %}">
+    <meta property="og:url" content="https://r16.com.ua{{ request.path }}">
+    <meta property="og:image" content="{% block og_image %}https://r16.com.ua{% static 'images/og-default.png' %}{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    {# ================== Google Analytics (lazy load) ================== #}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var gtmId = 'G-F63L5ESNN8'; 
@@ -36,13 +48,11 @@
 
     <meta name="google-site-verification" content="D2aRaIcWDhooWV3K4uewL2EB9D3BUfH3t5M6hr7uL0I" />
 
-    <meta name="description" content="{% block meta_description %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.{% endblock %}">
+    <meta name="description" content="{% block meta_description_tag %}Інтернет-магазин шин R16.com.ua. Зимові та літні шини, диски. Самовивіз у Києві (Відрадний), доставка по Україні. Низькі ціни, широкий вибір.{% endblock %}">
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
-
-    <title>{% block title %}R16.com.ua - Шини Літні, Зимові та Всесезонні{% endblock %}</title>
 
     {% block extra_head %}{% endblock %}
     
@@ -56,6 +66,55 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+
+    {# ================== Schema.org: Organization (всі сторінки) ================== #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AutoPartsStore",
+      "@id": "https://r16.com.ua/#organization",
+      "name": "R16.com.ua",
+      "url": "https://r16.com.ua",
+      "logo": "https://r16.com.ua{% static 'images/logo.png' %}",
+      "image": "https://r16.com.ua{% static 'images/og-default.png' %}",
+      "description": "Інтернет-магазин шин та дисків. Зимові, літні, всесезонні шини з доставкою по Україні.",
+      "telephone": "+380666881491",
+      "email": "r16info2025@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "вул. Володимира Качали, 3",
+        "addressLocality": "Київ",
+        "addressCountry": "UA"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 50.4501,
+        "longitude": 30.5234
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+          "opens": "08:00",
+          "closes": "21:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Saturday",
+          "opens": "09:00",
+          "closes": "16:00"
+        }
+      ],
+      "priceRange": "₴₴",
+      "currenciesAccepted": "UAH",
+      "paymentAccepted": "Cash, Credit Card",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Ukraine"
+      },
+      "sameAs": []
+    }
+    </script>
     
     <style>
         body { background-color: #f0f4f8; margin: 0; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
@@ -114,7 +173,7 @@
 
 <header class="navbar">
     <div class="navbar-brand">
-        <a href="{% url 'store:home' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 Logo" class="logo-img"></a>
+        <a href="{% url 'store:home' %}" class="logo-link"><img src="{% static 'images/logo.png' %}" alt="R16 — Інтернет-магазин шин" class="logo-img"></a>
     </div>
     
     <div class="navbar-menu">

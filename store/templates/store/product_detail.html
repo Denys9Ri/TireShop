@@ -7,99 +7,122 @@
     {% if seo_title %}
         {{ seo_title }}
     {% else %}
-        {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} - Купити в R16
+        Купити {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} — ціна {{ product.price }} грн | R16
     {% endif %}
 {% endblock %}
 
 {% block meta_description %}
-Купити {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} в Києві. 💰 Ціна: {{ product.price }} грн. 🚚 Доставка по Україні. Гарантія якості.
+Купити {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }} в Києві. 💰 Ціна: {{ product.price }} грн. 🚚 Доставка по Україні Новою Поштою. Гарантія якості. Обмін 14 днів.
 {% endblock %}
 
 {% block content %}
 
+{# ================== SCHEMA.ORG ================== #}
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": "{{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}",
-  "image": [
-    "{% if product.photo_url %}{{ product.photo_url }}{% elif product.photo %}https://r16.com.ua{{ product.photo.url }}{% else %}https://r16.com.ua/static/images/no-image.png{% endif %}"
-  ],
-  "description": "Купити шини {{ product.brand.name }} {{ product.display_name }}. Розмір: {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Індекси: {{ product.load_index }}{{ product.speed_index }}. Рік: {{ product.year }}.",
-  "brand": {
-    "@type": "Brand",
-    "name": "{{ product.brand.name }}"
-  },
-  "sku": "{{ product.id }}",
-  "mpn": "{{ product.id }}",
-  "offers": {
-    "@type": "Offer",
-    "url": "https://r16.com.ua{{ request.path }}",
-    "priceCurrency": "UAH",
-    "price": "{{ product.price|stringformat:'.2f' }}",
-    "priceValidUntil": "2026-12-31",
-    "itemCondition": "https://schema.org/NewCondition",
-    "availability": "{% if product.stock_quantity > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-    "seller": {
-      "@type": "Organization",
-      "name": "R16"
+[
+  {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": "{{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}",
+    "image": [
+      "{% if product.photo_url %}{{ product.photo_url }}{% elif product.photo %}https://r16.com.ua{{ product.photo.url }}{% else %}https://r16.com.ua/static/images/no-image.png{% endif %}"
+    ],
+    "description": "Купити шини {{ product.brand.name }} {{ product.display_name }}. Розмір: {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {{ product.get_seasonality_display }}. Індекси: {{ product.load_index }}{{ product.speed_index }}. Рік: {{ product.year }}.",
+    "brand": {
+      "@type": "Brand",
+      "name": "{{ product.brand.name }}"
     },
-    "shippingDetails": {
-      "@type": "OfferShippingDetails",
-      "shippingRate": {
-        "@type": "MonetaryAmount",
-        "value": "0",
-        "currency": "UAH"
+    "sku": "{{ product.id }}",
+    "mpn": "{{ product.id }}",
+    "offers": {
+      "@type": "Offer",
+      "url": "https://r16.com.ua{{ request.path }}",
+      "priceCurrency": "UAH",
+      "price": "{{ product.price|stringformat:'.2f' }}",
+      "priceValidUntil": "2026-12-31",
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": "{% if product.stock_quantity > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
+      "seller": {
+        "@type": "Organization",
+        "name": "R16"
       },
-      "shippingDestination": {
-        "@type": "DefinedRegion",
-        "addressCountry": "UA"
-      },
-      "deliveryTime": {
-        "@type": "ShippingDeliveryTime",
-        "handlingTime": {
-          "@type": "QuantitativeValue",
-          "minValue": 0,
-          "maxValue": 1,
-          "unitCode": "DAY"
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "UAH"
         },
-        "transitTime": {
-          "@type": "QuantitativeValue",
-          "minValue": 1,
-          "maxValue": 3,
-          "unitCode": "DAY"
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "UA"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 0,
+            "maxValue": 1,
+            "unitCode": "DAY"
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 1,
+            "maxValue": 3,
+            "unitCode": "DAY"
+          }
         }
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "UA",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+        "merchantReturnDays": 14,
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
       }
-    },
-    "hasMerchantReturnPolicy": {
-      "@type": "MerchantReturnPolicy",
-      "applicableCountry": "UA",
-      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-      "merchantReturnDays": 14,
-      "returnMethod": "https://schema.org/ReturnByMail",
-      "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"
     }
   },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.9",
-    "bestRating": "5",
-    "worstRating": "1",
-    "reviewCount": "{{ product.id|add:'5' }}"
-  },
-  "review": {
-    "@type": "Review",
-    "reviewRating": {
-      "@type": "Rating",
-      "ratingValue": "5",
-      "bestRating": "5"
-    },
-    "author": {
-      "@type": "Person",
-      "name": "Клієнт R16"
-    }
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Головна",
+        "item": "https://r16.com.ua/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Каталог",
+        "item": "https://r16.com.ua{% url 'store:catalog' %}"
+      },
+      {% if parent_category %}
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ parent_category.name }}",
+        "item": "https://r16.com.ua{{ parent_category.url }}"
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "name": "{{ product.brand.name }} {{ product.display_name }}",
+        "item": "https://r16.com.ua{{ request.path }}"
+      }
+      {% else %}
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ product.brand.name }} {{ product.display_name }}",
+        "item": "https://r16.com.ua{{ request.path }}"
+      }
+      {% endif %}
+    ]
   }
-}
+]
 </script>
 
 <style>
@@ -309,11 +332,16 @@
                         <div class="carousel-item active" onclick="openLightbox(0)">
                             <div class="carousel-item-content">
                                 {% if product.photo_url %}
-                                    <img src="{{ product.photo_url }}" class="product-image" alt="{{ product.brand.name }} {{ product.display_name }}" onerror="this.src='https://placehold.co/600x600?text=No+Image';">
+                                    <img src="{{ product.photo_url }}" class="product-image"
+                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
+                                         onerror="this.src='https://placehold.co/600x600?text=No+Image';"
+                                         loading="eager">
                                 {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}" class="product-image" alt="{{ product.brand.name }} {{ product.display_name }}">
+                                    <img src="{{ product.photo.url }}" class="product-image"
+                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
+                                         loading="eager">
                                 {% else %}
-                                    <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="No image">
+                                    <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="Фото відсутнє">
                                 {% endif %}
                             </div>
                         </div>
@@ -321,9 +349,13 @@
                             <div class="carousel-item" onclick="openLightbox({{ forloop.counter }})">
                                 <div class="carousel-item-content">
                                     {% if img.image_url %}
-                                        <img src="{{ img.image_url }}" class="product-image" alt="Gallery">
+                                        <img src="{{ img.image_url }}" class="product-image"
+                                             alt="Шина {{ product.brand.name }} {{ product.display_name }} — фото {{ forloop.counter }}"
+                                             loading="lazy">
                                     {% elif img.image %}
-                                        <img src="{{ img.image.url }}" class="product-image" alt="Gallery">
+                                        <img src="{{ img.image.url }}" class="product-image"
+                                             alt="Шина {{ product.brand.name }} {{ product.display_name }} — фото {{ forloop.counter }}"
+                                             loading="lazy">
                                     {% endif %}
                                 </div>
                             </div>
@@ -348,19 +380,19 @@
                 <div class="thumbnails-row">
                     <button type="button" data-bs-target="#productMainCarousel" data-bs-slide-to="0" class="thumb-btn active">
                         {% if product.photo_url %}
-                            <img src="{{ product.photo_url }}" onerror="this.src='https://placehold.co/100x100?text=Error';">
+                            <img src="{{ product.photo_url }}" alt="{{ product.brand.name }} — мініатюра 1" onerror="this.src='https://placehold.co/100x100?text=Error';">
                         {% elif product.photo %}
-                            <img src="{{ product.photo.url }}">
+                            <img src="{{ product.photo.url }}" alt="{{ product.brand.name }} — мініатюра 1">
                         {% else %}
-                            <img src="https://placehold.co/100x100?text=No">
+                            <img src="https://placehold.co/100x100?text=No" alt="Фото відсутнє">
                         {% endif %}
                     </button>
                     {% for img in product.images.all %}
                         <button type="button" data-bs-target="#productMainCarousel" data-bs-slide-to="{{ forloop.counter }}" class="thumb-btn">
                             {% if img.image_url %}
-                                <img src="{{ img.image_url }}">
+                                <img src="{{ img.image_url }}" alt="{{ product.brand.name }} — мініатюра {{ forloop.counter|add:1 }}">
                             {% elif img.image %}
-                                <img src="{{ img.image.url }}">
+                                <img src="{{ img.image.url }}" alt="{{ product.brand.name }} — мініатюра {{ forloop.counter|add:1 }}">
                             {% endif %}
                         </button>
                     {% endfor %}
@@ -381,7 +413,7 @@
                     {% if product.seo_h1 %}
                         {{ product.seo_h1 }}
                     {% else %}
-                        {{ product.brand.name }} {{ product.display_name }}
+                        Купити {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}
                     {% endif %}
                 </h1>
                 <p class="text-muted fs-5 mb-4">{{ product.width }} / {{ product.profile }} R{{ product.diameter }}</p>
@@ -479,11 +511,16 @@
                 <div class="col">
                     <div class="similar-card p-3 h-100 d-flex flex-column position-relative">
                         {% if sim.photo_url %}
-                            <img src="{{ sim.photo_url }}" class="similar-img" alt="{{ sim.brand.name }} {{ sim.display_name }}" onerror="this.src='https://placehold.co/400x400?text=No+Image';">
+                            <img src="{{ sim.photo_url }}" class="similar-img"
+                                 alt="Шина {{ sim.brand.name }} {{ sim.display_name }} {{ sim.width }}/{{ sim.profile }} R{{ sim.diameter }}"
+                                 onerror="this.src='https://placehold.co/400x400?text=No+Image';"
+                                 loading="lazy">
                         {% elif sim.photo %}
-                            <img src="{{ sim.photo.url }}" class="similar-img" alt="{{ sim.brand.name }} {{ sim.display_name }}">
+                            <img src="{{ sim.photo.url }}" class="similar-img"
+                                 alt="Шина {{ sim.brand.name }} {{ sim.display_name }} {{ sim.width }}/{{ sim.profile }} R{{ sim.diameter }}"
+                                 loading="lazy">
                         {% else %}
-                            <img src="https://placehold.co/400x400?text=No+Photo" class="similar-img">
+                            <img src="https://placehold.co/400x400?text=No+Photo" class="similar-img" alt="Фото відсутнє">
                         {% endif %}
                         
                         {% if sim.discount_percent > 0 %}
@@ -525,11 +562,11 @@
                         <div class="carousel-item active h-100">
                             <div class="lightbox-img-wrap">
                                 {% if product.photo_url %}
-                                    <img src="{{ product.photo_url }}" alt="{{ product.brand.name }} {{ product.display_name }}">
+                                    <img src="{{ product.photo_url }}" alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}">
                                 {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}" alt="{{ product.brand.name }} {{ product.display_name }}">
+                                    <img src="{{ product.photo.url }}" alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}">
                                 {% else %}
-                                    <img src="https://placehold.co/600x600?text=No+Photo">
+                                    <img src="https://placehold.co/600x600?text=No+Photo" alt="Фото відсутнє">
                                 {% endif %}
                             </div>
                         </div>
@@ -537,9 +574,9 @@
                             <div class="carousel-item h-100">
                                 <div class="lightbox-img-wrap">
                                     {% if img.image_url %}
-                                        <img src="{{ img.image_url }}" alt="Gallery">
+                                        <img src="{{ img.image_url }}" alt="Шина {{ product.brand.name }} {{ product.display_name }} — фото {{ forloop.counter }}">
                                     {% elif img.image %}
-                                        <img src="{{ img.image.url }}" alt="Gallery">
+                                        <img src="{{ img.image.url }}" alt="Шина {{ product.brand.name }} {{ product.display_name }} — фото {{ forloop.counter }}">
                                     {% endif %}
                                 </div>
                             </div>

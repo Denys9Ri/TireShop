@@ -884,24 +884,25 @@ def sitemap_xml_view(request):
     return HttpResponse("\n".join(xml_lines), content_type="application/xml")
 
 
-# =========================================================
-# 🔥 ОНОВЛЕНИЙ XML ФІД ДЛЯ GOOGLE SHOPPING (ЛІМІТ 10) 🔥
-# =========================================================
 def google_shopping_feed(request):
     """
     Google Merchant Center XML фід.
     URL: https://r16.com.ua/google-feed.xml
+
+    Підключення в Merchant Center:
+      Продукти → Фіди → + → Запланована вибірка
+      URL: https://r16.com.ua/google-feed.xml
+      Частота: щодня
     """
     from django.utils.xmlutils import SimplerXMLGenerator
     from io import StringIO
 
-    # 🔥 ЖОРСТКА СТРАТЕГІЯ "ПІСОЧНИЦІ": Віддаємо лише 10 товарів 🔥
     products = (
         Product.objects
-        .filter(price__gt=0, stock_quantity__gt=0, slug__isnull=False, seasonality='summer')
+        .filter(price__gt=0, slug__isnull=False)
         .exclude(slug='')
         .select_related('brand')
-        .order_by('-id')[:10]  # <--- ЛІМІТ РІВНО 10 ТОВАРІВ
+        .order_by('-id')
     )
 
     out = StringIO()
@@ -920,13 +921,11 @@ def google_shopping_feed(request):
         handler.endElement(tag)
 
     el('title', 'R16.com.ua — Шини з доставкою по Україні')
-    el('link', 'https://r16.com.ua/')
-    el('description', 'Інтернет-магазин автомобільних шин R16. Зимові, літні, всесезонні шини.')
+    el('link', 'https://r16.com.ua')
+    el('description', 'Інтернет-магазин шин R16.com.ua. Зимові, літні, всесезонні шини.')
 
     for p in products:
-        brand_name = p.brand.name if p.brand else "R16"
-        
-        title = f"Шина {brand_name} {p.display_name} {p.width}/{p.profile} R{p.diameter}"
+        title = f"{p.brand.name} {p.display_name} {p.width}/{p.profile} R{p.diameter}"
         if len(title) > 150:
             title = title[:150]
 
@@ -934,29 +933,26 @@ def google_shopping_feed(request):
             'winter': 'Зимова',
             'summer': 'Літня',
             'all-season': 'Всесезонна',
-        }.get(p.seasonality, 'Автомобільна')
+        }.get(p.seasonality, 'Шина')
 
         description = (
-            f"{season_ua} шина {brand_name} {p.display_name}. "
+            f"{season_ua} шина {p.brand.name} {p.display_name}. "
             f"Розмір: {p.width}/{p.profile} R{p.diameter}. "
-            f"В наявності. Доставка по Україні Новою Поштою або самовивіз у Києві."
+            f"Індекси: {p.load_index or ''}{p.speed_index or ''}. "
+            f"Доставка по Україні Новою Поштою."
         )
 
         product_url = f"https://r16.com.ua/product/{p.slug}/"
 
-        image_url = 'https://r16.com.ua/static/images/no-image.png'
         if getattr(p, 'photo_url', None):
-            raw_url = str(p.photo_url).strip()
-            if raw_url.startswith('//'):
-                image_url = 'https:' + raw_url
-            elif raw_url.startswith('/'):
-                image_url = 'https://r16.com.ua' + raw_url
-            elif raw_url.startswith('http'):
-                image_url = raw_url
+            image_url = p.photo_url
         elif getattr(p, 'photo', None) and p.photo:
             image_url = f"https://r16.com.ua{p.photo.url}"
+        else:
+            image_url = None
 
-        price_str = f"{float(p.price):.2f} UAH"
+        availability = 'in_stock' if p.stock_quantity > 0 else 'out_of_stock'
+        price_str = f"{p.price:.2f} UAH"
 
         handler.startElement('item', {})
 
@@ -964,28 +960,35 @@ def google_shopping_feed(request):
         el('g:title',       title)
         el('g:description', description)
         el('g:link',        product_url)
-        el('g:image_link',  image_url)
-        
-        el('g:availability', 'in_stock')
+
+        if image_url:
+            el('g:image_link', image_url)
+
+        el('g:availability', availability)
         el('g:price',        price_str)
         el('g:condition',    'new')
-        el('g:brand',        brand_name)
+        el('g:brand',        p.brand.name)
 
-        el('g:identifier_exists', 'false')
+        # Шини не мають GTIN — обов'язково, інакше Google відхилить товар
+        el('g:identifier_exists', 'no')
         el('g:mpn', str(p.id))
 
-        el('g:google_product_category', 'Vehicles & Parts > Vehicle Parts & Accessories > Tire & Wheel Accessories > Tires')
-        el('g:product_type', f"Шини > {season_ua} шини")
+        # Числовий ID обов'язковий — текст Google не приймає
+        # 6093 = Automotive Tires (офіційна таксономія Google)
+        el('g:google_product_category', '6093')
+        el('g:product_type', f"Шини > {season_ua} шини > {p.brand.name}")
 
+        # Доставка
         handler.startElement('g:shipping', {})
         el('g:country', 'UA')
         el('g:service', 'Нова Пошта')
         el('g:price',   '0.00 UAH')
         handler.endElement('g:shipping')
 
-        el('g:custom_label_0', p.seasonality or 'unknown')
-        el('g:custom_label_1', str(p.diameter))
-        el('g:custom_label_2', brand_name)
+        # Мітки для фільтрації в Merchant Center
+        el('g:custom_label_0', p.seasonality or 'unknown')  # winter/summer/all-season
+        el('g:custom_label_1', str(p.diameter))              # 15, 16, 17...
+        el('g:custom_label_2', p.brand.name)                 # Michelin, Nokian...
 
         handler.endElement('item')
 

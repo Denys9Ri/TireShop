@@ -5,8 +5,8 @@ from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 
-# Імпортуємо Views (🔥 Додав google_shopping_feed)
-from store.views import fix_product_names_view, robots_txt, google_shopping_feed
+# Імпортуємо Views
+from store.views import fix_product_names_view, robots_txt, google_shopping_feed, redirect_old_store_product_urls
 
 # Імпортуємо Sitemap класи
 from store.sitemaps import ProductSitemap, StaticViewSitemap, BrandSitemap
@@ -15,7 +15,7 @@ from store.sitemaps import ProductSitemap, StaticViewSitemap, BrandSitemap
 sitemaps = {
     'products': ProductSitemap,
     'static': StaticViewSitemap,
-    'brands': BrandSitemap,  # Тепер Google бачитиме сторінки брендів
+    'brands': BrandSitemap,
 }
 
 urlpatterns = [
@@ -23,9 +23,12 @@ urlpatterns = [
     
     # 1. SEO СТОРІНКИ ТА ФІДИ
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    path('robots.txt', robots_txt), # Використовуємо розумний robots.txt з store/views.py
+    path('robots.txt', robots_txt),
     
-    # 🔥 ОСЬ ВОНО: Підключення фіду для Google Merchant Center 🔥
+    # 🔥 Редірект зі старих URL /store/product/ID/ на нові /product/slug/ 🔥
+    re_path(r'^store/product/(?P<product_id>\d+)/$', redirect_old_store_product_urls),
+
+    # 🔥 Фід для Google Merchant Center 🔥
     path('google-feed.xml', google_shopping_feed, name='google_shopping_feed'),
 
     # 2. КОРИСТУВАЧІ (ВХІД/РЕЄСТРАЦІЯ)
@@ -39,7 +42,7 @@ urlpatterns = [
     path('secret-fix-names/', fix_product_names_view),
 ]
 
-# Медіа файли (Для Render та локальної розробки)
+# Медіа файли
 urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {
         'document_root': settings.MEDIA_ROOT,

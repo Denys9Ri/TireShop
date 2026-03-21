@@ -166,7 +166,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     brand_name = brand_obj.name if brand_obj else ""
     size_str = f"{w}/{p} R{d}" if (w and p and d) else ""
 
-    # H1 — завжди з "Купити" для кращого CTR
     h1_parts = []
     if season_db == 'winter':
         h1_parts.append("Купити зимові шини")
@@ -184,13 +183,11 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
 
     h1_final = " ".join(h1_parts)
 
-    # Title — з ціною якщо є (підвищує CTR на ~15%)
     if min_price and min_price > 0:
         title_final = f"{h1_final} — ціна від {min_price} грн | R16.com.ua"
     else:
         title_final = f"{h1_final} | R16.com.ua"
 
-    # Meta description — з ціновим діапазоном і CTA
     if min_price and max_price and min_price > 0:
         price_str = f"Ціна: {min_price}–{max_price} грн."
     elif min_price and min_price > 0:
@@ -203,7 +200,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
         f"🚚 Доставка Новою Поштою по Україні. 📍 Самовивіз у Києві. Гарантія якості."
     ).strip()
 
-    # SEO H2 та текст
     key = 'default'
     if season_db == 'winter':
         key = 'winter'
@@ -217,7 +213,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     seo_h2 = template['h2'].format(**fmt)
     description_html = template['text'].format(**fmt)
 
-    # Canonical URL — без page=, зі збереженням фільтрів (вирішує дублі)
     canonical_params = []
     if w:         canonical_params.append(f"width={w}")
     if p:         canonical_params.append(f"profile={p}")
@@ -272,7 +267,6 @@ def get_faq_schema_json(faq_list):
 
 
 def get_cross_links(current_season_slug, current_brand, w, p, d):
-    """Генерує перехресні посилання для внутрішньої перелінковки."""
     cache_key = f"cross_links_{current_season_slug}_{current_brand}_{w}_{p}_{d}"
     cached = cache.get(cache_key)
     if cached:
@@ -280,7 +274,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
 
     links = []
 
-    # Посилання на інші сезони того ж розміру
     if w and p and d:
         season_items = []
         for slug, info in SEASONS_MAP.items():
@@ -295,7 +288,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
         if season_items:
             links.append({'title': 'Цей розмір за сезоном', 'items': season_items})
 
-    # Посилання на суміжні діаметри
     if w and p and d:
         nearby = []
         for diam in [int(d) - 1, int(d) + 1]:
@@ -395,7 +387,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
     req_profile  = profile  or request.GET.get('profile')
     req_diameter = diameter or request.GET.get('diameter')
 
-    # Редіректи GET → SEO-URL
     if not any([slug, brand_slug, season_slug, width]) and (
         req_season or req_brand_id or (req_width and req_profile and req_diameter)
     ):
@@ -433,7 +424,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         elif target_brand_slug:
             return redirect('store:brand_landing', brand_slug=target_brand_slug)
 
-    # Фільтрація товарів
     products = get_base_products()
     brand_obj = None
     season_db = None
@@ -593,9 +583,18 @@ def product_detail_view(request, slug):
     })
 
 
+# 🔥 РЕДІРЕКТИ ЗІ СТАРИХ URL 🔥
 def redirect_old_product_urls(request, product_id):
     p = get_object_or_404(Product, id=product_id)
     return redirect('store:product_detail', slug=p.slug, permanent=True)
+
+
+def redirect_old_store_product_urls(request, product_id):
+    try:
+        p = get_object_or_404(Product, id=product_id)
+        return redirect('store:product_detail', slug=p.slug, permanent=True)
+    except Exception:
+        raise Http404
 
 
 def cart_detail_view(request):
@@ -885,15 +884,6 @@ def sitemap_xml_view(request):
 
 
 def google_shopping_feed(request):
-    """
-    Google Merchant Center XML фід.
-    URL: https://r16.com.ua/google-feed.xml
-
-    Підключення в Merchant Center:
-      Продукти → Фіди → + → Запланована вибірка
-      URL: https://r16.com.ua/google-feed.xml
-      Частота: щодня
-    """
     from django.utils.xmlutils import SimplerXMLGenerator
     from io import StringIO
 
@@ -969,26 +959,21 @@ def google_shopping_feed(request):
         el('g:condition',    'new')
         el('g:brand',        p.brand.name)
 
-        # Шини не мають GTIN — обов'язково, інакше Google відхилить товар
         el('g:identifier_exists', 'no')
         el('g:mpn', str(p.id))
 
-        # Числовий ID обов'язковий — текст Google не приймає
-        # 6093 = Automotive Tires (офіційна таксономія Google)
         el('g:google_product_category', '6093')
         el('g:product_type', f"Шини > {season_ua} шини > {p.brand.name}")
 
-        # Доставка
         handler.startElement('g:shipping', {})
         el('g:country', 'UA')
         el('g:service', 'Нова Пошта')
         el('g:price',   '0.00 UAH')
         handler.endElement('g:shipping')
 
-        # Мітки для фільтрації в Merchant Center
-        el('g:custom_label_0', p.seasonality or 'unknown')  # winter/summer/all-season
-        el('g:custom_label_1', str(p.diameter))              # 15, 16, 17...
-        el('g:custom_label_2', p.brand.name)                 # Michelin, Nokian...
+        el('g:custom_label_0', p.seasonality or 'unknown')
+        el('g:custom_label_1', str(p.diameter))
+        el('g:custom_label_2', p.brand.name)
 
         handler.endElement('item')
 

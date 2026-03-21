@@ -123,7 +123,7 @@
                 <div class="row g-3">
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Ширина</label>
-                        <select name="width" class="form-select form-select-lg-custom">
+                        <select name="width" aria-label="Ширина шини" class="form-select form-select-lg-custom">
                             <option value="">Всі</option>
                             {% for w in all_widths %}
                                 <option value="{{ w }}">{{ w }}</option>
@@ -133,7 +133,7 @@
 
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Профіль</label>
-                        <select name="profile" class="form-select form-select-lg-custom">
+                        <select name="profile" aria-label="Профіль шини" class="form-select form-select-lg-custom">
                             <option value="">Всі</option>
                             {% for p in all_profiles %}
                                 <option value="{{ p }}">{{ p }}</option>
@@ -143,7 +143,7 @@
 
                     <div class="col-6 col-md-2">
                         <label class="form-label-custom">Діаметр</label>
-                        <select name="diameter" class="form-select form-select-lg-custom">
+                        <select name="diameter" aria-label="Діаметр шини" class="form-select form-select-lg-custom">
                             <option value="">(R)</option>
                             {% for d in all_diameters %}
                                 <option value="{{ d }}">R{{ d }}</option>
@@ -153,7 +153,7 @@
 
                     <div class="col-6 col-md-3">
                         <label class="form-label-custom">Бренд</label>
-                        <select name="brand" class="form-select form-select-lg-custom">
+                        <select name="brand" aria-label="Бренд шини" class="form-select form-select-lg-custom">
                             <option value="">Всі бренди</option>
                             {% for brand in brands %}
                                 <option value="{{ brand.id }}">{{ brand.name }}</option>

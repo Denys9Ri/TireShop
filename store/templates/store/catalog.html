@@ -274,7 +274,7 @@
                                     {% if product.stock_quantity > 0 %}
                                         <div class="quantity-stepper">
                                             <button type="button" class="quantity-btn" data-direction="decrease">−</button>
-                                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}">
+                                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" aria-label="Кількість товару">
                                             <button type="button" class="quantity-btn" data-direction="increase">+</button>
                                         </div>
                                         <button type="submit" class="btn btn-primary w-100 rounded-pill btn-sm fw-bold">В кошик</button>

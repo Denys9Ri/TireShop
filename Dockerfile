@@ -15,4 +15,4 @@ RUN python manage.py collectstatic --no-input
 
 EXPOSE 8000
 
-CMD ["gunicorn", "TireShop.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+CMD ["gunicorn", "TireShop.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "300"]

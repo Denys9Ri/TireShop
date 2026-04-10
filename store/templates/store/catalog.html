@@ -171,7 +171,7 @@
                 </form>
             </div>
 
-            {# ШВИДКІ ПОСИЛАННЯ НА ПОПУЛЯРНІ РОЗМІРИ (тільки на незафільтрованому каталозі) #}
+            {# ШВИДКІ ПОСИЛАННЯ НА ПОПУЛЯРНІ РОЗМІРИ #}
             {% if not request.GET.width and not request.GET.profile and not request.GET.diameter and not request.GET.brand and not request.GET.season %}
             <div class="quick-sizes mb-3">
                 <span class="text-muted small fw-bold me-1">Популярні:</span>
@@ -231,10 +231,18 @@
                             {% endif %}
 
                             <a href="{% url 'store:product_detail' product.slug %}">
-                                <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}"
-                                     class="product-image" loading="lazy"
-                                     alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
-                                     onerror="this.src='{% static 'images/no-image.png' %}'">
+                                {% if product.photo_url and product.photo_url != 'None' and product.photo_url != 'NULL' %}
+                                    <img src="{{ product.photo_url }}"
+                                         class="product-image" loading="lazy"
+                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
+                                         onerror="this.src='{% static 'images/no-image.png' %}'">
+                                {% elif product.photo %}
+                                    <img src="{{ product.photo.url }}"
+                                         class="product-image" loading="lazy"
+                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}">
+                                {% else %}
+                                    <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="Фото відсутнє">
+                                {% endif %}
                             </a>
 
                             <div class="product-name fw-bold mb-1">

@@ -15,7 +15,7 @@ class Command(BaseCommand):
         API_KEY = "348454bcde1a4277c8b0e4f1ae8fbe40fb111938"
 
         # Тепер ми шукаємо і NULL, і порожні рядки ("")
-        products = Product.objects.filter(Q(photo__isnull=True) | Q(photo__exact=''))[:5] 
+        products = Product.objects.filter(Q(photo__isnull=True) | Q(photo__exact=''))
         
         if not products:
             self.stdout.write("✅ Всі товари дійсно вже мають фотографії!")

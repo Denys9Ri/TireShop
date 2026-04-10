@@ -12,7 +12,7 @@ class Command(BaseCommand):
         self.stdout.write("🤖 Запуск партизанського бота для пошуку фотографій...")
         
         # Твій робочий ключ від Serper
-        API_KEY = "348454bcde1a4277c8b0e4f1ae8fbe40fb111938"
+        API_KEY = "44e0f1314e3d0244bc5e38b63cecfb6d38c02032"
 
         # Тепер ми шукаємо і NULL, і порожні рядки ("")
         products = Product.objects.filter(Q(photo__isnull=True) | Q(photo__exact=''))

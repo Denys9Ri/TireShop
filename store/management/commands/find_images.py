@@ -3,6 +3,7 @@ import time
 from django.core.management.base import BaseCommand
 from store.models import Product
 from django.core.files.base import ContentFile
+from django.db.models import Q  # <--- Додали магічний інструмент для пошуку
 
 class Command(BaseCommand):
     help = 'Пошук чистих фото в мережі через Serper.dev'
@@ -13,22 +14,20 @@ class Command(BaseCommand):
         # Твій робочий ключ від Serper
         API_KEY = "348454bcde1a4277c8b0e4f1ae8fbe40fb111938"
 
-        # Шукаємо товари, у яких немає фото (використовуємо photo__isnull).
-        # Прибрали is_active, бо такого поля немає в твоїй моделі.
-        products = Product.objects.filter(photo__isnull=True)[:5] 
+        # Тепер ми шукаємо і NULL, і порожні рядки ("")
+        products = Product.objects.filter(Q(photo__isnull=True) | Q(photo__exact=''))[:5] 
         
         if not products:
-            self.stdout.write("✅ Всі товари вже мають фотографії!")
+            self.stdout.write("✅ Всі товари дійсно вже мають фотографії!")
             return
 
         # Чорний список (сайти з водяними знаками)
         black_list = ['omega.page', 'infoshina', 'shina.ua', 'rozetka', 'prom.ua', 'autoshina']
 
         for product in products:
-            # Формуємо хитрий запит, використовуючи твої реальні поля (name, width, profile, diameter)
+            # Формуємо хитрий запит, використовуючи твої реальні поля
             brand_name = product.brand.name if product.brand else ""
             
-            # Наприклад: "Michelin Primacy 4 205/55 R16 шина"
             search_query = f"{brand_name} {product.name} {product.width}/{product.profile} R{product.diameter} tire"
             
             self.stdout.write(f"\n🔎 Шукаємо: {search_query}")

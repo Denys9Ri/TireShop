@@ -11,9 +11,9 @@ class Command(BaseCommand):
         self.stdout.write("🤖 Запуск партизанського бота для пошуку фотографій...")
         
         # 🔥 ВСТАВ СВІЙ СКОПІЙОВАНИЙ КЛЮЧ ВІД SERPER ТУТ:
-        API_KEY = "9ac8ffb82d47caf4dd46e223217e9f3361222a54"
+        API_KEY = "348454bcde1a4277c8b0e4f1ae8fbe40fb111938"
         
-        if API_KEY == "9ac8ffb82d47caf4dd46e223217e9f3361222a54":
+        if API_KEY == "348454bcde1a4277c8b0e4f1ae8fbe40fb111938":
             self.stderr.write("❌ Стоп! Ви забули вставити API ключ.")
             return
 

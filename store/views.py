@@ -318,8 +318,16 @@ def robots_txt(request):
 # --- 👁️ VIEWS ---
 
 def home_view(request):
-    # 🔥 ОСЬ ТУТ ДОДАНО .order_by('?') ДЛЯ РАНДОМНОГО ВИВОДУ ТОВАРІВ 🔥
-    featured_products = Product.objects.filter(stock_quantity__gt=4).order_by('?')[:8]
+    # Фільтруємо товари, залишаючи ТІЛЬКИ ті, що мають фото (локальне АБО віддалене)
+    no_local = Q(photo__isnull=True) | Q(photo__exact='')
+    no_remote = Q(photo_url__isnull=True) | Q(photo_url__exact='') | Q(photo_url__iexact='none') | Q(photo_url__iexact='null')
+
+    featured_products = Product.objects.filter(
+        stock_quantity__gt=4
+    ).exclude(
+        no_local, no_remote
+    ).order_by('?')[:8]
+
     brands = Brand.objects.all().order_by('name')
     width_list = (Product.objects.filter(width__gt=0)
                   .values_list('width', flat=True).distinct().order_by('width'))
@@ -327,6 +335,7 @@ def home_view(request):
                     .values_list('profile', flat=True).distinct().order_by('profile'))
     diameter_list = (Product.objects.filter(diameter__gt=0)
                      .values_list('diameter', flat=True).distinct().order_by('diameter'))
+    
     return render(request, 'store/home.html', {
         'featured_products': featured_products,
         'brands': brands,

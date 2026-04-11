@@ -162,7 +162,7 @@ def get_base_products():
 
 
 def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
-                          min_price=0, max_price=0):
+                         min_price=0, max_price=0):
     brand_name = brand_obj.name if brand_obj else ""
     size_str = f"{w}/{p} R{d}" if (w and p and d) else ""
 
@@ -318,7 +318,8 @@ def robots_txt(request):
 # --- 👁️ VIEWS ---
 
 def home_view(request):
-    featured_products = Product.objects.filter(stock_quantity__gt=4).order_by('-id')[:8]
+    # 🔥 ОСЬ ТУТ ДОДАНО .order_by('?') ДЛЯ РАНДОМНОГО ВИВОДУ ТОВАРІВ 🔥
+    featured_products = Product.objects.filter(stock_quantity__gt=4).order_by('?')[:8]
     brands = Brand.objects.all().order_by('name')
     width_list = (Product.objects.filter(width__gt=0)
                   .values_list('width', flat=True).distinct().order_by('width'))

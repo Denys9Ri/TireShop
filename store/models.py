@@ -149,22 +149,28 @@ class Product(models.Model):
             self.slug = f"{original_slug}-{counter}"
             counter += 1
 
-        try:
-            settings = SiteSettings.get_solo()
-            markup = decimal.Decimal(str(settings.global_markup))
-        except:
-            markup = decimal.Decimal('1.30')
-        
-        cost = decimal.Decimal(str(self.cost_price))
-        base_price = cost * markup
-        
-        if self.discount_percent > 0:
-            factor = (decimal.Decimal('100') - decimal.Decimal(self.discount_percent)) / decimal.Decimal('100')
-            final_price = base_price * factor
-        else:
-            final_price = base_price
+        # 🔥 РОЗУМНА ЛОГІКА ЦІНОУТВОРЕННЯ 🔥
+        # Рахуємо націнку (Собівартість * Відсоток) ТІЛЬКИ ЯКЩО:
+        # 1) Є собівартість (cost_price > 0)
+        # 2) І поточна ціна = 0 (тобто скрипт не передав нам готову ціну від Омеги)
+        if self.cost_price > 0 and self.price == 0:
+            try:
+                settings = SiteSettings.get_solo()
+                markup = decimal.Decimal(str(settings.global_markup))
+            except:
+                markup = decimal.Decimal('1.30')
             
-        self.price = int(final_price)
+            cost = decimal.Decimal(str(self.cost_price))
+            base_price = cost * markup
+            
+            if self.discount_percent > 0:
+                factor = (decimal.Decimal('100') - decimal.Decimal(self.discount_percent)) / decimal.Decimal('100')
+                final_price = base_price * factor
+            else:
+                final_price = base_price
+                
+            self.price = int(final_price)
+            
         super().save(*args, **kwargs)
 
     def __str__(self): return self.slug
@@ -173,7 +179,7 @@ class Product(models.Model):
         verbose_name = "Товар"
         verbose_name_plural = "Товари"
 
-# --- 3. ЗАМОВЛЕННЯ (🔥 ОНОВЛЕНА ВОРОНКА СТАТУСІВ 🔥) ---
+# --- 3. ЗАМОВЛЕННЯ ---
 class Order(models.Model):
     STATUS_CHOICES = [
         ('new', '🔴 Нове'),

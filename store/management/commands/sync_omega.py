@@ -48,8 +48,6 @@ class Command(BaseCommand):
                 with z.open(filename) as f:
                     df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=7, engine='xlrd')
             
-            # 🔥 МАГІЧНИЙ РЯДОК 🔥
-            # Видаляємо всі типи переносів, подвійні/потрійні пробіли та невидимі символи, зводячи їх до одного пробілу
             df.columns = df.columns.str.replace(r'\s+', ' ', regex=True).str.strip()
             
         except Exception as e:
@@ -58,15 +56,14 @@ class Command(BaseCommand):
 
         if 'Товар' not in df.columns or 'Загальний залишок' not in df.columns:
             self.stdout.write(self.style.ERROR(f"❌ Не знайдено потрібних колонок у прайсі!"))
-            self.stdout.write(self.style.ERROR(f"🔍 Очищені колонки: {list(df.columns)}"))
             return
 
         self.stdout.write(self.style.SUCCESS(f"📊 Знайдено {len(df)} рядків товарів. Починаємо оновлення бази..."))
 
         updated_count = 0
         not_found_count = 0
+        not_found_examples = [] # Список для прикладу того, що ми не знайшли
 
-        # Обнуляємо всі залишки на сайті перед завантаженням свіжих
         Product.objects.update(stock_quantity=0)
 
         with transaction.atomic():
@@ -98,6 +95,15 @@ class Command(BaseCommand):
                     updated_count += 1
                 else:
                     not_found_count += 1
+                    # Зберігаємо перші 15 незбігів для діагностики
+                    if len(not_found_examples) < 15:
+                        not_found_examples.append(name_in_excel)
 
         self.stdout.write(self.style.SUCCESS(f"\n🎉 ГОТОВО! Оновлено товарів: {updated_count}"))
         self.stdout.write(self.style.WARNING(f"⚠️ Не знайдено збігів по назві: {not_found_count}"))
+        
+        # Виводимо приклади
+        if not_found_examples:
+            self.stdout.write("\n📝 ПРИКЛАДИ НАЗВ З ПРАЙСУ, ЯКИХ НЕМАЄ НА САЙТІ (або названі інакше):")
+            for ex in not_found_examples:
+                self.stdout.write(f" - {ex}")

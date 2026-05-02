@@ -65,7 +65,6 @@ class Command(BaseCommand):
         created_count = 0
         error_count = 0
 
-        # Обнуляємо всі залишки на сайті перед початком
         Product.objects.update(stock_quantity=0)
 
         with transaction.atomic():
@@ -75,7 +74,7 @@ class Command(BaseCommand):
                 if not name_in_excel or name_in_excel == 'nan':
                     continue
 
-                # --- ПІДРАХУНОК ЗАЛИШКІВ (Київ + Львів) ---
+                # --- ПІДРАХУНОК ЗАЛИШКІВ ---
                 raw_kyiv = str(row.get('Вільний залишок Київ', '0')).replace('>', '').replace('<', '').strip()
                 try:
                     stock_kyiv = int(float(raw_kyiv))
@@ -91,23 +90,17 @@ class Command(BaseCommand):
                 stock = stock_kyiv + stock_lviv
                 if stock > 20:
                     stock = 20
-                # ----------------------------------------
 
-                # Ціни
-                raw_price = str(row.get('Інтернет ціна', '0')).replace(' ', '').replace(',', '.').strip()
+                # --- ЖОРСТКЕ ОЧИЩЕННЯ ЦІНИ ---
+                # Беремо рядок, видаляємо ВСЕ, крім цифр і коми/крапки, потім міняємо кому на крапку
+                raw_price_str = str(row.get('Інтернет ціна', '0'))
+                clean_price = re.sub(r'[^\d,\.]', '', raw_price_str).replace(',', '.')
                 try:
-                    price = float(raw_price)
+                    price = float(clean_price)
                 except ValueError:
                     price = 0.0
-                    
-                # Отримуємо ціну закупки (опціонально, якщо вона потрібна в базі)
-                raw_cost_price = str(row.get('Ваша ціна', '0')).replace(' ', '').replace(',', '.').strip()
-                try:
-                    cost_price = float(raw_cost_price)
-                except ValueError:
-                    cost_price = 0.0
 
-                # Параметри для пошуку/створення
+                # Параметри
                 brand_str = str(row.get('Виробник', '')).split(',')[0].strip()
                 size_str = str(row.get('Типорозмір', '')).strip()
                 diam_str = str(row.get('Діаметр', '')).strip()
@@ -121,16 +114,11 @@ class Command(BaseCommand):
                 p = int(p_match.group(1)) if p_match else None
                 d = int(d_match.group(1)) if d_match else None
 
-                # 1. Прямий збіг по назві
+                # Шукаємо товар
                 product = Product.objects.filter(name__iexact=name_in_excel).first()
                 
-                # 2. Розумний пошук
                 if not product and w and p and d and brand_str:
-                    candidates = Product.objects.filter(
-                        width=w, profile=p, diameter=d, 
-                        brand__name__icontains=brand_str
-                    )
-
+                    candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
                     if candidates.count() == 1:
                         product = candidates.first()
                     elif candidates.count() > 1:
@@ -138,36 +126,28 @@ class Command(BaseCommand):
                         for c in candidates:
                             db_words = re.findall(r'[a-z0-9а-яієї]+', c.name.lower())
                             db_words = [word for word in db_words if word not in ['шина', 'під', 'шип']]
-                            
                             if db_words and all(word in excel_words for word in db_words):
                                 product = c
                                 break
 
-                # 3. ОНОВЛЕННЯ АБО СТВОРЕННЯ
+                # Оновлюємо або створюємо
                 if product:
-                    # Оновлюємо існуючий
                     product.stock_quantity = stock
                     if price > 0:
                         product.price = price
                     product.save()
                     updated_count += 1
                 else:
-                    # СТВОРЮЄМО НОВИЙ
                     if w and p and d and brand_str:
-                        # Знаходимо або створюємо бренд
                         brand_obj, created = Brand.objects.get_or_create(name=brand_str)
-                        
-                        # Конвертуємо сезонність Омеги у формат нашої бази
-                        seasonality = 'S' # Літо за замовчуванням
+                        seasonality = 'S'
                         if 'Зима' in season_str:
                             seasonality = 'W'
                         elif 'сезон' in season_str.lower():
                             seasonality = 'A'
                         
                         try:
-                            # Генеруємо чисту назву без слова "Шина"
                             clean_name = name_in_excel.replace('Шина ', '')
-                            
                             new_product = Product.objects.create(
                                 name=clean_name,
                                 brand=brand_obj,
@@ -175,22 +155,17 @@ class Command(BaseCommand):
                                 profile=p,
                                 diameter=d,
                                 seasonality=seasonality,
-                                price=price,
-                                # Якщо у вас в моделі є cost_price, можна додати: cost_price=cost_price,
+                                price=price, # Тепер сюди зайде ідеально чиста ціна!
                                 stock_quantity=stock,
-                                # Опис порожній, бо Омега його не дає
                                 description="", 
                             )
                             created_count += 1
                         except Exception as e:
-                            # Якщо є якісь обмеження в базі (унікальність тощо)
                             error_count += 1
                     else:
-                        # Якщо Омега не вказала розміри, ми не можемо створити шину
                         error_count += 1
 
         self.stdout.write(self.style.SUCCESS(f"\n🎉 ГОТОВО!"))
         self.stdout.write(self.style.SUCCESS(f"🔄 Оновлено існуючих товарів: {updated_count}"))
-        self.stdout.write(self.style.WARNING(f"➕ Створено нових товарів: {created_count}"))
-        if error_count > 0:
-            self.stdout.write(self.style.ERROR(f"⚠️ Пропущено (некоректні дані): {error_count}"))
+        if created_count > 0:
+            self.stdout.write(self.style.WARNING(f"➕ Створено нових товарів: {created_count}"))

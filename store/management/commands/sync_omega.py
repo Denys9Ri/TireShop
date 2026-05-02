@@ -1,71 +1,107 @@
 import requests
+import time
+import zipfile
+import io
+import pandas as pd
 from django.core.management.base import BaseCommand
+from store.models import Product
+from django.db import transaction
 
 class Command(BaseCommand):
-    help = 'Швидка синхронізація цін та залишків шин через Omega JSON API'
+    help = 'Автоматичне оновлення залишків та цін з API Омега'
 
     def handle(self, *args, **options):
-        self.stdout.write("🚀 Запуск швидкого оновлення через Omega API...")
+        KEY = "ORMX5xgdRK5aqkFU8nlKfRv1rtnJmwc7"
+        PRICE_ID = 39
+
+        self.stdout.write(self.style.WARNING("1️⃣ Запуск синхронізації з Омега API..."))
         
-        # 🔥 СЮДИ ТИ ВСТАВИШ КЛЮЧ, КОЛИ ВІН ПРИЙДЕ 🔥
-        API_KEY = "ТВІЙ_МАЙБУТНІЙ_КЛЮЧ"
-        
-        if API_KEY == "ТВІЙ_МАЙБУТНІЙ_КЛЮЧ":
-            self.stderr.write("❌ Стоп! Ви ще не вставили свій API ключ від Омеги.")
-            self.stderr.write("Відкрийте файл store/management/commands/sync_omega.py і замініть 'ТВІЙ_МАЙБУТНІЙ_КЛЮЧ' на реальний ключ.")
+        # 1. Ставимо прайс в чергу
+        req = requests.post("https://public.omega.page/public/api/v1.0/price/enqueuePrice", json={"Key": KEY, "Id": PRICE_ID})
+        if req.status_code != 200:
+            self.stdout.write(self.style.ERROR(f"❌ Помилка API черги. Статус: {req.status_code}"))
             return
 
-        url = "https://public.omega.page/public/api/v1.0/searchcatalog/getTires"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "Key": API_KEY,
-        }
+        self.stdout.write("⏳ Прайс замовлено. Очікуємо формування файлу на сервері Омеги...")
 
-        self.stdout.write("📥 Запит до API (getTires)...")
+        # 2. Чекаємо і скачуємо
+        download_url = "https://public.omega.page/public/api/v1.0/price/downloadPrice"
+        file_content = None
         
+        for i in range(20):
+            time.sleep(15) # перевіряємо кожні 15 секунд
+            res = requests.post(download_url, json={"Key": KEY, "Id": PRICE_ID})
+            
+            if res.status_code == 200:
+                file_content = res.content
+                self.stdout.write(self.style.SUCCESS("✅ ZIP-Архів успішно завантажено!"))
+                break
+            else:
+                self.stdout.write(f"   ...ще формується (спроба {i+1}/20)")
+
+        if not file_content:
+            self.stdout.write(self.style.ERROR("❌ Сервер Омеги не віддав файл за 5 хвилин. Спробуйте пізніше."))
+            return
+
+        # 3. Розпаковуємо ZIP і читаємо Excel прямо в оперативній пам'яті
+        self.stdout.write(self.style.WARNING("2️⃣ Розпакування та аналіз прайсу..."))
         try:
-            response = requests.post(url, json=payload, headers=headers)
-            
-            if not response.ok:
-                self.stderr.write(f"❌ Помилка HTTP {response.status_code}: {response.text}")
-                return
-
-            # Спробуємо розпарсити JSON
-            data = response.json()
-            
-            # Шукаємо список товарів у відповіді
-            tires_list = None
-            if isinstance(data, dict):
-                if "Data" in data:
-                    tires_list = data["Data"]
-                elif "Result" in data:
-                    tires_list = data["Result"]
-            elif isinstance(data, list):
-                tires_list = data
-
-            if tires_list is None:
-                self.stderr.write(f"❌ Невідома структура відповіді: {str(data)[:200]}...")
-                return
-
-            self.stdout.write(f"✅ Отримано товарів: {len(tires_list)}")
-            
-            if len(tires_list) == 0:
-                self.stdout.write("⚠️ API повернуло пустий список. Перевірте ключ або налаштування в Омезі.")
-                return
-
-            # Покажемо структуру першого товару для розвідки
-            first_tire = tires_list[0]
-            self.stdout.write("\n🔍 СТРУКТУРА ПЕРШОГО ТОВАРУ (JSON):")
-            self.stdout.write(f"ID (Number/ProductId): {first_tire.get('Number') or first_tire.get('ProductId')}")
-            self.stdout.write(f"Бренд: {first_tire.get('BrandDescription')}")
-            self.stdout.write(f"Назва: {first_tire.get('Description')}")
-            self.stdout.write(f"Ціна (Price / CustomerPrice): {first_tire.get('Price')} / {first_tire.get('CustomerPrice')}")
-            self.stdout.write(f"Залишок (EffectiveQuantity): {first_tire.get('EffectiveQuantity')}")
-            self.stdout.write("-" * 40 + "\n")
-
-            self.stdout.write("⚠️ РОБОТ ЗУПИНЕНИЙ ДЛЯ ПЕРЕВІРКИ. Скинь ці дані розробнику (мені).")
-            
-        except requests.exceptions.RequestException as e:
-            self.stderr.write(f"❌ Помилка з'єднання з сервером Омеги: {e}")
+            with zipfile.ZipFile(io.BytesIO(file_content)) as z:
+                filename = z.namelist()[0]
+                with z.open(filename) as f:
+                    # Читаємо лист 'Шини Легкові', пропускаючи перші 7 рядків шапки
+                    df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=7, engine='xlrd')
         except Exception as e:
-            self.stderr.write(f"❌ Системна помилка під час обробки JSON: {e}")
+            self.stdout.write(self.style.ERROR(f"❌ Помилка читання Excel: {e}"))
+            return
+
+        # Перевіряємо, чи є потрібні колонки
+        if 'Товар' not in df.columns or 'Загальний залишок' not in df.columns:
+            self.stdout.write(self.style.ERROR("❌ Не знайдено потрібних колонок у прайсі!"))
+            return
+
+        self.stdout.write(self.style.SUCCESS(f"📊 Знайдено {len(df)} рядків товарів. Починаємо оновлення бази..."))
+
+        # 4. Оновлюємо базу даних
+        updated_count = 0
+        not_found_count = 0
+
+        # Спочатку обнуляємо всі залишки на сайті (щоб ті товари, яких вже немає в Омеги, зникли з продажу)
+        Product.objects.update(stock_quantity=0)
+
+        with transaction.atomic():
+            for index, row in df.iterrows():
+                name_in_excel = str(row.get('Товар', '')).strip()
+                
+                if not name_in_excel or name_in_excel == 'nan':
+                    continue
+
+                # Очищаємо залишок (якщо написано '>20', робимо просто 20)
+                raw_stock = str(row.get('Загальний залишок', '0')).replace('>', '').replace('<', '').strip()
+                try:
+                    stock = int(float(raw_stock))
+                except ValueError:
+                    stock = 0
+
+                # Очищаємо ціну (беремо колонку 'Інтернет ціна')
+                raw_price = str(row.get('Інтернет ціна', '0')).replace(' ', '').replace(',', '.').strip()
+                try:
+                    price = float(raw_price)
+                except ValueError:
+                    price = 0.0
+
+                # Шукаємо товар у нашій базі за назвою (можна переробити на пошук за 'Картка' (SKU), якщо він у вас збережений)
+                # Оскільки назви в Excel і в базі можуть трохи відрізнятися пробілами, використовуємо icontains
+                product = Product.objects.filter(name__iexact=name_in_excel).first()
+                
+                if product:
+                    product.stock_quantity = stock
+                    if price > 0:
+                        product.price = price
+                    product.save()
+                    updated_count += 1
+                else:
+                    not_found_count += 1
+
+        self.stdout.write(self.style.SUCCESS(f"\n🎉 ГОТОВО! Оновлено товарів: {updated_count}"))
+        self.stdout.write(self.style.WARNING(f"⚠️ Не знайдено збігів по назві: {not_found_count}"))

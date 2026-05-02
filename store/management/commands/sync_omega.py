@@ -49,15 +49,20 @@ class Command(BaseCommand):
             with zipfile.ZipFile(io.BytesIO(file_content)) as z:
                 filename = z.namelist()[0]
                 with z.open(filename) as f:
-                    # Читаємо лист 'Шини Легкові', пропускаючи перші 7 рядків шапки
-                    df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=7, engine='xlrd')
+                    # УВАГА: Пропускаємо перші 8 рядків (синя шапка на 9-му рядку)
+                    df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=8, engine='xlrd')
+            
+            # Очищаємо назви колонок від випадкових пробілів та переносів рядків
+            df.columns = df.columns.str.strip().str.replace('\n', ' ')
+            
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ Помилка читання Excel: {e}"))
             return
 
         # Перевіряємо, чи є потрібні колонки
         if 'Товар' not in df.columns or 'Загальний залишок' not in df.columns:
-            self.stdout.write(self.style.ERROR("❌ Не знайдено потрібних колонок у прайсі!"))
+            self.stdout.write(self.style.ERROR(f"❌ Не знайдено потрібних колонок у прайсі!"))
+            self.stdout.write(self.style.ERROR(f"🔍 Знайдені колонки: {list(df.columns)}"))
             return
 
         self.stdout.write(self.style.SUCCESS(f"📊 Знайдено {len(df)} рядків товарів. Починаємо оновлення бази..."))
@@ -66,7 +71,7 @@ class Command(BaseCommand):
         updated_count = 0
         not_found_count = 0
 
-        # Спочатку обнуляємо всі залишки на сайті (щоб ті товари, яких вже немає в Омеги, зникли з продажу)
+        # Спочатку обнуляємо всі залишки на сайті
         Product.objects.update(stock_quantity=0)
 
         with transaction.atomic():
@@ -90,8 +95,6 @@ class Command(BaseCommand):
                 except ValueError:
                     price = 0.0
 
-                # Шукаємо товар у нашій базі за назвою (можна переробити на пошук за 'Картка' (SKU), якщо він у вас збережений)
-                # Оскільки назви в Excel і в базі можуть трохи відрізнятися пробілами, використовуємо icontains
                 product = Product.objects.filter(name__iexact=name_in_excel).first()
                 
                 if product:

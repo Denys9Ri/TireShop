@@ -6,9 +6,7 @@ import pandas as pd
 import re
 from django.core.management.base import BaseCommand
 from store.models import Product, Brand
-from django.db import transaction
 
-# Бронебійна функція для читання будь-яких чисел з Excel
 def clean_price_value(val):
     if pd.isna(val):
         return 0.0
@@ -16,18 +14,17 @@ def clean_price_value(val):
         return float(val)
         
     s = str(val).strip()
-    s = re.sub(r'\s+', '', s) # Видаляємо всі пробіли
+    s = re.sub(r'\s+', '', s)
     if not s:
         return 0.0
         
-    s = s.replace(',', '.') # Міняємо кому на крапку
+    s = s.replace(',', '.')
     
-    # Якщо крапок кілька (наприклад 1.254.85), залишаємо тільки останню як десяткову
     parts = s.split('.')
     if len(parts) > 2:
         s = ''.join(parts[:-1]) + '.' + parts[-1]
         
-    s = re.sub(r'[^\d\.]', '', s) # Залишаємо тільки цифри та крапку
+    s = re.sub(r'[^\d\.]', '', s)
     try:
         return float(s)
     except ValueError:
@@ -83,90 +80,86 @@ class Command(BaseCommand):
         error_count = 0
         zero_price_count = 0
 
+        # Обнуляємо залишки (робимо це один раз швидко)
         Product.objects.update(stock_quantity=0)
 
-        with transaction.atomic():
-            for index, row in df.iterrows():
-                name_in_excel = str(row.get('Товар', '')).strip()
-                if not name_in_excel or name_in_excel == 'nan':
-                    continue
+        # ТУТ МИ ПРИБРАЛИ transaction.atomic() ЩОБ УНИКНУТИ DEADLOCK!
+        for index, row in df.iterrows():
+            name_in_excel = str(row.get('Товар', '')).strip()
+            if not name_in_excel or name_in_excel == 'nan':
+                continue
 
-                # --- ЗАЛИШКИ ---
-                stock_kyiv = clean_price_value(row.get('Вільний залишок Київ', 0))
-                stock_lviv = clean_price_value(row.get('Вільний залишок Львів', 0))
-                stock = int(stock_kyiv + stock_lviv)
-                if stock > 20: stock = 20
+            stock_kyiv = clean_price_value(row.get('Вільний залишок Київ', 0))
+            stock_lviv = clean_price_value(row.get('Вільний залишок Львів', 0))
+            stock = int(stock_kyiv + stock_lviv)
+            if stock > 20: stock = 20
 
-                # --- ЦІНА (КАСКАДНА ЛОГІКА) ---
-                price_internet = clean_price_value(row.get('Інтернет ціна'))
-                price_retail = clean_price_value(row.get('Роздрібна ціна'))
-                price_cost = clean_price_value(row.get('Ваша ціна'))
+            price_internet = clean_price_value(row.get('Інтернет ціна'))
+            price_retail = clean_price_value(row.get('Роздрібна ціна'))
+            price_cost = clean_price_value(row.get('Ваша ціна'))
 
-                final_price = price_internet
-                if final_price <= 0:
-                    final_price = price_retail
-                if final_price <= 0:
-                    final_price = price_cost
+            final_price = price_internet
+            if final_price <= 0:
+                final_price = price_retail
+            if final_price <= 0:
+                final_price = price_cost
 
-                # Параметри
-                brand_str = str(row.get('Виробник', '')).split(',')[0].strip()
-                size_str = str(row.get('Типорозмір', '')).strip()
-                diam_str = str(row.get('Діаметр', '')).strip()
-                season_str = str(row.get('Сезонність', '')).strip()
+            brand_str = str(row.get('Виробник', '')).split(',')[0].strip()
+            size_str = str(row.get('Типорозмір', '')).strip()
+            diam_str = str(row.get('Діаметр', '')).strip()
+            season_str = str(row.get('Сезонність', '')).strip()
 
-                w_match = re.search(r'(\d{3})', size_str)
-                p_match = re.search(r'/(\d{2,3})', size_str)
-                d_match = re.search(r'(\d{2})', diam_str)
+            w_match = re.search(r'(\d{3})', size_str)
+            p_match = re.search(r'/(\d{2,3})', size_str)
+            d_match = re.search(r'(\d{2})', diam_str)
 
-                w = int(w_match.group(1)) if w_match else None
-                p = int(p_match.group(1)) if p_match else None
-                d = int(d_match.group(1)) if d_match else None
+            w = int(w_match.group(1)) if w_match else None
+            p = int(p_match.group(1)) if p_match else None
+            d = int(d_match.group(1)) if d_match else None
 
-                # Шукаємо товар
-                product = Product.objects.filter(name__iexact=name_in_excel).first()
-                if not product and w and p and d and brand_str:
-                    candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
-                    if candidates.count() == 1:
-                        product = candidates.first()
-                    elif candidates.count() > 1:
-                        excel_words = re.findall(r'[a-z0-9а-яієї]+', name_in_excel.lower())
-                        for c in candidates:
-                            db_words = re.findall(r'[a-z0-9а-яієї]+', c.name.lower())
-                            db_words = [word for word in db_words if word not in ['шина', 'під', 'шип']]
-                            if db_words and all(word in excel_words for word in db_words):
-                                product = c
-                                break
+            product = Product.objects.filter(name__iexact=name_in_excel).first()
+            if not product and w and p and d and brand_str:
+                candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
+                if candidates.count() == 1:
+                    product = candidates.first()
+                elif candidates.count() > 1:
+                    excel_words = re.findall(r'[a-z0-9а-яієї]+', name_in_excel.lower())
+                    for c in candidates:
+                        db_words = re.findall(r'[a-z0-9а-яієї]+', c.name.lower())
+                        db_words = [word for word in db_words if word not in ['шина', 'під', 'шип']]
+                        if db_words and all(word in excel_words for word in db_words):
+                            product = c
+                            break
 
-                # Оновлюємо або створюємо
-                if product:
-                    product.stock_quantity = stock
-                    if final_price > 0:
-                        product.price = final_price
-                    else:
-                        zero_price_count += 1
-                    product.save()
-                    updated_count += 1
+            if product:
+                product.stock_quantity = stock
+                if final_price > 0:
+                    product.price = final_price
                 else:
-                    if w and p and d and brand_str:
-                        brand_obj, created = Brand.objects.get_or_create(name=brand_str)
-                        seasonality = 'S'
-                        if 'Зима' in season_str: seasonality = 'W'
-                        elif 'сезон' in season_str.lower(): seasonality = 'A'
-                        
-                        try:
-                            clean_name = name_in_excel.replace('Шина ', '')
-                            new_product = Product.objects.create(
-                                name=clean_name, brand=brand_obj,
-                                width=w, profile=p, diameter=d, seasonality=seasonality,
-                                price=final_price, stock_quantity=stock, description="", 
-                            )
-                            if final_price <= 0:
-                                zero_price_count += 1
-                            created_count += 1
-                        except Exception as e:
-                            error_count += 1
-                    else:
+                    zero_price_count += 1
+                product.save()
+                updated_count += 1
+            else:
+                if w and p and d and brand_str:
+                    brand_obj, created = Brand.objects.get_or_create(name=brand_str)
+                    seasonality = 'S'
+                    if 'Зима' in season_str: seasonality = 'W'
+                    elif 'сезон' in season_str.lower(): seasonality = 'A'
+                    
+                    try:
+                        clean_name = name_in_excel.replace('Шина ', '')
+                        new_product = Product.objects.create(
+                            name=clean_name, brand=brand_obj,
+                            width=w, profile=p, diameter=d, seasonality=seasonality,
+                            price=final_price, stock_quantity=stock, description="", 
+                        )
+                        if final_price <= 0:
+                            zero_price_count += 1
+                        created_count += 1
+                    except Exception as e:
                         error_count += 1
+                else:
+                    error_count += 1
 
         self.stdout.write(self.style.SUCCESS(f"\n🎉 ГОТОВО!"))
         self.stdout.write(self.style.SUCCESS(f"🔄 Оновлено існуючих товарів: {updated_count}"))

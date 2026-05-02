@@ -7,27 +7,23 @@ import re
 from django.core.management.base import BaseCommand
 from store.models import Product, Brand
 
+# Найбільш безжальна функція очищення цін — знищує все, крім цифр і крапки
 def clean_price_value(val):
-    if pd.isna(val):
-        return 0.0
-    if isinstance(val, (int, float)):
-        return float(val)
-        
-    s = str(val).strip()
-    s = re.sub(r'\s+', '', s)
-    if not s:
-        return 0.0
-        
-    s = s.replace(',', '.')
-    
-    parts = s.split('.')
-    if len(parts) > 2:
-        s = ''.join(parts[:-1]) + '.' + parts[-1]
-        
-    s = re.sub(r'[^\d\.]', '', s)
     try:
+        if pd.isna(val): return 0.0
+        if isinstance(val, (int, float)): return float(val)
+        
+        s = str(val).strip().replace(',', '.')
+        s = re.sub(r'[^\d\.]', '', s) # Видаляє будь-які пробіли, букви, спецсимволи
+        
+        if not s: return 0.0
+        
+        parts = s.split('.')
+        if len(parts) > 2: 
+            s = ''.join(parts[:-1]) + '.' + parts[-1]
+            
         return float(s)
-    except ValueError:
+    except Exception:
         return 0.0
 
 class Command(BaseCommand):
@@ -80,7 +76,7 @@ class Command(BaseCommand):
         error_count = 0
         zero_price_count = 0
 
-        # Обнуляємо залишки (робимо це один раз швидко)
+        # Обнуляємо залишки швидко
         Product.objects.update(stock_quantity=0)
 
         for index, row in df.iterrows():
@@ -118,24 +114,18 @@ class Command(BaseCommand):
 
             product = None
             
-            # 1. Точний збіг назви (ігноруємо регістр)
             clean_name_excel = name_in_excel.replace('Шина ', '').strip()
             product = Product.objects.filter(name__iexact=clean_name_excel).first()
             if not product:
                 product = Product.objects.filter(name__iexact=name_in_excel).first()
 
-            # 2. Розумний збіг по параметрам
             if not product and w and p and d and brand_str:
                 candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
                 if candidates.count() == 1:
-                    # Якщо є ТІЛЬКИ ОДНА шина такого розміру і бренду - 100% це вона!
                     product = candidates.first()
                 elif candidates.count() > 1:
-                    # Якщо є кілька, беремо першу-ліпшу (щоб не залишати нулі), 
-                    # але перевіряємо, щоб це була та сама модель
                     for c in candidates:
-                        # Шукаємо модель (напр. "ALENZA") в назві бази
-                        model_parts = re.findall(r'[a-zA-Z]+', c.name)
+                        model_parts = re.findall(r'[a-zA-Z0-9]+', c.name)
                         if any(m.lower() in name_in_excel.lower() for m in model_parts if len(m) > 2):
                             product = c
                             break
@@ -146,8 +136,14 @@ class Command(BaseCommand):
                     product.price = final_price
                 else:
                     zero_price_count += 1
+                
                 product.save()
                 updated_count += 1
+
+                # ВИВОДИМО ЛОГ У ТЕРМІНАЛ ДЛЯ ТЕСТУ
+                if updated_count <= 10 and final_price > 0:
+                    self.stdout.write(self.style.SUCCESS(f"✅ Знайдено: {product.name[:35]}... | Встановлено ціну: {final_price}"))
+
             else:
                 if w and p and d and brand_str:
                     brand_obj, created = Brand.objects.get_or_create(name=brand_str)
@@ -165,7 +161,7 @@ class Command(BaseCommand):
                         if final_price <= 0:
                             zero_price_count += 1
                         created_count += 1
-                    except Exception as e:
+                    except Exception:
                         error_count += 1
                 else:
                     error_count += 1

@@ -5,42 +5,47 @@ from store.models import Product
 from django.core.files.base import ContentFile
 
 class Command(BaseCommand):
-    help = 'Безкоштовне завантаження фото прямо з серверів Омеги'
+    help = 'Примусове завантаження фото з Омеги за прямими посиланнями'
 
     def handle(self, *args, **options):
-        # Беремо товари, де є посилання, але ще немає фізичного файлу фото
+        # Беремо всі товари, у яких є URL фото від Омеги
         products = Product.objects.filter(photo_url__isnull=False).exclude(photo_url='')
         
-        # Відфільтровуємо ті, у яких вже є завантажене фото (щоб не качати по колу)
-        products_to_download = [p for p in products if not p.photo]
-
-        self.stdout.write(self.style.WARNING(f"🚀 Знайдено {len(products_to_download)} товарів для завантаження фото..."))
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+        self.stdout.write(self.style.WARNING(f"🔎 Аналізуємо {products.count()} товарів на наявність фото..."))
 
         count = 0
-        for product in products_to_download:
-            try:
-                self.stdout.write(f"📥 Качаємо для: {product.name}...")
-                
-                response = requests.get(product.photo_url, headers=headers, timeout=15)
-                
-                if response.status_code == 200:
-                    # Генеруємо назву файлу на основі ID або імені
-                    ext = product.photo_url.split('.')[-1].split('?')[0] # дістаємо розширення (jpg/png)
-                    if len(ext) > 4: ext = 'jpg'
+        for product in products:
+            # ПЕРЕВІРКА: чи є фізичний файл на сервері?
+            # Якщо файлу немає, або поле порожнє - качаємо
+            if not product.photo or not os.path.exists(product.photo.path):
+                try:
+                    self.stdout.write(f"📥 Завантаження для: {product.name}")
                     
-                    filename = f"product_{product.id}.{ext}"
+                    response = requests.get(product.photo_url, timeout=10)
                     
-                    # Зберігаємо файл у поле photo
-                    product.photo.save(filename, ContentFile(response.content), save=True)
-                    count += 1
-                else:
-                    self.stdout.write(self.style.ERROR(f"❌ Помилка {response.status_code} для {product.photo_url}"))
+                    if response.status_code == 200:
+                        # Формуємо чисте ім'я файлу
+                        filename = f"tire_{product.id}.jpg"
+                        
+                        # Зберігаємо файл
+                        product.photo.save(filename, ContentFile(response.content), save=True)
+                        count += 1
+                        
+                        if count % 10 == 0:
+                            self.stdout.write(self.style.SUCCESS(f"✅ Вже завантажено {count}..."))
+                    else:
+                        self.stdout.write(self.style.ERROR(f"⚠️ Омега повернула статус {response.status_code}"))
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"💥 Помилка завантаження: {e}"))
+                except Exception as e:
+                    # Якщо виникла помилка (наприклад, шлях .path не знайдено для порожнього поля)
+                    # просто пробуємо скачати
+                    try:
+                        response = requests.get(product.photo_url, timeout=10)
+                        if response.status_code == 200:
+                            product.photo.save(f"tire_{product.id}.jpg", ContentFile(response.content), save=True)
+                            count += 1
+                    except:
+                        continue
 
-        self.stdout.write(self.style.SUCCESS(f"✅ Готово! Завантажено {count} нових фотографій."))
+        self.stdout.write(self.style.SUCCESS(f"\n🎉 Роботу завершено!"))
+        self.stdout.write(self.style.SUCCESS(f"📸 Завантажено нових фото: {count}"))

@@ -6,15 +6,15 @@ import pandas as pd
 import re
 from django.core.management.base import BaseCommand
 from store.models import Product, Brand
+from django.db import reset_queries # Додали для очищення пам'яті
 
-# Найбільш безжальна функція очищення цін — знищує все, крім цифр і крапки
 def clean_price_value(val):
     try:
         if pd.isna(val): return 0.0
         if isinstance(val, (int, float)): return float(val)
         
         s = str(val).strip().replace(',', '.')
-        s = re.sub(r'[^\d\.]', '', s) # Видаляє будь-які пробіли, букви, спецсимволи
+        s = re.sub(r'[^\d\.]', '', s)
         
         if not s: return 0.0
         
@@ -76,8 +76,9 @@ class Command(BaseCommand):
         error_count = 0
         zero_price_count = 0
 
-        # Обнуляємо залишки швидко
         Product.objects.update(stock_quantity=0)
+
+        self.stdout.write(self.style.WARNING("🔄 Починаємо запис у базу... (це може зайняти пару хвилин)"))
 
         for index, row in df.iterrows():
             name_in_excel = str(row.get('Товар', '')).strip()
@@ -94,10 +95,8 @@ class Command(BaseCommand):
             price_cost = clean_price_value(row.get('Ваша ціна'))
 
             final_price = price_internet
-            if final_price <= 0:
-                final_price = price_retail
-            if final_price <= 0:
-                final_price = price_cost
+            if final_price <= 0: final_price = price_retail
+            if final_price <= 0: final_price = price_cost
 
             brand_str = str(row.get('Виробник', '')).split(',')[0].strip()
             size_str = str(row.get('Типорозмір', '')).strip()
@@ -113,7 +112,6 @@ class Command(BaseCommand):
             d = int(d_match.group(1)) if d_match else None
 
             product = None
-            
             clean_name_excel = name_in_excel.replace('Шина ', '').strip()
             product = Product.objects.filter(name__iexact=clean_name_excel).first()
             if not product:
@@ -140,9 +138,10 @@ class Command(BaseCommand):
                 product.save()
                 updated_count += 1
 
-                # ВИВОДИМО ЛОГ У ТЕРМІНАЛ ДЛЯ ТЕСТУ
-                if updated_count <= 10 and final_price > 0:
-                    self.stdout.write(self.style.SUCCESS(f"✅ Знайдено: {product.name[:35]}... | Встановлено ціну: {final_price}"))
+                # Виводимо прогрес кожні 100 товарів і чистимо пам'ять!
+                if updated_count % 100 == 0:
+                    self.stdout.write(f"   ...вже оновлено {updated_count} товарів...")
+                    reset_queries() # Рятує від зависання терміналу (очищає оперативну пам'ять)
 
             else:
                 if w and p and d and brand_str:
@@ -158,8 +157,7 @@ class Command(BaseCommand):
                             width=w, profile=p, diameter=d, seasonality=seasonality,
                             price=final_price, stock_quantity=stock, description="", 
                         )
-                        if final_price <= 0:
-                            zero_price_count += 1
+                        if final_price <= 0: zero_price_count += 1
                         created_count += 1
                     except Exception:
                         error_count += 1
@@ -171,4 +169,4 @@ class Command(BaseCommand):
         if created_count > 0:
             self.stdout.write(self.style.WARNING(f"➕ Створено нових товарів: {created_count}"))
         if zero_price_count > 0:
-            self.stdout.write(self.style.ERROR(f"⚠️ Товарів без ціни в Омеги (поставлено 0): {zero_price_count}"))
+            self.stdout.write(self.style.ERROR(f"⚠️ Товарів без ціни (залишено 0): {zero_price_count}"))

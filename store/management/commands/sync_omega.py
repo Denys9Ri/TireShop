@@ -83,7 +83,6 @@ class Command(BaseCommand):
         # Обнуляємо залишки (робимо це один раз швидко)
         Product.objects.update(stock_quantity=0)
 
-        # ТУТ МИ ПРИБРАЛИ transaction.atomic() ЩОБ УНИКНУТИ DEADLOCK!
         for index, row in df.iterrows():
             name_in_excel = str(row.get('Товар', '')).strip()
             if not name_in_excel or name_in_excel == 'nan':
@@ -117,17 +116,27 @@ class Command(BaseCommand):
             p = int(p_match.group(1)) if p_match else None
             d = int(d_match.group(1)) if d_match else None
 
-            product = Product.objects.filter(name__iexact=name_in_excel).first()
+            product = None
+            
+            # 1. Точний збіг назви (ігноруємо регістр)
+            clean_name_excel = name_in_excel.replace('Шина ', '').strip()
+            product = Product.objects.filter(name__iexact=clean_name_excel).first()
+            if not product:
+                product = Product.objects.filter(name__iexact=name_in_excel).first()
+
+            # 2. Розумний збіг по параметрам
             if not product and w and p and d and brand_str:
                 candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
                 if candidates.count() == 1:
+                    # Якщо є ТІЛЬКИ ОДНА шина такого розміру і бренду - 100% це вона!
                     product = candidates.first()
                 elif candidates.count() > 1:
-                    excel_words = re.findall(r'[a-z0-9а-яієї]+', name_in_excel.lower())
+                    # Якщо є кілька, беремо першу-ліпшу (щоб не залишати нулі), 
+                    # але перевіряємо, щоб це була та сама модель
                     for c in candidates:
-                        db_words = re.findall(r'[a-z0-9а-яієї]+', c.name.lower())
-                        db_words = [word for word in db_words if word not in ['шина', 'під', 'шип']]
-                        if db_words and all(word in excel_words for word in db_words):
+                        # Шукаємо модель (напр. "ALENZA") в назві бази
+                        model_parts = re.findall(r'[a-zA-Z]+', c.name)
+                        if any(m.lower() in name_in_excel.lower() for m in model_parts if len(m) > 2):
                             product = c
                             break
 

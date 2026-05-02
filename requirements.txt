@@ -11,3 +11,5 @@ pandas
 openpyxl
 django-jazzmin
 xhtml2pdf
+pandas==2.2.1
+xlrd==2.0.1

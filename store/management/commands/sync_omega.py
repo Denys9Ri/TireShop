@@ -4,6 +4,7 @@ import zipfile
 import io
 import pandas as pd
 import re
+import os  # 🔥 Додали для роботи з безпечними змінними оточення
 from django.core.management.base import BaseCommand
 from store.models import Product, Brand
 from django.db import reset_queries # Додали для очищення пам'яті
@@ -30,7 +31,13 @@ class Command(BaseCommand):
     help = 'Автоматичне оновлення залишків, цін та додавання нових товарів з API Омега'
 
     def handle(self, *args, **options):
-        KEY = "ORMX5xgdRK5aqkFU8nlKfRv1rtnJmwc7"
+        # 🔥 БЕРЕМО КЛЮЧ З НАЛАШТУВАНЬ COOLIFY 🔥
+        KEY = os.environ.get("OMEGA_API_KEY")
+        
+        if not KEY:
+            self.stdout.write(self.style.ERROR("❌ Не знайдено OMEGA_API_KEY у змінних оточеннях Coolify!"))
+            return
+            
         PRICE_ID = 39
 
         self.stdout.write(self.style.WARNING("1️⃣ Запуск синхронізації з Омега API..."))

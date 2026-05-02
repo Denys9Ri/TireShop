@@ -46,17 +46,16 @@ class Command(BaseCommand):
             with zipfile.ZipFile(io.BytesIO(file_content)) as z:
                 filename = z.namelist()[0]
                 with z.open(filename) as f:
-                    # REVERTED to skiprows=7 to target the correct blue header row
                     df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=7, engine='xlrd')
             
-            # Clean up the column names by removing hidden newlines and spaces
-            df.columns = df.columns.str.replace('\n', ' ').str.replace('\r', '').str.strip()
+            # 🔥 МАГІЧНИЙ РЯДОК 🔥
+            # Видаляємо всі типи переносів, подвійні/потрійні пробіли та невидимі символи, зводячи їх до одного пробілу
+            df.columns = df.columns.str.replace(r'\s+', ' ', regex=True).str.strip()
             
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ Помилка читання Excel: {e}"))
             return
 
-        # Check if the required columns exist after cleaning
         if 'Товар' not in df.columns or 'Загальний залишок' not in df.columns:
             self.stdout.write(self.style.ERROR(f"❌ Не знайдено потрібних колонок у прайсі!"))
             self.stdout.write(self.style.ERROR(f"🔍 Очищені колонки: {list(df.columns)}"))
@@ -67,6 +66,7 @@ class Command(BaseCommand):
         updated_count = 0
         not_found_count = 0
 
+        # Обнуляємо всі залишки на сайті перед завантаженням свіжих
         Product.objects.update(stock_quantity=0)
 
         with transaction.atomic():

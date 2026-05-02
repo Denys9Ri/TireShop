@@ -3,6 +3,7 @@ import time
 import zipfile
 import io
 import pandas as pd
+import re
 from django.core.management.base import BaseCommand
 from store.models import Product
 from django.db import transaction
@@ -62,7 +63,7 @@ class Command(BaseCommand):
 
         updated_count = 0
         not_found_count = 0
-        not_found_examples = [] # Список для прикладу того, що ми не знайшли
+        not_found_examples = []
 
         Product.objects.update(stock_quantity=0)
 
@@ -85,8 +86,43 @@ class Command(BaseCommand):
                 except ValueError:
                     price = 0.0
 
+                # 1. СПРОБА: Прямий збіг по назві
                 product = Product.objects.filter(name__iexact=name_in_excel).first()
                 
+                # 2. РОЗУМНА СПРОБА: Шукаємо за параметрами (бренд, ширина, профіль, радіус)
+                if not product:
+                    brand_str = str(row.get('Виробник', '')).strip()
+                    size_str = str(row.get('Типорозмір', '')).strip()
+                    diam_str = str(row.get('Діаметр', '')).strip()
+
+                    # Витягуємо цифри з колонок "155/65R13" та "13"
+                    w_match = re.search(r'(\d{3})', size_str)
+                    p_match = re.search(r'/(\d{2,3})', size_str)
+                    d_match = re.search(r'(\d{2})', diam_str)
+
+                    if w_match and p_match and d_match and brand_str:
+                        w = int(w_match.group(1))
+                        p = int(p_match.group(1))
+                        d = int(d_match.group(1))
+
+                        # Шукаємо всі товари цього розміру і бренду
+                        candidates = Product.objects.filter(
+                            width=w, profile=p, diameter=d, 
+                            brand__name__icontains=brand_str
+                        )
+
+                        if candidates.count() == 1:
+                            # Знайшли тільки одну таку шину — це вона!
+                            product = candidates.first()
+                        elif candidates.count() > 1:
+                            # Якщо є кілька моделей, перевіряємо, чи слова з нашої назви є в назві Омеги
+                            for c in candidates:
+                                model_words = c.name.lower().replace('шина', '').split()
+                                if model_words and all(word in name_in_excel.lower() for word in model_words):
+                                    product = c
+                                    break
+
+                # Якщо товар остаточно знайдено — оновлюємо
                 if product:
                     product.stock_quantity = stock
                     if price > 0:
@@ -95,15 +131,12 @@ class Command(BaseCommand):
                     updated_count += 1
                 else:
                     not_found_count += 1
-                    # Зберігаємо перші 15 незбігів для діагностики
                     if len(not_found_examples) < 15:
                         not_found_examples.append(name_in_excel)
 
         self.stdout.write(self.style.SUCCESS(f"\n🎉 ГОТОВО! Оновлено товарів: {updated_count}"))
-        self.stdout.write(self.style.WARNING(f"⚠️ Не знайдено збігів по назві: {not_found_count}"))
-        
-        # Виводимо приклади
-        if not_found_examples:
-            self.stdout.write("\n📝 ПРИКЛАДИ НАЗВ З ПРАЙСУ, ЯКИХ НЕМАЄ НА САЙТІ (або названі інакше):")
+        if not_found_count > 0:
+            self.stdout.write(self.style.WARNING(f"⚠️ Не знайдено збігів: {not_found_count}"))
+            self.stdout.write("\n📝 ПРИКЛАДИ НАЗВ З ПРАЙСУ, ЯКІ НЕ ЗНАЙШЛИСЯ:")
             for ex in not_found_examples:
                 self.stdout.write(f" - {ex}")

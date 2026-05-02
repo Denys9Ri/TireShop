@@ -4,16 +4,17 @@ import re
 import time
 from django.core.management.base import BaseCommand
 from store.models import Product, Brand
+from django.utils.text import slugify
 from django import db
 
 class Command(BaseCommand):
-    help = 'GOLD Посторінкова синхронізація через пряме API Омега (Універсальна)'
+    help = 'GOLD Універсальна синхронізація з виправленням дублікатів брендів'
 
     def handle(self, *args, **options):
         KEY = os.environ.get("OMEGA_API_KEY", "ORMX5xgdRK5aqkFU8nlKfRv1rtnJmwc7")
         url = "https://public.omega.page/public/api/v1.0/searchcatalog/getTires"
         
-        self.stdout.write(self.style.WARNING("🚀 Запуск універсальної GOLD-синхронізації..."))
+        self.stdout.write(self.style.WARNING("🚀 Запуск виправленої GOLD-синхронізації..."))
 
         # Скидаємо залишки перед оновленням
         Product.objects.update(stock_quantity=0)
@@ -26,7 +27,6 @@ class Command(BaseCommand):
         while True:
             self.stdout.write(f"📥 Завантаження товарів з позиції {current_from}...")
             
-            # Прибираємо UsageList, щоб API точно віддало список
             payload = {
                 "From": current_from,
                 "Count": batch_size,
@@ -46,17 +46,14 @@ class Command(BaseCommand):
                 total_available = result_data.get('Total', 0)
 
                 if not items:
-                    self.stdout.write("ℹ️ Товарів більше немає.")
                     break
 
                 for item in items:
                     name_omega = item.get('DescriptionUkr', '')
-                    if not name_omega: continue
+                    if not name_omega or "Шина" not in name_omega:
+                        continue
 
-                    # Фільтруємо тільки шини (на випадок, якщо API підкине запчастини)
-                    if "Шина" not in name_omega: continue
-
-                    brand_name = item.get('BrandDescription', 'Unknown')
+                    brand_raw = item.get('BrandDescription', 'Unknown').strip()
                     price_omega = item.get('CustomerPrice', 0)
                     image_url = item.get('ImageUrl', '')
                     
@@ -70,7 +67,7 @@ class Command(BaseCommand):
                     
                     if total_stock > 20: total_stock = 20
 
-                    # Парсинг розмірів
+                    # Парсинг розмірів (Ширина/Профіль RДіаметр)
                     size_match = re.search(r'(\d{3})/(\d{2,3})\s?[R|r](\d{2})', name_omega)
                     w = int(size_match.group(1)) if size_match else 0
                     p = int(size_match.group(2)) if size_match else 0
@@ -78,7 +75,17 @@ class Command(BaseCommand):
 
                     clean_name = name_omega.replace('Шина ', '').strip()
                     
-                    # Шукаємо в базі (спершу по точному імені, потім по Slug, якщо потрібно)
+                    # 1. Спершу шукаємо бренд безпечно (ігноруючи регістр)
+                    brand_obj = Brand.objects.filter(name__iexact=brand_raw).first()
+                    if not brand_obj:
+                        # Створюємо бренд тільки якщо його slug точно не зайнятий
+                        new_slug = slugify(brand_raw)
+                        brand_obj, _ = Brand.objects.get_or_create(
+                            slug=new_slug, 
+                            defaults={'name': brand_raw}
+                        )
+
+                    # 2. Шукаємо або оновлюємо товар
                     product = Product.objects.filter(name__iexact=clean_name).first()
                     if not product:
                         product = Product.objects.filter(name__iexact=name_omega).first()
@@ -88,14 +95,14 @@ class Command(BaseCommand):
                         product.cost_price = price_omega
                         product.description = item.get('Info', '')
                         
+                        # Оновлюємо URL фото, якщо свого файлу ще немає
                         if image_url and (not product.photo or product.photo == ''):
                             product.photo_url = image_url
                         
-                        product.price = 0 
+                        product.price = 0 # Обнуляємо для спрацювання націнки у models.py
                         product.save()
                         updated_count += 1
                     else:
-                        brand_obj, _ = Brand.objects.get_or_create(name=brand_name)
                         Product.objects.create(
                             name=clean_name,
                             brand=brand_obj,
@@ -110,15 +117,15 @@ class Command(BaseCommand):
                 current_from += batch_size
                 db.reset_queries()
                 
-                if current_from >= total_available or current_from >= 5000: # Обмежувач безпеки
+                if current_from >= total_available:
                     break
                 
                 time.sleep(0.5)
 
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"💥 Помилка: {e}"))
+                self.stdout.write(self.style.ERROR(f"💥 Помилка на позиції {current_from}: {e}"))
                 break
 
-        self.stdout.write(self.style.SUCCESS(f"\n🎉 GOLD-Синхронізація завершена!"))
+        self.stdout.write(self.style.SUCCESS(f"\n🎉 GOLD-Синхронізація успішно завершена!"))
         self.stdout.write(self.style.SUCCESS(f"🔄 Оновлено: {updated_count}"))
         self.stdout.write(self.style.SUCCESS(f"➕ Створено: {created_count}"))

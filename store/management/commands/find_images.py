@@ -1,114 +1,66 @@
+import os
 import requests
 import time
-import re
-import os
 from django.core.management.base import BaseCommand
 from store.models import Product
 from django.core.files.base import ContentFile
-from django.db.models import Q
-
-def get_clean_model_name(name_str):
-    s = str(name_str)
-    s = re.sub(r'\d{3}/\d{2,3}\s?[RZRzr]?\d{2}', '', s)
-    s = re.sub(r'\b\d{2,3}[a-zA-Z]\b', '', s)
-    s = re.sub(r'\b(XL|RunFlat|RFT|EXTRA LOAD)\b', '', s, flags=re.IGNORECASE)
-    s = re.sub(r'\(.*?\)', '', s)
-    s = s.replace('Шина', '').replace('під шип', '')
-    s = re.sub(r'[^\w\s-]', ' ', s)
-    s = re.sub(r'\s+', ' ', s).strip()
-    return s
 
 class Command(BaseCommand):
-    help = 'Пошук чистих фото в мережі через Serper.dev'
+    help = 'Смарт-пошук фото: Омега (з обходом 403) + Serper'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.WARNING("🤖 Запуск партизанського бота для пошуку фотографій..."))
+        # Шукаємо тільки ті товари, де фото поле порожнє
+        products = Product.objects.filter(photo='').exclude(name='')
         
-        # Беремо ключ з Coolify, але якщо його там немає (наприклад, запускаємо локально) - використовуємо напряму
-        API_KEY = os.environ.get("SERPER_API_KEY", "63360c318daf0d05c5148894689ceab40bf1e5f4")
-
-        # Очищення фантомів
-        self.stdout.write("🧹 Перевірка бази на наявність 'фантомних' фотографій...")
-        ghosts = Product.objects.exclude(Q(photo__isnull=True) | Q(photo__exact=''))
-        ghost_count = 0
-        for p in ghosts:
-            if p.photo and not p.photo.storage.exists(p.photo.name):
-                p.photo = None
-                p.save()
-                ghost_count += 1
-                
-        if ghost_count > 0:
-            self.stdout.write(self.style.SUCCESS(f"✅ Видалено {ghost_count} фантомних записів."))
-        else:
-            self.stdout.write(self.style.SUCCESS("✅ Фантомів не знайдено."))
-
-        # Шукаємо товари без фото
-        products = Product.objects.filter(Q(photo__isnull=True) | Q(photo__exact=''))
+        self.stdout.write(self.style.WARNING(f"🚀 Починаємо фінальну обробку {products.count()} товарів..."))
         
-        if not products:
-            self.stdout.write(self.style.SUCCESS("✅ Всі товари дійсно вже мають фотографії!"))
-            return
+        # Заголовки, щоб сервери не бачили в нас бота
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+        }
+        
+        serper_key = os.environ.get("SERPER_API_KEY", "ВАШ_КЛЮЧ_ТУТ_ЯКЩО_НЕМАЄ_В_ENV")
 
-        black_list = ['omega.page', 'infoshina', 'shina.ua', 'rozetka', 'prom.ua', 'autoshina']
-
+        count = 0
         for product in products:
-            brand_name = product.brand.name if product.brand else ""
-            clean_model = get_clean_model_name(product.name)
+            success = False
             
-            search_query = f"{brand_name} {clean_model} tire"
-            self.stdout.write(f"\n🔎 Шукаємо: '{search_query}'")
-            
-            search_url = "https://google.serper.dev/images"
-            headers = {
-                'X-API-KEY': API_KEY,
-                'Content-Type': 'application/json'
-            }
-            data = {"q": search_query, "num": 10}
-            
-            try:
-                response = requests.post(search_url, json=data, headers=headers)
-                
-                # 🔥 РЕНТГЕН ПОМИЛОК 🔥
-                if response.status_code != 200:
-                    self.stdout.write(self.style.ERROR(f"   ❌ Сервер Serper відмовив! Код: {response.status_code}. Відповідь: {response.text}"))
-                    return # Зупиняємо скрипт, щоб не спамити помилками
-                    
-                results = response.json().get('images', [])
-                
-                if not results:
-                    self.stdout.write(self.style.WARNING(f"   ⚠️ Serper повернув 0 картинок. Відповідь: {response.text}"))
-                    continue
+            # 1. Пробуємо завантажити за посиланням Омеги з новими заголовками
+            if product.photo_url:
+                try:
+                    res = requests.get(product.photo_url, headers=headers, timeout=10)
+                    if res.status_code == 200:
+                        product.photo.save(f"tire_{product.id}.jpg", ContentFile(res.content), save=True)
+                        self.stdout.write(self.style.SUCCESS(f"✅ [Омега-Fix] {product.name}"))
+                        success = True
+                except:
+                    pass
 
-                image_saved = False
-                
-                for img in results:
-                    img_url = img.get('imageUrl')
-                    source = img.get('source').lower() if img.get('source') else ""
+            # 2. Якщо не вийшло - йдемо в Serper (Google)
+            if not success and serper_key:
+                try:
+                    url = "https://google.serper.dev/images"
+                    payload = {"q": f"шина {product.name} фото", "num": 1}
+                    s_headers = {'X-API-KEY': serper_key, 'Content-Type': 'application/json'}
                     
-                    if any(bad_site in source for bad_site in black_list):
-                        self.stdout.write(f"   ⚠️ Пропускаємо {source} (чорний список)")
-                        continue
-                        
-                    self.stdout.write(f"   📥 Завантаження з {source}...")
+                    response = requests.post(url, json=payload, headers=s_headers)
+                    results = response.json().get('images', [])
                     
-                    try:
-                        img_response = requests.get(img_url, timeout=5)
-                        if img_response.status_code == 200:
-                            file_name = f"tire_{product.id}_{product.slug[:20]}.jpg"
-                            product.photo.save(file_name, ContentFile(img_response.content))
-                            self.stdout.write(self.style.SUCCESS(f"   ✅ УСПІХ! Фото збережено."))
-                            image_saved = True
-                            break
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"   ❌ Помилка скачування: {e}"))
-                        continue
-                
-                if not image_saved:
-                    self.stdout.write("   😔 Не вдалося знайти чисте фото для цього товару.")
-                    
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"❌ Помилка пошуку: {e}"))
-            
-            time.sleep(1)
-            
-        self.stdout.write(self.style.SUCCESS("\n🏁 Пошуковий рейд завершено!"))
+                    if results:
+                        img_url = results[0]['imageUrl']
+                        img_res = requests.get(img_url, headers=headers, timeout=10)
+                        if img_res.status_code == 200:
+                            product.photo.save(f"tire_{product.id}.jpg", ContentFile(img_res.content), save=True)
+                            self.stdout.write(self.style.SUCCESS(f"🔍 [Google] {product.name}"))
+                            success = True
+                            time.sleep(0.5) # Мінімальна пауза
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"❌ Помилка Google для {product.name}"))
+
+            if success:
+                count += 1
+                if count % 50 == 0:
+                    self.stdout.write(self.style.WARNING(f"📈 Опрацьовано {count} товарів..."))
+
+        self.stdout.write(self.style.SUCCESS(f"\n🎉 ФІНІШ! Додано {count} фото. Сайт повністю укомплектований!"))

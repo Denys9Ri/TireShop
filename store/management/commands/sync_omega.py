@@ -8,6 +8,31 @@ from django.core.management.base import BaseCommand
 from store.models import Product, Brand
 from django.db import transaction
 
+# Бронебійна функція для читання будь-яких чисел з Excel
+def clean_price_value(val):
+    if pd.isna(val):
+        return 0.0
+    if isinstance(val, (int, float)):
+        return float(val)
+        
+    s = str(val).strip()
+    s = re.sub(r'\s+', '', s) # Видаляємо всі пробіли
+    if not s:
+        return 0.0
+        
+    s = s.replace(',', '.') # Міняємо кому на крапку
+    
+    # Якщо крапок кілька (наприклад 1.254.85), залишаємо тільки останню як десяткову
+    parts = s.split('.')
+    if len(parts) > 2:
+        s = ''.join(parts[:-1]) + '.' + parts[-1]
+        
+    s = re.sub(r'[^\d\.]', '', s) # Залишаємо тільки цифри та крапку
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
 class Command(BaseCommand):
     help = 'Автоматичне оновлення залишків, цін та додавання нових товарів з API Омега'
 
@@ -22,7 +47,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"❌ Помилка API черги. Статус: {req.status_code}"))
             return
 
-        self.stdout.write("⏳ Прайс замовлено. Очікуємо формування файлу на сервері Омеги...")
+        self.stdout.write("⏳ Прайс замовлено. Очікуємо формування файлу...")
 
         download_url = "https://public.omega.page/public/api/v1.0/price/downloadPrice"
         file_content = None
@@ -39,7 +64,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"   ...ще формується (спроба {i+1}/20)")
 
         if not file_content:
-            self.stdout.write(self.style.ERROR("❌ Сервер Омеги не віддав файл за 5 хвилин. Спробуйте пізніше."))
+            self.stdout.write(self.style.ERROR("❌ Сервер Омеги не віддав файл."))
             return
 
         self.stdout.write(self.style.WARNING("2️⃣ Розпакування та аналіз прайсу..."))
@@ -48,57 +73,40 @@ class Command(BaseCommand):
                 filename = z.namelist()[0]
                 with z.open(filename) as f:
                     df = pd.read_excel(f, sheet_name='Шини Легкові', skiprows=7, engine='xlrd')
-            
             df.columns = df.columns.str.replace(r'\s+', ' ', regex=True).str.strip()
-            
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ Помилка читання Excel: {e}"))
             return
 
-        if 'Товар' not in df.columns:
-            self.stdout.write(self.style.ERROR(f"❌ Не знайдено потрібних колонок у прайсі!"))
-            return
-
-        self.stdout.write(self.style.SUCCESS(f"📊 Знайдено {len(df)} рядків товарів. Починаємо оновлення бази..."))
-
         updated_count = 0
         created_count = 0
         error_count = 0
+        zero_price_count = 0
 
         Product.objects.update(stock_quantity=0)
 
         with transaction.atomic():
             for index, row in df.iterrows():
                 name_in_excel = str(row.get('Товар', '')).strip()
-                
                 if not name_in_excel or name_in_excel == 'nan':
                     continue
 
-                # --- ПІДРАХУНОК ЗАЛИШКІВ ---
-                raw_kyiv = str(row.get('Вільний залишок Київ', '0')).replace('>', '').replace('<', '').strip()
-                try:
-                    stock_kyiv = int(float(raw_kyiv))
-                except ValueError:
-                    stock_kyiv = 0
+                # --- ЗАЛИШКИ ---
+                stock_kyiv = clean_price_value(row.get('Вільний залишок Київ', 0))
+                stock_lviv = clean_price_value(row.get('Вільний залишок Львів', 0))
+                stock = int(stock_kyiv + stock_lviv)
+                if stock > 20: stock = 20
 
-                raw_lviv = str(row.get('Вільний залишок Львів', '0')).replace('>', '').replace('<', '').strip()
-                try:
-                    stock_lviv = int(float(raw_lviv))
-                except ValueError:
-                    stock_lviv = 0
+                # --- ЦІНА (КАСКАДНА ЛОГІКА) ---
+                price_internet = clean_price_value(row.get('Інтернет ціна'))
+                price_retail = clean_price_value(row.get('Роздрібна ціна'))
+                price_cost = clean_price_value(row.get('Ваша ціна'))
 
-                stock = stock_kyiv + stock_lviv
-                if stock > 20:
-                    stock = 20
-
-                # --- ЖОРСТКЕ ОЧИЩЕННЯ ЦІНИ ---
-                # Беремо рядок, видаляємо ВСЕ, крім цифр і коми/крапки, потім міняємо кому на крапку
-                raw_price_str = str(row.get('Інтернет ціна', '0'))
-                clean_price = re.sub(r'[^\d,\.]', '', raw_price_str).replace(',', '.')
-                try:
-                    price = float(clean_price)
-                except ValueError:
-                    price = 0.0
+                final_price = price_internet
+                if final_price <= 0:
+                    final_price = price_retail
+                if final_price <= 0:
+                    final_price = price_cost
 
                 # Параметри
                 brand_str = str(row.get('Виробник', '')).split(',')[0].strip()
@@ -116,7 +124,6 @@ class Command(BaseCommand):
 
                 # Шукаємо товар
                 product = Product.objects.filter(name__iexact=name_in_excel).first()
-                
                 if not product and w and p and d and brand_str:
                     candidates = Product.objects.filter(width=w, profile=p, diameter=d, brand__name__icontains=brand_str)
                     if candidates.count() == 1:
@@ -133,32 +140,28 @@ class Command(BaseCommand):
                 # Оновлюємо або створюємо
                 if product:
                     product.stock_quantity = stock
-                    if price > 0:
-                        product.price = price
+                    if final_price > 0:
+                        product.price = final_price
+                    else:
+                        zero_price_count += 1
                     product.save()
                     updated_count += 1
                 else:
                     if w and p and d and brand_str:
                         brand_obj, created = Brand.objects.get_or_create(name=brand_str)
                         seasonality = 'S'
-                        if 'Зима' in season_str:
-                            seasonality = 'W'
-                        elif 'сезон' in season_str.lower():
-                            seasonality = 'A'
+                        if 'Зима' in season_str: seasonality = 'W'
+                        elif 'сезон' in season_str.lower(): seasonality = 'A'
                         
                         try:
                             clean_name = name_in_excel.replace('Шина ', '')
                             new_product = Product.objects.create(
-                                name=clean_name,
-                                brand=brand_obj,
-                                width=w,
-                                profile=p,
-                                diameter=d,
-                                seasonality=seasonality,
-                                price=price, # Тепер сюди зайде ідеально чиста ціна!
-                                stock_quantity=stock,
-                                description="", 
+                                name=clean_name, brand=brand_obj,
+                                width=w, profile=p, diameter=d, seasonality=seasonality,
+                                price=final_price, stock_quantity=stock, description="", 
                             )
+                            if final_price <= 0:
+                                zero_price_count += 1
                             created_count += 1
                         except Exception as e:
                             error_count += 1
@@ -169,3 +172,5 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"🔄 Оновлено існуючих товарів: {updated_count}"))
         if created_count > 0:
             self.stdout.write(self.style.WARNING(f"➕ Створено нових товарів: {created_count}"))
+        if zero_price_count > 0:
+            self.stdout.write(self.style.ERROR(f"⚠️ Товарів без ціни в Омеги (поставлено 0): {zero_price_count}"))

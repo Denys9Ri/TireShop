@@ -6,20 +6,18 @@
 
 {% block content %}
 <style>
-    /* --- 1. HERO SECTION (ТЕПЕР БІЛИЙ / SOLID) --- */
-    /* Робимо цей блок білим, щоб текст читався ідеально, а сам блок виділявся */
+    /* --- 1. HERO SECTION --- */
     .brand-hero {
-        background: #ffffff; /* Суцільний білий */
+        background: #ffffff;
         border-radius: 30px;
         padding: 40px; 
         margin-bottom: 30px;
         border: 1px solid #f0f0f0;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); /* М'яка тінь */
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
         position: relative; 
         overflow: hidden;
     }
     
-    /* Додаємо легкий градієнт збоку для краси */
     .brand-hero::after {
         content: ''; position: absolute; right: 0; top: 0; width: 150px; height: 100%;
         background: linear-gradient(to left, rgba(13, 110, 253, 0.03), transparent);
@@ -38,7 +36,7 @@
     .pros-cons-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 10px; }
     .pros-box, .cons-box {
         background: #fdfdfd; border-radius: 20px; padding: 20px;
-        border: 1px solid #eee; /* Тонка рамка замість скла */
+        border: 1px solid #eee;
     }
     .pros-title { color: #198754; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
     .cons-title { color: #dc3545; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
@@ -47,24 +45,23 @@
         .brand-hero { padding: 25px; }
     }
     
-    /* --- 2. 🔥 ПАНЕЛЬ ФІЛЬТРУ (ТЕПЕР СКЛЯНА / GLASS) 🔥 --- */
+    /* --- 2. ПАНЕЛЬ ФІЛЬТРУ --- */
     .brand-filter-bar {
-        background: rgba(255, 255, 255, 0.4); /* Прозорість */
-        backdrop-filter: blur(15px); /* Розмиття фону */
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
         border: 1px solid rgba(255, 255, 255, 0.6);
         border-radius: 24px;
         padding: 25px;
         margin-bottom: 40px;
-        box-shadow: 0 15px 35px rgba(0, 74, 153, 0.1); /* Глибша тінь для ефекту паріння */
+        box-shadow: 0 15px 35px rgba(0, 74, 153, 0.1);
     }
     
     .filter-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #495057; margin-bottom: 8px; display: block; padding-left: 5px; }
     
-    /* Інпути всередині скла робимо напівбілими */
     .filter-select { 
         border: 1px solid rgba(255,255,255,0.5); 
-        background-color: rgba(255, 255, 255, 0.85); /* Майже білий */
+        background-color: rgba(255, 255, 255, 0.85);
         border-radius: 12px; height: 50px; font-weight: 600; color: #333; cursor: pointer;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
     }
@@ -75,7 +72,7 @@
     }
     
     .btn-filter-go {
-        background: linear-gradient(135deg, #0d6efd, #0b5ed7); /* Градієнт для кнопки */
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
         color: white; border-radius: 12px; height: 50px; width: 100%; 
         font-weight: 800; border: none; text-transform: uppercase; transition: 0.3s;
         box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
@@ -115,7 +112,6 @@
         </ol>
     </nav>
 
-    {# 🔥 БЛОК БРЕНДУ (БІЛИЙ / SOLID) 🔥 #}
     <div class="brand-hero">
         <div class="row align-items-start">
             <div class="col-lg-8">
@@ -164,7 +160,6 @@
         </div>
     </div>
 
-    {# 🔥 ФІЛЬТР ПО БРЕНДУ (СКЛЯНИЙ / GLASS) 🔥 #}
     <div class="brand-filter-bar">
         <form action="{% url 'store:catalog' %}" method="get">
             <input type="hidden" name="brand" value="{{ brand.id }}">
@@ -201,7 +196,6 @@
         </form>
     </div>
 
-    {# ПЕРЕЛІНКОВКА #}
     {% if cross_links %}
         <div class="mb-5">
             {% for group in cross_links %}
@@ -217,7 +211,6 @@
 
     <h2 class="h4 fw-bold mb-4">Наявність на складі</h2>
 
-    {# СІТКА ТОВАРІВ #}
     <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
         {% for product in page_obj %}
             <div class="col">
@@ -229,7 +222,10 @@
                     </div>
                     {% if product.seasonality == 'winter' %}<div class="season-badge winter" title="Зимова"><i class="bi bi-snow"></i></div>{% elif product.seasonality == 'summer' %}<div class="season-badge summer" title="Літня"><i class="bi bi-sun-fill"></i></div>{% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem;"></i></div>{% endif %}
                     <a href="{% url 'store:product_detail' product.slug %}">
-                        <img src="{{ product.photo_url|default:'https://placehold.co/600x600?text=No+Img' }}" class="product-image" loading="lazy" alt="{{ product.name }}" onerror="this.src='{% static 'images/no-image.png' %}'">
+                        {# ПРІОРИТЕТ: product.photo.url -> product.photo_url #}
+                        <img src="{% if product.photo %}{{ product.photo.url }}{% elif product.photo_url %}{{ product.photo_url }}{% else %}{% static 'images/no-image.png' %}{% endif %}" 
+                             class="product-image" loading="lazy" alt="{{ product.name }}" 
+                             onerror="this.src='{% static 'images/no-image.png' %}'">
                     </a>
                     <div class="product-name fw-bold mb-1">
                         <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">{{ product.brand.name }} {{ product.display_name }}</a>
@@ -270,7 +266,6 @@
         {% endfor %}
     </div>
 
-    {# ПАГІНАЦІЯ #}
     {% if page_obj.has_other_pages %}
         <nav class="mt-5">
             <ul class="pagination justify-content-center flex-wrap gap-1">
@@ -289,7 +284,6 @@
         </nav>
     {% endif %}
 
-    {# 🔥 SEO ТЕКСТ (ЗНИЗУ) 🔥 #}
     {% if brand.seo_text %}
         <div class="mt-5 seo-glass-box">
             {{ brand.seo_text|safe }}

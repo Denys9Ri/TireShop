@@ -241,10 +241,10 @@
                 <div class="tab-content border-top pt-4">
                     <div class="tab-pane fade show active" id="desc">
                         <div class="text-secondary lh-lg fs-6">
-                            {% if product.seo_text %}
-                                {{ product.seo_text|safe }}
+                            {% if product.description %}
+                                {{ product.description|safe }}
                             {% else %}
-                                {{ product.description|safe|default:"Опис товару наразі готується..." }}
+                                Опис товару наразі готується...
                             {% endif %}
                         </div>
                     </div>
@@ -276,7 +276,6 @@
                             <button class="btn btn-outline-primary btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#reviewModal">Написати відгук</button>
                         </div>
                         
-                        <!-- ЦИКЛ ДЛЯ ВІДГУКІВ З БД -->
                         {% for review in reviews %}
                             <div class="review-item border-bottom pb-3 mb-3">
                                 <div class="d-flex justify-content-between mb-1">
@@ -322,6 +321,13 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- 🔥 СЮДИ ПОВЕРНУВСЯ SEO ТЕКСТ 🔥 -->
+        <div class="glass-faq-container mt-5 p-4 bg-light border rounded-4">
+            <h2 class="h4 fw-bold mb-3 text-dark">{{ seo_h2|default:seo_h1 }}</h2>
+            <div class="text-muted small">{{ seo_text_html|safe }}</div>
+        </div>
+
     </div>
 </div>
 

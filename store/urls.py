@@ -18,7 +18,6 @@ urlpatterns = [
     path('shiny/<str:brand_slug>/<str:season_slug>/<int:width>-<int:profile>-r<int:diameter>/', views.seo_matrix_view, name='seo_full'),
 
     # 3. 🔥 ФІКС 🔥: СЕЗОН + РОЗМІР
-    # Використовуємо re_path, щоб перехопити ТІЛЬКИ зимові/літні/всесезонні
     re_path(r'^shiny/(?P<season_slug>zimovi|litni|vsesezonni)/(?P<width>\d+)-(?P<profile>\d+)-r(?P<diameter>\d+)/$', views.seo_matrix_view, name='seo_season_size'),
 
     # 4. БРЕНД + РОЗМІР
@@ -55,8 +54,8 @@ urlpatterns = [
     path('faq/', views.faq_view, name='faq'),
     path('secret-fix-names/', views.fix_product_names_view),
 
-    # 🔥 SITEMAP (ДИНАМІЧНИЙ) 🔥
+    # 🔥 ТЕХНІЧНІ ФАЙЛИ ТА ФІДИ 🔥
     path('sitemap.xml', views.sitemap_xml_view, name='sitemap_xml'),
-
+    path('google-shopping-feed.xml', views.google_shopping_feed, name='google_shopping_feed'),
     path('robots.txt', views.robots_txt),
 ]

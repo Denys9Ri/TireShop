@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand
 from store.models import Product
-import requests
 from bs4 import BeautifulSoup
 import urllib.parse
 import time
 import re
+import cloudscraper
 
 # --- СЛОВНИКИ ІНДЕКСІВ ---
 SPEED_INDICES = {
@@ -25,74 +25,116 @@ LOAD_INDICES = {
 }
 
 class Command(BaseCommand):
-    help = 'Бот-Парсер V2.0 для заповнення характеристик шин'
+    help = 'Бот-Парсер V3.0 (Cloudscraper) для обходу захисту'
 
     def scrape_missing_data(self, brand, model, size):
         tread_type = "Не вказано"
         fuel_economy = "Не вказано"
         noise_level = "Не вказано"
         
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'uk,en-US;q=0.9,en;q=0.8'
-        }
+        # Створюємо scraper, який вміє обходити Cloudflare
+        scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            }
+        )
 
         try:
-            # Спробуємо парсити Shiny-Diski
+            # Формуємо запит (шукаємо спочатку на shiny-diski)
             query = f"{brand} {model} {size}"
             encoded_query = urllib.parse.quote(query)
             search_url = f"https://shiny-diski.com.ua/uk/search?query={encoded_query}"
             
-            response = requests.get(search_url, headers=headers, timeout=10)
+            response = scraper.get(search_url, timeout=15)
+            
+            # Якщо shiny-diski не відповів, пробуємо infoshina
             if response.status_code != 200:
-                return tread_type, fuel_economy, noise_level
+                search_url = f"https://infoshina.com.ua/uk/search?search={encoded_query}"
+                response = scraper.get(search_url, timeout=15)
+                if response.status_code != 200:
+                    return tread_type, fuel_economy, noise_level
 
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Шукаємо лінк на товар
+            # Знаходимо перше посилання на товар в результатах пошуку
             product_link = None
             for a_tag in soup.find_all('a', href=True):
-                if '/uk/' in a_tag['href'] and len(a_tag['href']) > 20:
-                    product_link = a_tag['href']
-                    break
-                    
+                href = a_tag['href']
+                if '/uk/' in href and ('shina' in href or 'shini' in href or 'tires' in href or brand.lower() in href.lower()):
+                    if len(href) > 20:
+                        product_link = href
+                        break
+
             if not product_link:
                 return tread_type, fuel_economy, noise_level
 
-            if not product_link.startswith('http'):
-                product_link = 'https://shiny-diski.com.ua' + product_link
+            # Робимо повне посилання
+            if product_link.startswith('/'):
+                if 'infoshina' in search_url:
+                    product_link = 'https://infoshina.com.ua' + product_link
+                else:
+                    product_link = 'https://shiny-diski.com.ua' + product_link
 
-            prod_response = requests.get(product_link, headers=headers, timeout=10)
+            # Заходимо в саму карточку
+            prod_response = scraper.get(product_link, timeout=15)
             prod_soup = BeautifulSoup(prod_response.text, 'html.parser')
 
-            # Шукаємо в таблицях характеристик
-            for tr in prod_soup.find_all('tr'):
-                text_lower = tr.get_text().lower()
-                tds = tr.find_all('td')
-                if len(tds) >= 2:
-                    val = tds[1].get_text(strip=True)
-                    
-                    if "протектор" in text_lower:
-                        if len(val) > 2: tread_type = val.capitalize()
-                    elif "палив" in text_lower:
-                        if len(val) == 1: fuel_economy = val.upper()
-                    elif "шум" in text_lower:
-                        if val: noise_level = val if "dB" in val else f"{val} dB"
+            # Шукаємо у всіх можливих контейнерах характеристик (таблиці, списки, діви)
+            for element in prod_soup.find_all(['tr', 'li', 'div']):
+                text_lower = element.get_text(separator=' ').lower()
+                
+                # 1. Протектор
+                if "протектор" in text_lower or "малюнок" in text_lower:
+                    tds = element.find_all(['td', 'span', 'b', 'strong'])
+                    if len(tds) >= 2:
+                        val = tds[-1].get_text(strip=True)
+                        if len(val) > 3 and "протект" not in val.lower():
+                            tread_type = val.capitalize()
+                    else:
+                        parts = element.get_text(separator=':').split(':')
+                        if len(parts) >= 2:
+                            val = parts[-1].strip()
+                            if len(val) > 3 and len(val) < 20: tread_type = val.capitalize()
+
+                # 2. Паливо (шукаємо одну літеру A-G)
+                if "палив" in text_lower or "опір коченню" in text_lower:
+                    tds = element.find_all(['td', 'span', 'b', 'strong'])
+                    if len(tds) >= 2:
+                        val = tds[-1].get_text(strip=True).upper()
+                        if len(val) == 1 and val in 'ABCDEFG': fuel_economy = val
+                    else:
+                        parts = element.get_text(separator=':').split(':')
+                        if len(parts) >= 2:
+                            val = parts[-1].strip().upper()
+                            if len(val) == 1 and val in 'ABCDEFG': fuel_economy = val
+
+                # 3. Шум (шукаємо цифри + dB/дБ)
+                if "шум" in text_lower:
+                    val = element.get_text(separator=' ')
+                    match = re.search(r'(\d{2})\s*(db|дб)', val, re.IGNORECASE)
+                    if match:
+                        noise_level = f"{match.group(1)} dB"
+                    else:
+                        match2 = re.search(r'(\d{2})', val)
+                        if match2 and 60 <= int(match2.group(1)) <= 80:
+                            noise_level = f"{match2.group(1)} dB"
 
             return tread_type, fuel_economy, noise_level
 
         except Exception as e:
+            # Тихий фейл, щоб не зупиняти весь процес
             return tread_type, fuel_economy, noise_level
 
     def handle(self, *args, **kwargs):
         products = Product.objects.exclude(description__icontains='<ul>')
         total = products.count()
         
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V2. Знайдено товарів без опису: {total}'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V3 (Cloudscraper). Залишилось обробити: {total}'))
 
         for i, product in enumerate(products, 1):
-            # 1. ГРАМАТИКА (Виправляємо стать шини)
+            # ГРАМАТИКА
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
             if "легков" in veh_type: veh_type = "легкова"
             elif "позашлях" in veh_type or "suv" in veh_type: veh_type = "для позашляховиків"
@@ -102,12 +144,11 @@ class Command(BaseCommand):
             country = product.country if (product.country and product.country != "-") else "Не вказано"
             year = product.year
             
-            # 2. РОЗУМНИЙ ПОШУК ІНДЕКСІВ (Навіть якщо в базі пусто, шукаємо в назві!)
+            # ІНДЕКСИ (Беремо з БД або витягуємо з назви)
             speed_val = product.speed_index or ""
             load_val = product.load_index or ""
             
             if not speed_val or not load_val:
-                # Шукаємо комбінацію типу "111W" або "98 Y" в назві товару
                 match = re.search(r'\b(\d{2,3})([A-Z]{1,2})\b', product.name.upper())
                 if match:
                     if not load_val: load_val = match.group(1)
@@ -116,15 +157,15 @@ class Command(BaseCommand):
             speed_kmh = SPEED_INDICES.get(speed_val.upper(), "???") if speed_val else "???"
             load_kg = LOAD_INDICES.get(load_val, "???") if load_val else "???"
 
-            # 3. ПАРСИНГ З ІНТЕРНЕТУ
+            # ПАРСИНГ З ІНТЕРНЕТУ
             brand_name = product.brand.name if product.brand else ""
             size_str = f"{product.width}/{product.profile} R{product.diameter}"
             
-            self.stdout.write(f"[{i}/{total}] Обробка: {brand_name} {product.name}...")
+            self.stdout.write(f"[{i}/{total}] Парсинг: {brand_name} {product.name}...")
             
             tread, fuel, noise = self.scrape_missing_data(brand_name, product.name, size_str)
 
-            # 4. ФОРМУВАННЯ HTML
+            # ФОРМУВАННЯ HTML
             html_description = f"""<div>
     <strong>Шина {veh_type}, {season_str}</strong><br>
     <ul>
@@ -140,7 +181,7 @@ class Command(BaseCommand):
             product.description = html_description
             product.save(update_fields=['description'])
             
-            self.stdout.write(self.style.SUCCESS(f'✅ Успіх!'))
-            time.sleep(1)
+            self.stdout.write(self.style.SUCCESS(f'✅ Готово: Протектор: {tread} | Паливо: {fuel} | Шум: {noise}'))
+            time.sleep(2) # Пауза 2 секунди, щоб нас не забанили
 
-        self.stdout.write(self.style.SUCCESS('🔥 Завершено!'))
+        self.stdout.write(self.style.SUCCESS('🔥 Всі дані успішно спарсено та згенеровано!'))

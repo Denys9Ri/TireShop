@@ -17,7 +17,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .cart import Cart
-from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage
+# ДОДАНО ІМПОРТ REVIEW
+from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage, Review
 
 # --- ⚙️ КОНФІГУРАЦІЯ ---
 
@@ -318,7 +319,6 @@ def robots_txt(request):
 # --- 👁️ VIEWS ---
 
 def home_view(request):
-    # Фільтруємо товари, залишаючи ТІЛЬКИ ті, що мають фото (локальне АБО віддалене)
     no_local = Q(photo__isnull=True) | Q(photo__exact='')
     no_remote = Q(photo_url__isnull=True) | Q(photo_url__exact='') | Q(photo_url__iexact='none') | Q(photo_url__iexact='null')
 
@@ -556,9 +556,33 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
 def catalog_view(request):
     return seo_matrix_view(request)
 
-
+# 🔥 ОНОВЛЕНИЙ PRODUCT DETAIL ВЬЮ 🔥
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
+    
+    # 📌 ОБРОБКА ФОРМИ ВІДГУКУ
+    if request.method == 'POST' and 'submit_review' in request.POST:
+        name = request.POST.get('reviewer_name')
+        rating = request.POST.get('rating')
+        text = request.POST.get('review_text')
+        
+        if name and rating and text:
+            try:
+                Review.objects.create(
+                    product=product,
+                    name=name,
+                    rating=int(rating),
+                    text=text
+                )
+                # Виводимо повідомлення про успіх
+                messages.success(request, 'Дякуємо! Ваш відгук відправлено на модерацію.')
+            except ValueError:
+                messages.error(request, 'Помилка при збереженні оцінки.')
+        return redirect('store:product_detail', slug=product.slug)
+
+    # 📌 ДІСТАЄМО ТІЛЬКИ СХВАЛЕНІ ВІДГУКИ
+    approved_reviews = product.reviews.filter(is_approved=True)
+
     similar = Product.objects.filter(
         width=product.width, diameter=product.diameter
     ).exclude(id=product.id)[:4]
@@ -583,6 +607,7 @@ def product_detail_view(request, slug):
     return render(request, 'store/product_detail.html', {
         'product': product,
         'similar_products': similar,
+        'reviews': approved_reviews, # 📌 Передаємо відгуки в шаблон
         'parent_category': parent_cat,
         'seo_title':     seo_data['title'],
         'seo_h1':        seo_data['h1'],

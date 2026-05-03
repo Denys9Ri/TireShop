@@ -121,6 +121,16 @@
         </ol>
     </nav>
 
+    <!-- Повідомлення (про успішний відгук тощо) -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="product-page-container">
         <div class="row g-5">
             <!-- ГАЛЕРЕЯ -->
@@ -151,7 +161,7 @@
                 <div class="d-flex align-items-center mb-4 flex-wrap gap-2">
                     <div class="rating-stars">
                         <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
-                        <span class="rating-value text-dark small">4.8 <a href="#reviews" class="text-muted fw-normal text-decoration-none" onclick="document.getElementById('reviews-tab').click();">(12 відгуків)</a></span>
+                        <span class="rating-value text-dark small">4.8 <a href="#reviews" class="text-muted fw-normal text-decoration-none" onclick="document.getElementById('reviews-tab').click();">({{ reviews.count|default:"0" }} відгуків)</a></span>
                     </div>
                     <div class="ms-auto">
                         {% if product.stock_quantity > 0 %}
@@ -225,13 +235,12 @@
                 <ul class="nav nav-pills mb-4 gap-2" id="productTab" role="tablist">
                     <li class="nav-item"><button class="nav-link active px-4 py-2 fw-bold" data-bs-toggle="tab" data-bs-target="#desc">Опис</button></li>
                     <li class="nav-item"><button class="nav-link px-4 py-2 fw-bold" data-bs-toggle="tab" data-bs-target="#specs">Характеристики</button></li>
-                    <li class="nav-item"><button class="nav-link px-4 py-2 fw-bold" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews">Відгуки (12)</button></li>
+                    <li class="nav-item"><button class="nav-link px-4 py-2 fw-bold" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews">Відгуки ({{ reviews.count|default:"0" }})</button></li>
                 </ul>
                 
                 <div class="tab-content border-top pt-4">
                     <div class="tab-pane fade show active" id="desc">
                         <div class="text-secondary lh-lg fs-6">
-                            <!-- ВИПРАВЛЕНО: Додано фільтр |safe, щоб HTML теги (<div>, <br>) рендерилися як треба, а не виводилися текстом -->
                             {% if product.seo_text %}
                                 {{ product.seo_text|safe }}
                             {% else %}
@@ -267,28 +276,38 @@
                             <button class="btn btn-outline-primary btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#reviewModal">Написати відгук</button>
                         </div>
                         
-                        <div class="review-item border-bottom pb-3 mb-3">
-                            <div class="d-flex justify-content-between mb-1"><strong>Олександр</strong><span class="text-muted small">01.05.2026</span></div>
-                            <div class="rating-stars small mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
-                            <p class="text-muted small">М'яка, свіжа гума. Балансування пройшло ідеально (по 10-20 грамів на колесо). За свою ціну — топ.</p>
-                        </div>
-                        <div class="review-item border-bottom pb-3 mb-3">
-                            <div class="d-flex justify-content-between mb-1"><strong>Євген</strong><span class="text-muted small">27.04.2026</span></div>
-                            <div class="rating-stars small mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div>
-                            <p class="text-muted small"><span class="text-success fw-bold">Плюси:</span> Чудова бюджетна резина.<br><span class="text-danger fw-bold">Мінуси:</span> Поки не помітив.</p>
-                        </div>
+                        <!-- ЦИКЛ ДЛЯ ВІДГУКІВ З БД -->
+                        {% for review in reviews %}
+                            <div class="review-item border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <strong>{{ review.name }}</strong>
+                                    <span class="text-muted small">{{ review.created_at|date:"d.m.Y" }}</span>
+                                </div>
+                                <div class="rating-stars small mb-2 text-warning">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="text-muted small mb-0">{{ review.text|linebreaksbr }}</p>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted small py-3">Поки що немає відгуків. Будьте першим!</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- СХОЖІ ТОВАРИ (ВИПРАВЛЕНО) -->
+        <!-- СХОЖІ ТОВАРИ (ПОКАЗУЄ ТІЛЬКИ ТІ, ЩО Є В НАЯВНОСТІ) -->
         {% if similar_products %}
         <div class="mt-5 pt-5 border-top">
             <h3 class="fw-bold mb-4">Інші шини в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}</h3>
             <div class="row row-cols-2 row-cols-md-4 g-3">
                 {% for sim in similar_products %}
-                    <!-- Показуємо тільки ті, що є в наявності -->
                     {% if sim.stock_quantity > 0 %}
                     <div class="col">
                         <div class="similar-item h-100 bg-white">
@@ -301,30 +320,31 @@
                     {% endif %}
                 {% endfor %}
             </div>
-            <!-- Якщо товарів в наявності немає, виводимо повідомлення (можна прибрати цей блок, якщо хочете щоб було просто пусто) -->
-            <div class="text-muted small mt-3">* Наразі інші моделі в цьому розмірі розпродані.</div>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Модальне вікно для створення відгуку -->
+<!-- Модальне вікно для створення відгуку (СПРАВЖНЯ ФОРМА) -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold" id="reviewModalLabel">Залишити відгук</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form method="POST" action="{% url 'store:product_detail' product.slug %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="submit_review" value="1">
+                    
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ваше ім'я</label>
-                        <input type="text" class="form-control" placeholder="Введіть ім'я">
+                        <input type="text" name="reviewer_name" class="form-control" placeholder="Введіть ім'я" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Оцінка товару</label>
-                        <select class="form-select">
+                        <select name="rating" class="form-select" required>
                             <option value="5">⭐⭐⭐⭐⭐ Відмінно</option>
                             <option value="4">⭐⭐⭐⭐ Добре</option>
                             <option value="3">⭐⭐⭐ Нормально</option>
@@ -334,9 +354,9 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Текст відгуку</label>
-                        <textarea class="form-control" rows="4" placeholder="Поділіться враженнями..."></textarea>
+                        <textarea name="review_text" class="form-control" rows="4" placeholder="Поділіться враженнями..." required></textarea>
                     </div>
-                    <button type="button" class="btn btn-primary w-100 fw-bold" data-bs-dismiss="modal" onclick="alert('Дякуємо! Ваш відгук відправлено на модерацію.')">ВІДПРАВИТИ ВІДГУК</button>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">ВІДПРАВИТИ ВІДГУК</button>
                 </form>
             </div>
         </div>

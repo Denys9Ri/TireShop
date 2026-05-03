@@ -9,6 +9,8 @@ from django.db import transaction
 from django.urls import reverse
 from django.core.cache import cache
 from django.contrib import messages
+from django.utils.xmlutils import SimplerXMLGenerator
+from io import StringIO
 import json
 import requests
 import re
@@ -23,15 +25,15 @@ from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage, Re
 # --- ⚙️ КОНФІГУРАЦІЯ ---
 
 SEASONS_MAP = {
-    'zimovi':     {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
-    'zymovi':     {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
-    'litni':      {'db': 'summer',     'ua': 'Літні шини',      'adj': 'літні'},
+    'zimovi':      {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
+    'zymovi':      {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
+    'litni':       {'db': 'summer',     'ua': 'Літні шини',      'adj': 'літні'},
     'vsesezonni': {'db': 'all-season', 'ua': 'Всесезонні шини', 'adj': 'всесезонні'},
 }
 
 DB_TO_SLUG_MAP = {
-    'winter':     'zimovi',
-    'summer':     'litni',
+    'winter':      'zimovi',
+    'summer':      'litni',
     'all-season': 'vsesezonni',
     'all_season': 'vsesezonni',
 }
@@ -77,7 +79,7 @@ FAQ_DATA = {
     'summer': [
         ("Коли ставити літню гуму?",
          "Коли температура стабільно вище +7°C. Літня гума на теплій дорозі тримає краще."),
-        ("Які літні шини кращі: для міста чи траси?",
+        ("Яки літні шини кращі: для міста чи траси?",
          "<b>Місто</b> — тихі, зносостійкі.<br><b>Траса</b> — стабільні на швидкості, добре тримають дорогу у дощ.<br>"
          "Пиши, як їздиш, і підберемо."),
         ("Що таке аквапланування і як його уникнути?",
@@ -215,9 +217,9 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     description_html = template['text'].format(**fmt)
 
     canonical_params = []
-    if w:         canonical_params.append(f"width={w}")
-    if p:         canonical_params.append(f"profile={p}")
-    if d:         canonical_params.append(f"diameter={d}")
+    if w:          canonical_params.append(f"width={w}")
+    if p:          canonical_params.append(f"profile={p}")
+    if d:          canonical_params.append(f"diameter={d}")
     if season_db: canonical_params.append(f"season={season_db}")
     if brand_obj: canonical_params.append(f"brand={brand_obj.id}")
 
@@ -540,9 +542,9 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         'selected_profile':  p_int,
         'selected_diameter': d_int,
         'search_query': query,
-        'seo_title':       seo_data['title'],
-        'seo_h1':          seo_data['h1'],
-        'seo_h2':          seo_data['seo_h2'],
+        'seo_title':        seo_data['title'],
+        'seo_h1':           seo_data['h1'],
+        'seo_h2':           seo_data['seo_h2'],
         'seo_description': seo_data['meta_description'],
         'seo_text_html':   seo_data['description_html'],
         'faq_schema':      faq_schema,
@@ -609,12 +611,12 @@ def product_detail_view(request, slug):
         'similar_products': similar,
         'reviews': approved_reviews, # 📌 Передаємо відгуки в шаблон
         'parent_category': parent_cat,
-        'seo_title':     seo_data['title'],
-        'seo_h1':        seo_data['h1'],
-        'seo_h2':        seo_data['seo_h2'],
+        'seo_title':      seo_data['title'],
+        'seo_h1':         seo_data['h1'],
+        'seo_h2':         seo_data['seo_h2'],
         'seo_text_html': seo_data['description_html'],
-        'faq_schema':    faq_schema,
-        'faq_list':      faq_list,
+        'faq_schema':     faq_schema,
+        'faq_list':       faq_list,
     })
 
 
@@ -918,16 +920,14 @@ def sitemap_xml_view(request):
     return HttpResponse("\n".join(xml_lines), content_type="application/xml")
 
 
+# 🔥 ОНОВЛЕНИЙ ГУГЛ ФІД 🔥
 def google_shopping_feed(request):
-    from django.utils.xmlutils import SimplerXMLGenerator
-    from io import StringIO
-
     products = (
         Product.objects
         .filter(price__gt=0, slug__isnull=False)
         .exclude(slug='')
         .select_related('brand')
-        .order_by('-id')
+        .order_by('-stock_quantity') # Спочатку те, що в наявності
     )
 
     out = StringIO()
@@ -950,33 +950,30 @@ def google_shopping_feed(request):
     el('description', 'Інтернет-магазин шин R16.com.ua. Зимові, літні, всесезонні шини.')
 
     for p in products:
-        title = f"{p.brand.name} {p.display_name} {p.width}/{p.profile} R{p.diameter}"
+        title = f"{p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}"
         if len(title) > 150:
             title = title[:150]
 
-        season_ua = {
-            'winter': 'Зимова',
-            'summer': 'Літня',
-            'all-season': 'Всесезонна',
-        }.get(p.seasonality, 'Шина')
-
-        description = (
-            f"{season_ua} шина {p.brand.name} {p.display_name}. "
-            f"Розмір: {p.width}/{p.profile} R{p.diameter}. "
-            f"Індекси: {p.load_index or ''}{p.speed_index or ''}. "
-            f"Доставка по Україні Новою Поштою."
-        )
+        # Використовуємо твій ШІ-опис, якщо він є, чистимо його від HTML
+        if p.description:
+            description = re.sub('<[^<]+?>', '', p.description)[:5000]
+        else:
+            season_ua = {'winter': 'Зимова', 'summer': 'Літня', 'all-season': 'Всесезонна'}.get(p.seasonality, 'Шина')
+            description = f"{season_ua} шина {p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}. Доставка Новою Поштою."
 
         product_url = f"https://r16.com.ua/product/{p.slug}/"
 
-        if getattr(p, 'photo_url', None):
-            image_url = p.photo_url
-        elif getattr(p, 'photo', None) and p.photo:
+        # Логіка фото (локальне або лінк)
+        image_url = None
+        if p.photo: 
             image_url = f"https://r16.com.ua{p.photo.url}"
-        else:
-            image_url = None
+        elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: 
+            image_url = p.photo_url
 
-        availability = 'in_stock' if p.stock_quantity > 0 else 'out_of_stock'
+        if not image_url:
+            continue # Google не пустить без фото
+
+        availability = 'in stock' if p.stock_quantity > 0 else 'out of stock'
         price_str = f"{p.price:.2f} UAH"
 
         handler.startElement('item', {})
@@ -985,30 +982,19 @@ def google_shopping_feed(request):
         el('g:title',       title)
         el('g:description', description)
         el('g:link',        product_url)
-
-        if image_url:
-            el('g:image_link', image_url)
-
+        el('g:image_link', image_url)
         el('g:availability', availability)
         el('g:price',        price_str)
         el('g:condition',    'new')
         el('g:brand',        p.brand.name)
-
+        el('g:google_product_category', '6093') # Tires
         el('g:identifier_exists', 'no')
-        el('g:mpn', str(p.id))
-
-        el('g:google_product_category', '6093')
-        el('g:product_type', f"Шини > {season_ua} шини > {p.brand.name}")
 
         handler.startElement('g:shipping', {})
         el('g:country', 'UA')
         el('g:service', 'Нова Пошта')
-        el('g:price',   '0.00 UAH')
+        el('g:price',   '0.00 UAH') # Можна міняти в Merchant Center
         handler.endElement('g:shipping')
-
-        el('g:custom_label_0', p.seasonality or 'unknown')
-        el('g:custom_label_1', str(p.diameter))
-        el('g:custom_label_2', p.brand.name)
 
         handler.endElement('item')
 

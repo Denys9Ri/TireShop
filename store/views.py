@@ -15,6 +15,7 @@ import json
 import requests
 import re
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,6 @@ from .cart import Cart
 from .models import Product, Order, OrderItem, Brand, SiteBanner, AboutImage, Review
 
 # --- ⚙️ КОНФІГУРАЦІЯ ---
-
 SEASONS_MAP = {
     'zimovi':      {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
     'zymovi':      {'db': 'winter',     'ua': 'Зимові шини',     'adj': 'зимові'},
@@ -131,9 +131,7 @@ SEO_TEMPLATES = {
     },
 }
 
-
 # --- 🛠️ ДОПОМІЖНІ ФУНКЦІЇ ---
-
 def send_telegram(message):
     try:
         token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
@@ -152,7 +150,6 @@ def send_telegram(message):
     except Exception as e:
         logger.error(f"Telegram send error: {e}")
 
-
 def get_base_products():
     return Product.objects.filter(width__gt=0, diameter__gt=0).annotate(
         status_order=Case(
@@ -162,9 +159,7 @@ def get_base_products():
         )
     )
 
-
-def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
-                         min_price=0, max_price=0):
+def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None, min_price=0, max_price=0):
     brand_name = brand_obj.name if brand_obj else ""
     size_str = f"{w}/{p} R{d}" if (w and p and d) else ""
 
@@ -219,8 +214,8 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
     if w:          canonical_params.append(f"width={w}")
     if p:          canonical_params.append(f"profile={p}")
     if d:          canonical_params.append(f"diameter={d}")
-    if season_db: canonical_params.append(f"season={season_db}")
-    if brand_obj: canonical_params.append(f"brand={brand_obj.id}")
+    if season_db:  canonical_params.append(f"season={season_db}")
+    if brand_obj:  canonical_params.append(f"brand={brand_obj.id}")
 
     canonical_qs = "&".join(canonical_params)
     canonical_url = (
@@ -240,7 +235,6 @@ def generate_seo_content(brand_obj=None, season_db=None, w=None, p=None, d=None,
         'canonical_url': canonical_url,
     }
 
-
 def get_combined_faq(season_db):
     faq_list = FAQ_DATA['base'].copy()
     if season_db == 'winter':
@@ -250,7 +244,6 @@ def get_combined_faq(season_db):
     elif season_db in ('all-season', 'all_season'):
         faq_list.extend(FAQ_DATA['all_season'])
     return faq_list
-
 
 def get_faq_schema_json(faq_list):
     schema_items = []
@@ -267,7 +260,6 @@ def get_faq_schema_json(faq_list):
         "mainEntity": schema_items,
     }, ensure_ascii=False)
 
-
 def get_cross_links(current_season_slug, current_brand, w, p, d):
     cache_key = f"cross_links_{current_season_slug}_{current_brand}_{w}_{p}_{d}"
     cached = cache.get(cache_key)
@@ -275,7 +267,6 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
         return cached
 
     links = []
-
     if w and p and d:
         season_items = []
         for slug, info in SEASONS_MAP.items():
@@ -304,38 +295,17 @@ def get_cross_links(current_season_slug, current_brand, w, p, d):
     cache.set(cache_key, links, 60 * 60)
     return links
 
-
-def robots_txt(request):
-    lines = [
-        "User-agent: *",
-        "Disallow: /cart/",
-        "Disallow: /checkout/",
-        "Disallow: /admin/",
-        "Allow: /",
-        "Sitemap: https://r16.com.ua/sitemap.xml",
-    ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
-
-
 # --- 👁️ VIEWS ---
-
 def home_view(request):
     no_local = Q(photo__isnull=True) | Q(photo__exact='')
     no_remote = Q(photo_url__isnull=True) | Q(photo_url__exact='') | Q(photo_url__iexact='none') | Q(photo_url__iexact='null')
 
-    featured_products = Product.objects.filter(
-        stock_quantity__gt=4
-    ).exclude(
-        no_local, no_remote
-    ).order_by('?')[:8]
+    featured_products = Product.objects.filter(stock_quantity__gt=4).exclude(no_local, no_remote).order_by('?')[:8]
 
     brands = Brand.objects.all().order_by('name')
-    width_list = (Product.objects.filter(width__gt=0)
-                  .values_list('width', flat=True).distinct().order_by('width'))
-    profile_list = (Product.objects.filter(profile__gt=0)
-                    .values_list('profile', flat=True).distinct().order_by('profile'))
-    diameter_list = (Product.objects.filter(diameter__gt=0)
-                     .values_list('diameter', flat=True).distinct().order_by('diameter'))
+    width_list = Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width')
+    profile_list = Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile')
+    diameter_list = Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter')
     
     return render(request, 'store/home.html', {
         'featured_products': featured_products,
@@ -346,7 +316,6 @@ def home_view(request):
         'all_seasons': Product.SEASON_CHOICES,
     })
 
-
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
     if not brand:
@@ -355,23 +324,16 @@ def brand_landing_view(request, brand_slug):
     products = Product.objects.filter(brand=brand, stock_quantity__gt=0).order_by('price')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
-    custom_page_range = page_obj.paginator.get_elided_page_range(
-        page_obj.number, on_each_side=2, on_ends=1
-    )
+    custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    
     stats = products.aggregate(min_price=Min('price'), max_price=Max('price'))
-    seo_data = generate_seo_content(
-        brand, None, None, None, None,
-        int(stats['min_price'] or 0), int(stats['max_price'] or 0),
-    )
+    seo_data = generate_seo_content(brand, None, None, None, None, int(stats['min_price'] or 0), int(stats['max_price'] or 0))
     faq_list = get_combined_faq(None)
     faq_schema = get_faq_schema_json(faq_list)
 
-    width_list = (Product.objects.filter(width__gt=0)
-                  .values_list('width', flat=True).distinct().order_by('width'))
-    profile_list = (Product.objects.filter(profile__gt=0)
-                    .values_list('profile', flat=True).distinct().order_by('profile'))
-    diameter_list = (Product.objects.filter(diameter__gt=0)
-                     .values_list('diameter', flat=True).distinct().order_by('diameter'))
+    width_list = Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width')
+    profile_list = Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile')
+    diameter_list = Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter')
 
     return render(request, 'store/brand_detail.html', {
         'brand': brand,
@@ -389,47 +351,34 @@ def brand_landing_view(request, brand_slug):
         'canonical_url': seo_data['canonical_url'],
     })
 
-
-def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
-                    width=None, profile=None, diameter=None):
+def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width=None, profile=None, diameter=None):
     req_season   = request.GET.get('season')
     req_brand_id = request.GET.get('brand')
     req_width    = width    or request.GET.get('width')
     req_profile  = profile  or request.GET.get('profile')
     req_diameter = diameter or request.GET.get('diameter')
 
-    if not any([slug, brand_slug, season_slug, width]) and (
-        req_season or req_brand_id or (req_width and req_profile and req_diameter)
-    ):
+    if not any([slug, brand_slug, season_slug, width]) and (req_season or req_brand_id or (req_width and req_profile and req_diameter)):
         target_season_slug = DB_TO_SLUG_MAP.get(req_season) if req_season else None
-
         target_brand_slug = None
         if req_brand_id:
             try:
                 b_obj = Brand.objects.filter(id=int(req_brand_id)).first()
-                if b_obj:
-                    target_brand_slug = b_obj.slug
-            except (ValueError, TypeError):
-                pass
+                if b_obj: target_brand_slug = b_obj.slug
+            except (ValueError, TypeError): pass
 
         has_size = bool(req_width and req_profile and req_diameter)
 
         if target_brand_slug and target_season_slug and has_size:
-            return redirect('store:seo_full', brand_slug=target_brand_slug,
-                            season_slug=target_season_slug,
-                            width=req_width, profile=req_profile, diameter=req_diameter)
+            return redirect('store:seo_full', brand_slug=target_brand_slug, season_slug=target_season_slug, width=req_width, profile=req_profile, diameter=req_diameter)
         elif target_brand_slug and has_size:
-            return redirect('store:seo_brand_size', brand_slug=target_brand_slug,
-                            width=req_width, profile=req_profile, diameter=req_diameter)
+            return redirect('store:seo_brand_size', brand_slug=target_brand_slug, width=req_width, profile=req_profile, diameter=req_diameter)
         elif target_season_slug and has_size:
-            return redirect('store:seo_season_size', season_slug=target_season_slug,
-                            width=req_width, profile=req_profile, diameter=req_diameter)
+            return redirect('store:seo_season_size', season_slug=target_season_slug, width=req_width, profile=req_profile, diameter=req_diameter)
         elif target_brand_slug and target_season_slug:
-            return redirect('store:seo_brand_season',
-                            brand_slug=target_brand_slug, season_slug=target_season_slug)
+            return redirect('store:seo_brand_season', brand_slug=target_brand_slug, season_slug=target_season_slug)
         elif has_size:
-            return redirect('store:seo_size',
-                            width=req_width, profile=req_profile, diameter=req_diameter)
+            return redirect('store:seo_size', width=req_width, profile=req_profile, diameter=req_diameter)
         elif target_season_slug and not req_width:
             return redirect('store:seo_universal', slug=target_season_slug)
         elif target_brand_slug:
@@ -444,8 +393,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
             season_slug = slug
         else:
             brand_obj = Brand.objects.filter(name__iexact=slug).first()
-            if brand_obj:
-                brand_slug = slug
+            if brand_obj: brand_slug = slug
 
     query = request.GET.get('query', '').strip()
     if query:
@@ -453,13 +401,9 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         match = re.fullmatch(r'(\d{6,7})', clean)
         if match:
             dg = match.group(1)
-            products = products.filter(
-                width=int(dg[:3]), profile=int(dg[3:5]), diameter=int(dg[5:])
-            )
+            products = products.filter(width=int(dg[:3]), profile=int(dg[3:5]), diameter=int(dg[5:]))
         else:
-            products = products.filter(
-                Q(name__icontains=query) | Q(brand__name__icontains=query)
-            )
+            products = products.filter(Q(name__icontains=query) | Q(brand__name__icontains=query))
 
     if brand_slug:
         products = products.filter(brand__slug=brand_slug)
@@ -468,8 +412,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         try:
             products = products.filter(brand__id=int(req_brand_id))
             brand_obj = Brand.objects.filter(id=int(req_brand_id)).first()
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError): pass
 
     if req_season:
         products = products.filter(seasonality=req_season)
@@ -481,10 +424,8 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
 
     for val, attr in [(req_width, 'width'), (req_profile, 'profile'), (req_diameter, 'diameter')]:
         if val:
-            try:
-                products = products.filter(**{attr: int(val)})
-            except (ValueError, TypeError):
-                pass
+            try: products = products.filter(**{attr: int(val)})
+            except (ValueError, TypeError): pass
 
     real_products = products.filter(price__gt=0)
     if real_products.exists():
@@ -514,9 +455,7 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
     brands = Brand.objects.all().order_by('name')
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
-    custom_page_range = page_obj.paginator.get_elided_page_range(
-        page_obj.number, on_each_side=2, on_ends=1
-    )
+    custom_page_range = page_obj.paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
 
     q_params = request.GET.copy()
     q_params.pop('page', None)
@@ -526,16 +465,11 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         'custom_page_range': custom_page_range,
         'filter_query_string': q_params.urlencode(),
         'all_brands': brands,
-        'all_widths': (Product.objects.filter(width__gt=0)
-                       .values_list('width', flat=True).distinct().order_by('width')),
-        'all_profiles': (Product.objects.filter(profile__gt=0)
-                         .values_list('profile', flat=True).distinct().order_by('profile')),
-        'all_diameters': (Product.objects.filter(diameter__gt=0)
-                          .values_list('diameter', flat=True).distinct().order_by('diameter')),
+        'all_widths': Product.objects.filter(width__gt=0).values_list('width', flat=True).distinct().order_by('width'),
+        'all_profiles': Product.objects.filter(profile__gt=0).values_list('profile', flat=True).distinct().order_by('profile'),
+        'all_diameters': Product.objects.filter(diameter__gt=0).values_list('diameter', flat=True).distinct().order_by('diameter'),
         'all_seasons': Product.SEASON_CHOICES,
-        'selected_brand_id': brand_obj.id if brand_obj else (
-            int(req_brand_id) if req_brand_id else None
-        ),
+        'selected_brand_id': brand_obj.id if brand_obj else (int(req_brand_id) if req_brand_id else None),
         'selected_season':   season_db,
         'selected_width':    w_int,
         'selected_profile':  p_int,
@@ -544,21 +478,18 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None,
         'seo_title':        seo_data['title'],
         'seo_h1':           seo_data['h1'],
         'seo_h2':           seo_data['seo_h2'],
-        'seo_description': seo_data['meta_description'],
-        'seo_text_html':   seo_data['description_html'],
-        'faq_schema':      faq_schema,
-        'faq_list':        faq_list,
-        'cross_links':     cross_links,
-        'canonical_url':   seo_data['canonical_url'],
+        'seo_description':  seo_data['meta_description'],
+        'seo_text_html':    seo_data['description_html'],
+        'faq_schema':       faq_schema,
+        'faq_list':         faq_list,
+        'cross_links':      cross_links,
+        'canonical_url':    seo_data['canonical_url'],
         'is_seo_page': True,
     })
-
 
 def catalog_view(request):
     return seo_matrix_view(request)
 
-
-# 🔥 ОНОВЛЕНИЙ PRODUCT DETAIL ВЬЮ 🔥
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     
@@ -569,26 +500,17 @@ def product_detail_view(request, slug):
         
         if name and rating and text:
             try:
-                Review.objects.create(
-                    product=product,
-                    name=name,
-                    rating=int(rating),
-                    text=text
-                )
+                Review.objects.create(product=product, name=name, rating=int(rating), text=text)
                 messages.success(request, 'Дякуємо! Ваш відгук відправлено на модерацію.')
             except ValueError:
                 messages.error(request, 'Помилка при збереженні оцінки.')
         return redirect('store:product_detail', slug=product.slug)
 
     approved_reviews = product.reviews.filter(is_approved=True)
-
-    similar = Product.objects.filter(
-        width=product.width, diameter=product.diameter
-    ).exclude(id=product.id)[:4]
+    similar = Product.objects.filter(width=product.width, diameter=product.diameter).exclude(id=product.id)[:4]
 
     seo_data = generate_seo_content(
-        product.brand, product.seasonality,
-        product.width, product.profile, product.diameter,
+        product.brand, product.seasonality, product.width, product.profile, product.diameter,
         int(product.price), int(product.price),
     )
     faq_list   = get_combined_faq(product.seasonality)
@@ -597,10 +519,7 @@ def product_detail_view(request, slug):
     parent_cat = None
     for k, v in SEASONS_MAP.items():
         if v['db'] == product.seasonality and k != 'zymovi':
-            parent_cat = {
-                'name': v['ua'],
-                'url': reverse('store:seo_universal', args=[k]),
-            }
+            parent_cat = {'name': v['ua'], 'url': reverse('store:seo_universal', args=[k])}
             break
 
     return render(request, 'store/product_detail.html', {
@@ -611,17 +530,14 @@ def product_detail_view(request, slug):
         'seo_title':      seo_data['title'],
         'seo_h1':         seo_data['h1'],
         'seo_h2':         seo_data['seo_h2'],
-        'seo_text_html': seo_data['description_html'],
+        'seo_text_html':  seo_data['description_html'],
         'faq_schema':     faq_schema,
         'faq_list':       faq_list,
     })
 
-
-# 🔥 РЕДІРЕКТИ ЗІ СТАРИХ URL 🔥
 def redirect_old_product_urls(request, product_id):
     p = get_object_or_404(Product, id=product_id)
     return redirect('store:product_detail', slug=p.slug, permanent=True)
-
 
 def redirect_old_store_product_urls(request, product_id):
     try:
@@ -630,10 +546,9 @@ def redirect_old_store_product_urls(request, product_id):
     except Exception:
         raise Http404
 
-
+# --- 🛒 КОРЗИНА І ЗАМОВЛЕННЯ ---
 def cart_detail_view(request):
     return render(request, 'store/cart.html', {'cart': Cart(request)})
-
 
 @require_POST
 def cart_add_view(request, product_id):
@@ -641,33 +556,25 @@ def cart_add_view(request, product_id):
     cart.add(get_object_or_404(Product, id=product_id), int(request.POST.get('quantity', 1)))
     return redirect(request.META.get('HTTP_REFERER', 'store:catalog'))
 
-
 @require_POST
 def cart_update_quantity_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     try:
-        quantity = int(request.POST.get('quantity', 1))
-        quantity = max(1, min(quantity, product.stock_quantity))
+        quantity = max(1, min(int(request.POST.get('quantity', 1)), product.stock_quantity))
         cart.add(product, quantity, update_quantity=True)
-    except (ValueError, TypeError):
-        pass
+    except (ValueError, TypeError): pass
     return redirect('store:cart_detail')
-
 
 def cart_remove_view(request, product_id):
-    cart = Cart(request)
-    cart.remove(get_object_or_404(Product, id=product_id))
+    Cart(request).remove(get_object_or_404(Product, id=product_id))
     return redirect('store:cart_detail')
-
 
 def cart_add_ajax_view(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    try:
-        quantity_to_add = int(request.POST.get('quantity', 1))
-    except (ValueError, TypeError):
-        quantity_to_add = 1
+    try: quantity_to_add = int(request.POST.get('quantity', 1))
+    except (ValueError, TypeError): quantity_to_add = 1
 
     cart_item = cart.cart.get(str(product.id))
     current_in_cart = cart_item['quantity'] if cart_item else 0
@@ -677,16 +584,12 @@ def cart_add_ajax_view(request, product_id):
     if quantity_to_add > 0:
         cart.add(product=product, quantity=quantity_to_add, update_quantity=False)
 
-    html = render_to_string(
-        'store/includes/cart_offcanvas.html', {'cart': cart}, request=request
-    )
+    html = render_to_string('store/includes/cart_offcanvas.html', {'cart': cart}, request=request)
     return JsonResponse({'html': html, 'cart_len': len(cart)})
-
 
 def checkout_view(request):
     cart = Cart(request)
-    if not cart:
-        return redirect('store:catalog')
+    if not cart: return redirect('store:catalog')
 
     if request.method == 'POST':
         shipping_type = request.POST.get('shipping_type', 'pickup')
@@ -703,222 +606,113 @@ def checkout_view(request):
 
         digits = re.sub(r'\D', '', raw_phone)
         if not (10 <= len(digits) <= 15):
-            messages.error(request, 'Помилка: Некоректний номер телефону. Введіть у форматі +380XXXXXXXXX.')
+            messages.error(request, 'Помилка: Некоректний номер телефону.')
             return redirect('store:checkout')
 
         clean_phone = re.sub(r'[^\d\+\-\(\)\s]', '', raw_phone)
 
-        suspicious_words = ['select', 'sleep', 'dbms_pipe', 'union', 'insert',
-                            'drop', 'delete', 'update', 'chr(', '||']
-        for field in [raw_name, raw_city, raw_branch]:
-            if field:
-                if len(field) > 100:
-                    messages.error(request, 'Помилка: Занадто довгий текст у полі форми.')
-                    return redirect('store:checkout')
-                if any(w in field.lower() for w in suspicious_words):
-                    messages.error(request, 'Система безпеки заблокувала запит.')
-                    return redirect('store:checkout')
-
         with transaction.atomic():
             order = Order.objects.create(
                 customer=request.user if request.user.is_authenticated else None,
-                shipping_type=shipping_type,
-                full_name=raw_name,
-                phone=clean_phone,
+                shipping_type=shipping_type, full_name=raw_name, phone=clean_phone,
                 email=None if is_pickup else request.POST.get('email'),
-                city=raw_city,
-                nova_poshta_branch=raw_branch,
+                city=raw_city, nova_poshta_branch=raw_branch,
             )
             items_text = ""
             for item in cart:
                 p = item['product']
-                OrderItem.objects.create(
-                    order=order, product=p,
-                    quantity=item['quantity'],
-                    price_at_purchase=item['price'],
-                )
-                items_text += (
-                    f"\n🔘 {p.brand.name} {p.name} "
-                    f"({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
-                )
+                OrderItem.objects.create(order=order, product=p, quantity=item['quantity'], price_at_purchase=item['price'])
+                items_text += f"\n🔘 {p.brand.name} {p.name} ({p.width}/{p.profile} R{p.diameter}) — {item['quantity']} шт."
 
-        delivery_details = (
-            "🏃 САМОВИВІЗ (Київ, вул. Качали 3)"
-            if is_pickup
-            else f"🚚 НОВА ПОШТА\n📍 Місто: {raw_city}\n🏢 Відділення: {raw_branch}"
-        )
+        delivery_details = "🏃 САМОВИВІЗ (Київ)" if is_pickup else f"🚚 НОВА ПОШТА\n📍 Місто: {raw_city}\n🏢 Відділення: {raw_branch}"
         send_telegram(
-            f"🔥 <b>НОВЕ ЗАМОВЛЕННЯ #{order.id}</b>\n"
-            f"👤 {order.full_name}\n📞 {order.phone}\n"
-            f"➖➖➖➖➖➖\n{delivery_details}\n➖➖➖➖➖➖\n"
-            f"🛒 <b>ТОВАРИ:</b>{items_text}\n➖➖➖➖➖➖\n"
-            f"💰 <b>СУМА: {cart.get_total_price()} грн</b>"
+            f"🔥 <b>НОВЕ ЗАМОВЛЕННЯ #{order.id}</b>\n👤 {order.full_name}\n📞 {order.phone}\n"
+            f"➖➖➖➖➖➖\n{delivery_details}\n➖➖➖➖➖➖\n🛒 <b>ТОВАРИ:</b>{items_text}\n"
+            f"➖➖➖➖➖➖\n💰 <b>СУМА: {cart.get_total_price()} грн</b>"
         )
         cart.clear()
         return redirect('store:catalog')
 
-    initial_data = {}
-    if request.user.is_authenticated:
-        initial_data['email']     = request.user.email
-        initial_data['full_name'] = f"{request.user.first_name} {request.user.last_name}".strip()
-        if hasattr(request.user, 'profile'):
-            prof = request.user.profile
-            initial_data['phone'] = getattr(prof, 'phone', getattr(prof, 'phone_number', ''))
-            initial_data['city']  = getattr(prof, 'city', '')
-            initial_data['nova_poshta_branch'] = getattr(prof, 'nova_poshta_branch', '')
-            if not initial_data['full_name']:
-                initial_data['full_name'] = getattr(prof, 'full_name', '')
+    prefill = {}
+    return render(request, 'store/checkout.html', {'prefill': prefill})
 
-    return render(request, 'store/checkout.html', {'prefill': initial_data})
-
-
-def about_view(request):
-    photos = AboutImage.objects.all().order_by('-created_at')
-    return render(request, 'store/about.html', {'photos': photos})
-
-
-def contacts_view(request):
-    return render(request, 'store/contacts.html')
-
-
-def delivery_payment_view(request):
-    return render(request, 'store/delivery_payment.html')
-
-
-def warranty_view(request):
-    return render(request, 'store/warranty.html')
-
+# --- СТАТИЧНІ СТОРІНКИ ---
+def about_view(request): return render(request, 'store/about.html', {'photos': AboutImage.objects.all().order_by('-created_at')})
+def contacts_view(request): return render(request, 'store/contacts.html')
+def delivery_payment_view(request): return render(request, 'store/delivery_payment.html')
+def warranty_view(request): return render(request, 'store/warranty.html')
+def faq_view(request): return render(request, 'store/faq.html')
+def sync_google_sheet_view(request): return redirect('admin:store_product_changelist')
+def fix_product_names_view(request): return JsonResponse({'status': 'ok'})
 
 @require_POST
 def bot_callback_view(request):
     try:
         data = json.loads(request.body)
         phone = data.get('phone', '').strip()
-        if phone:
-            send_telegram(f"🆘 SOS-дзвінок: {phone}")
-            return JsonResponse({'status': 'ok'})
-    except json.JSONDecodeError:
-        pass
-    return JsonResponse({'status': 'err'}, status=400)
-
-
-def sync_google_sheet_view(request):
-    return redirect('admin:store_product_changelist')
-
-
-def faq_view(request):
-    return render(request, 'store/faq.html')
-
-
-def fix_product_names_view(request):
-    if not request.user.is_superuser:
-        return JsonResponse({'status': 'error', 'message': 'Тільки для адміна'}, status=403)
-
-    batch_size = 300
-    try:
-        page = int(request.GET.get('page', 1))
-    except ValueError:
-        page = 1
-
-    start = (page - 1) * batch_size
-    products = Product.objects.order_by('id')[start:start + batch_size]
-    if not products:
-        return JsonResponse({'status': 'done', 'message': '🎉 Всі товари перевірено!'})
-
-    count = 0
-    log   = []
-    for p in products:
-        raw_name   = p.name
-        clean_name = raw_name.replace("Шина", "").replace("шина", "")
-        if p.brand:
-            clean_name = re.sub(f"^{re.escape(p.brand.name)}", "", clean_name, flags=re.IGNORECASE)
-            clean_name = re.sub(rf"\({re.escape(p.brand.name)}\)", "", clean_name, flags=re.IGNORECASE)
-
-        index_match    = re.search(r'\b(\d{2,3}[A-Z]{1,2})\b', clean_name)
-        load_speed_idx = index_match.group(1) if index_match else ""
-
-        clean_name_no_size = re.sub(r'\d{3}/\d{2}[RZ]\d{2}', '', clean_name)
-        if load_speed_idx:
-            clean_name_no_size = clean_name_no_size.replace(load_speed_idx, "")
-
-        model_name = re.sub(r'^\W+|\W+$', '', clean_name_no_size.strip())
-        final_name = f"{model_name} {load_speed_idx}".strip() if load_speed_idx else model_name
-        final_name = re.sub(r'\s+', ' ', final_name).strip()
-
-        if final_name != p.name and len(final_name) > 1:
-            log.append(f"{p.id}: {p.name} -> {final_name}")
-            Product.objects.filter(pk=p.pk).update(name=final_name)
-            count += 1
-
-    return JsonResponse({
-        'status': 'processing',
-        'current_page': page,
-        'fixed_in_this_batch': count,
-        'NEXT_STEP': f"{request.path}?page={page + 1}",
-        'log': log[:20],
-    })
+        if phone: send_telegram(f"🆘 SOS-дзвінок: {phone}")
+        return JsonResponse({'status': 'ok'})
+    except Exception: return JsonResponse({'status': 'err'}, status=400)
 
 
 # 🔥 БЕЗПЕЧНИЙ SITEMAP.XML 🔥
-import traceback
-
 def sitemap_xml_view(request):
     try:
         base_url = "https://r16.com.ua"
+        urls = [
+            f"{base_url}/",
+            f"{base_url}/catalog/",
+            f"{base_url}/about/",
+            f"{base_url}/contacts/",
+            f"{base_url}/delivery/",
+            f"{base_url}/warranty/",
+            f"{base_url}/faq/",
+            f"{base_url}/shiny/zimovi/",
+            f"{base_url}/shiny/litni/",
+            f"{base_url}/shiny/vsesezonni/"
+        ]
+
         xml_lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         ]
 
-        # 1. Статичні сторінки
-        static_routes = ['/', '/catalog/', '/about/', '/contacts/', '/delivery/', '/warranty/', '/faq/']
-        for path in static_routes:
-            xml_lines.append(f'  <url><loc>{base_url}{path}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
+        # Статичні та сезони
+        for u in urls:
+            xml_lines.append(f'  <url><loc>{u}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
 
-        # 2. Сезонні сторінки
-        for slug in ['zimovi', 'litni', 'vsesezonni']:
-            xml_lines.append(f'  <url><loc>{base_url}/shiny/{slug}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
+        # Бренди
+        brands = Brand.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
+        for b in brands:
+            xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
 
-        # 3. Бренди
-        brand_slugs = Brand.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
-        for b_slug in brand_slugs:
-            xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b_slug}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
+        # Розміри (працює дуже швидко)
+        sizes = Product.objects.filter(stock_quantity__gt=0, width__gt=0, profile__gt=0, diameter__gt=0).values('width', 'profile', 'diameter').distinct()
+        for s in sizes:
+            xml_lines.append(f'  <url><loc>{base_url}/shiny/{s["width"]}-{s["profile"]}-r{s["diameter"]}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
 
-        # 4. Товари (Тимчасово беремо тільки 1000 для перевірки на TimeOut)
-        product_slugs = Product.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)[:1000]
-        for p_slug in product_slugs:
-            xml_lines.append(f'  <url><loc>{base_url}/product/{p_slug}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+        # Товари (беремо тільки 4000 щоб не падав сервер від нестачі пам'яті)
+        products = Product.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)[:4000]
+        for p in products:
+            xml_lines.append(f'  <url><loc>{base_url}/product/{p}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
 
         xml_lines.append('</urlset>')
         
-        content = "\n".join(xml_lines).replace('&', '&amp;')
-        return HttpResponse(content, content_type="application/xml")
-
+        return HttpResponse("\n".join(xml_lines), content_type="application/xml")
     except Exception as e:
-        # 🔥 Якщо є помилка — ми побачимо її прямо на сторінці! 🔥
-        error_msg = f"ОТ ЖЕ ХАЛЕПА! ПОМИЛКА:\n{str(e)}\n\nДЕТАЛІ:\n{traceback.format_exc()}"
-        return HttpResponse(error_msg, content_type="text/plain", status=200)
+        return HttpResponse(f"CRITICAL ERROR: {str(e)}\n\n{traceback.format_exc()}", content_type="text/plain")
 
 
 # 🔥 ОНОВЛЕНИЙ ГУГЛ ФІД 🔥
 def google_shopping_feed(request):
     base_url = "https://r16.com.ua"
-    products = (
-        Product.objects
-        .filter(price__gt=0, slug__isnull=False)
-        .exclude(slug='')
-        .select_related('brand')
-        .order_by('-stock_quantity')
-    )
+    # Обмежимо до 4500 щоб не перевищувати ліміт Google і не падати по TimeOut
+    products = Product.objects.filter(price__gt=0, stock_quantity__gt=0).exclude(slug__isnull=True).exclude(slug='').select_related('brand').order_by('-stock_quantity')[:4500]
 
     out = StringIO()
     handler = SimplerXMLGenerator(out, 'utf-8')
     handler.startDocument()
-
-    handler.startElement('rss', {
-        'version': '2.0',
-        'xmlns:g': 'http://base.google.com/ns/1.0',
-    })
+    handler.startElement('rss', {'version': '2.0', 'xmlns:g': 'http://base.google.com/ns/1.0'})
     handler.startElement('channel', {})
 
     def el(tag, text):
@@ -933,54 +727,42 @@ def google_shopping_feed(request):
     for p in products:
         try:
             title = f"{p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}"
-            if len(title) > 150:
-                title = title[:150]
+            if len(title) > 150: title = title[:150]
 
             if p.description:
-                description = re.sub('<[^<]+?>', '', p.description)[:5000]
+                desc = re.sub('<[^<]+?>', '', p.description)[:5000]
             else:
-                season_ua = {'winter': 'Зимова', 'summer': 'Літня', 'all-season': 'Всесезонна'}.get(p.seasonality, 'Шина')
-                description = f"{season_ua} шина {p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}. Доставка Новою Поштою."
-
-            product_url = f"{base_url}/product/{p.slug}/"
+                desc = f"Шина {p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}. Доставка."
 
             image_url = None
-            if p.photo: 
-                image_url = f"{base_url}{p.photo.url}"
-            elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: 
-                image_url = p.photo_url
-
-            if not image_url:
-                continue
-
-            availability = 'in stock' if p.stock_quantity > 0 else 'out of stock'
-            price_str = f"{p.price:.2f} UAH"
+            if p.photo: image_url = f"{base_url}{p.photo.url}"
+            elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: image_url = p.photo_url
+            if not image_url: continue
 
             handler.startElement('item', {})
-
-            el('g:id',          str(p.id))
-            el('g:title',       title)
-            el('g:description', description)
-            el('g:link',        product_url)
-            el('g:image_link',  image_url)
-            el('g:availability', availability)
-            el('g:price',        price_str)
-            el('g:condition',    'new')
-            el('g:brand',        p.brand.name)
+            el('g:id', str(p.id))
+            el('g:title', title)
+            el('g:description', desc)
+            el('g:link', f"{base_url}/product/{p.slug}/")
+            el('g:image_link', image_url)
+            el('g:availability', 'in stock')
+            el('g:price', f"{p.price:.2f} UAH")
+            el('g:condition', 'new')
+            el('g:brand', p.brand.name)
             el('g:google_product_category', '6093')
             el('g:identifier_exists', 'no')
-
             handler.startElement('g:shipping', {})
             el('g:country', 'UA')
             el('g:service', 'Нова Пошта')
-            el('g:price',   '0.00 UAH')
+            el('g:price', '0.00 UAH')
             handler.endElement('g:shipping')
-
             handler.endElement('item')
         except Exception:
             continue
 
     handler.endElement('channel')
     handler.endElement('rss')
-
     return HttpResponse(out.getvalue(), content_type='application/xml; charset=utf-8')
+
+def robots_txt(request):
+    return HttpResponse("User-agent: *\nDisallow: /admin/\nSitemap: https://r16.com.ua/sitemap.xml", content_type="text/plain")

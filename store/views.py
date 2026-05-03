@@ -47,7 +47,7 @@ FAQ_DATA = {
         ("Що означають цифри 205/55 R16?",
          "205 — ширина, 55 — висота профілю, R16 — діаметр диска. Це впливає на керованість і комфорт."),
         ("Що таке індекс навантаження і швидкості (напр. 91V)?",
-         "Показує, скільки ваги і яку швидкість шина може витримати. Краще не ставити нижчі індекси, ніж радить виробник авто."),
+         "Показує, скільки ваги і яку швидкість шина може витримумати. Краще не ставити нижчі індекси, ніж радить виробник авто."),
         ("Можна купити дві шини замість чотирьох?",
          "Ідеально — чотири однакові. Якщо міняєш тільки дві, то кращу пару став на задню вісь — так авто буде більш стійким."),
         ("Який тиск качати в шинах?",
@@ -862,18 +862,20 @@ def fix_product_names_view(request):
     })
 
 
+# 🔥 ВИПРАВЛЕНИЙ SITEMAP.XML (Прибрано 500 помилку) 🔥
 def sitemap_xml_view(request):
     base_url = "https://r16.com.ua"
     urls = []
 
+    # 1. Статичні сторінки (безпечний reverse)
     static_routes = [
-        ('store:home',             '1.0', 'daily'),
-        ('store:catalog',          '0.9', 'daily'),
-        ('store:about',            '0.5', 'monthly'),
-        ('store:contacts',         '0.5', 'monthly'),
+        ('store:home', '1.0', 'daily'),
+        ('store:catalog', '0.9', 'daily'),
+        ('store:about', '0.5', 'monthly'),
+        ('store:contacts', '0.5', 'monthly'),
         ('store:delivery_payment', '0.5', 'monthly'),
-        ('store:warranty',         '0.5', 'monthly'),
-        ('store:faq',              '0.6', 'monthly'),
+        ('store:warranty', '0.5', 'monthly'),
+        ('store:faq', '0.6', 'monthly'),
     ]
     for name, priority, freq in static_routes:
         try:
@@ -881,29 +883,26 @@ def sitemap_xml_view(request):
         except Exception:
             pass
 
+    # 2. Сезонні сторінки (прямі посилання для безпеки)
     for slug in ['zimovi', 'litni', 'vsesezonni']:
-        try:
-            urls.append({
-                'loc': f"{base_url}{reverse('store:seo_universal', args=[slug])}",
-                'priority': '0.8', 'freq': 'daily',
-            })
-        except Exception:
-            pass
+        urls.append({'loc': f"{base_url}/shiny/{slug}/", 'priority': '0.8', 'freq': 'daily'})
 
-    for brand in Brand.objects.all():
+    # 3. Бренди (тільки з валідним slug)
+    for brand in Brand.objects.exclude(slug__isnull=True).exclude(slug=''):
         urls.append({'loc': f"{base_url}/shiny/brendy/{brand.slug}/", 'priority': '0.7', 'freq': 'weekly'})
 
+    # 4. Товари (тільки з валідним slug)
     for product in Product.objects.exclude(slug__isnull=True).exclude(slug=''):
         urls.append({'loc': f"{base_url}/product/{product.slug}/", 'priority': '0.8', 'freq': 'weekly'})
 
+    # 5. Популярні розміри (тільки в наявності)
     sizes = (Product.objects.filter(stock_quantity__gt=0)
              .values('width', 'profile', 'diameter').distinct())
     for s in sizes:
         w, p, d = s['width'], s['profile'], s['diameter']
         urls.append({'loc': f"{base_url}/shiny/{w}-{p}-r{d}/", 'priority': '0.9', 'freq': 'daily'})
-        for seas in ['zimovi', 'litni', 'vsesezonni']:
-            urls.append({'loc': f"{base_url}/shiny/{seas}/{w}-{p}-r{d}/", 'priority': '0.9', 'freq': 'daily'})
 
+    # Генеруємо XML
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -917,6 +916,7 @@ def sitemap_xml_view(request):
             f'  </url>'
         )
     xml_lines.append('</urlset>')
+    
     return HttpResponse("\n".join(xml_lines), content_type="application/xml")
 
 

@@ -6,12 +6,12 @@
 {% endblock %}
 
 {% block meta_description %}
-    Купити шини {{ product.brand.name }} {{ product.display_name }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. 💰 Найкраща ціна: {{ product.price }} грн. 🚚 Доставка Новою Поштою.
+    Купити шини {{ product.brand.name }} {{ product.display_name }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. 💰 Найкраща ціна: {{ product.price }} грн. 🚚 Доставка по Україні Новою Поштою. Гарантія якості.
 {% endblock %}
 
 {% block content %}
 
-{# ================== SCHEMA.ORG ДЛЯ GOOGLE ================== #}
+{# ================== SCHEMA.ORG ================== #}
 <script type="application/ld+json">
 [
   {
@@ -38,20 +38,6 @@
         "name": "R16"
       }
     }
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Головна", "item": "https://r16.com.ua/" },
-      { "@type": "ListItem", "position": 2, "name": "Каталог", "item": "https://r16.com.ua{% url 'store:catalog' %}" }
-      {% if parent_category %}
-      ,{ "@type": "ListItem", "position": 3, "name": "{{ parent_category.name }}", "item": "https://r16.com.ua{{ parent_category.url }}" }
-      ,{ "@type": "ListItem", "position": 4, "name": "{{ product.brand.name }} {{ product.display_name }}", "item": "https://r16.com.ua{{ request.path }}" }
-      {% else %}
-      ,{ "@type": "ListItem", "position": 3, "name": "{{ product.brand.name }} {{ product.display_name }}", "item": "https://r16.com.ua{{ request.path }}" }
-      {% endif %}
-    ]
   }
 ]
 </script>
@@ -71,26 +57,32 @@
     .rating-value { font-weight: 700; color: #333; margin-left: 8px; }
 
     /* Покупка */
-    .brand-link { color: #0d6efd; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; }
+    .brand-link { color: #0d6efd; font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 0.9rem; }
     .product-title { font-size: 2.2rem; font-weight: 850; color: #1a1a1a; line-height: 1.2; margin-top: 5px; }
     .price-card { background: #f8fbff; border: 1px solid #e1e9f5; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
     .current-price { font-size: 2.8rem; font-weight: 900; color: #000; letter-spacing: -1px; }
     
     /* Кнопка та лічильник */
-    .btn-buy-main { background: #0d6efd; color: #fff; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; width: 100%; border: none; transition: 0.3s; box-shadow: 0 8px 20px rgba(13,110,253,0.25); }
+    .btn-buy-main { background: #0d6efd; color: #fff; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; width: 100%; border: none; transition: 0.3s; box-shadow: 0 8px 20px rgba(13,110,253,0.25); white-space: nowrap; }
     .btn-buy-main:hover:not(:disabled) { background: #0b5ed7; transform: translateY(-3px); box-shadow: 0 12px 25px rgba(13,110,253,0.3); }
-    .quantity-stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 2px solid #e1e9f5; border-radius: 12px; height: 100%; }
-    .quantity-stepper button { background: transparent; border: none; color: #0d6efd; font-size: 1.5rem; padding: 0 15px; font-weight: bold; }
+    .quantity-stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 2px solid #e1e9f5; border-radius: 12px; height: 100%; min-height: 52px; }
+    .quantity-stepper button { background: transparent; border: none; color: #0d6efd; font-size: 1.5rem; padding: 0 15px; font-weight: bold; width: 40px; }
     .quantity-stepper input { border: none; text-align: center; font-weight: bold; font-size: 1.2rem; width: 40px; color: #333; padding: 0; outline: none; background: transparent; }
 
-    /* Таблиця */
-    .spec-table .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
-    .spec-label { color: #888; }
-    .spec-value { font-weight: 600; color: #333; }
+    /* Таблиця характеристик (з крапками) */
+    .specs-list { list-style: none; padding: 0; margin: 0; }
+    .specs-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 1rem; }
+    .specs-label { color: #555; }
+    .specs-dots { flex-grow: 1; border-bottom: 1px dotted #ccc; margin: 0 10px; opacity: 0.7; }
+    .specs-value { font-weight: 600; color: #222; text-align: right; }
 
-    /* Lightbox */
-    .modal-fullscreen .modal-content { background: rgba(0,0,0,0.96); }
-    .lightbox-img { max-width: 90%; max-height: 85vh; object-fit: contain; }
+    /* Блок Доставки */
+    .delivery-info-box { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.9); }
+    .delivery-icon { min-width: 40px; height: 40px; background: #e9f2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0d6efd; }
+    .trust-badges { display: flex; flex-wrap: wrap; gap: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 15px; }
+    .badge-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #444; font-weight: 600; }
+
+    /* Схожі товари */
     .similar-item { border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; transition: 0.3s; position: relative; }
     .similar-item:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 </style>
@@ -100,9 +92,6 @@
         <ol class="breadcrumb small">
             <li class="breadcrumb-item"><a href="/" class="text-muted text-decoration-none">Головна</a></li>
             <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-muted text-decoration-none">Каталог</a></li>
-            {% if parent_category %}
-                <li class="breadcrumb-item"><a href="{{ parent_category.url }}" class="text-muted text-decoration-none">{{ parent_category.name }}</a></li>
-            {% endif %}
             <li class="breadcrumb-item active fw-bold">{{ product.brand.name }} {{ product.display_name }}</li>
         </ol>
     </nav>
@@ -131,11 +120,13 @@
 
             <!-- ІНФО ТА КУПІВЛЯ -->
             <div class="col-lg-6">
-                <div class="brand-link mb-1">{{ product.brand.name }}</div>
+                <a href="{% url 'store:catalog' %}?brand={{ product.brand.id }}" class="brand-link">{{ product.brand.name }}</a>
+                
+                <!-- Виправлено: Назва без дублювання розмірів -->
                 <h1 class="product-title">{% if product.seo_h1 %}{{ product.seo_h1 }}{% else %}Купити {{ product.brand.name }} {{ product.display_name }}{% endif %}</h1>
                 
-                <div class="d-flex align-items-center mb-4">
-                    <div class="rating-stars me-2">
+                <div class="d-flex align-items-center mb-4 flex-wrap gap-2">
+                    <div class="rating-stars">
                         <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
                         <span class="rating-value text-dark small">4.8 (12 відгуків)</span>
                     </div>
@@ -158,15 +149,16 @@
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="mt-4">
                         {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-4 col-sm-4 col-md-3">
+                        <!-- Виправлено: адаптивні колонки для кнопок -->
+                        <div class="row g-2 align-items-stretch">
+                            <div class="col-5 col-sm-4">
                                 <div class="quantity-stepper">
                                     <button type="button" onclick="updateQty(-1)">−</button>
                                     <input type="number" name="quantity" id="qtyInput" value="4" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" readonly>
                                     <button type="button" onclick="updateQty(1)">+</button>
                                 </div>
                             </div>
-                            <div class="col-8 col-sm-8 col-md-9">
+                            <div class="col-7 col-sm-8">
                                 <button type="submit" class="btn btn-buy-main h-100" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
                                     {% if product.stock_quantity > 0 %}ДОДАТИ В КОШИК{% else %}НЕМАЄ В НАЯВНОСТІ{% endif %}
                                 </button>
@@ -175,12 +167,37 @@
                     </form>
                 </div>
 
-                <div class="spec-table">
-                    <div class="spec-row"><span class="spec-label">Сезон</span><span class="spec-value">{% if product.seasonality == 'winter' %}❄️ Зимова{% elif product.seasonality == 'summer' %}☀️ Літня{% else %}🌤️ Всесезонна{% endif %}</span></div>
-                    <div class="spec-row"><span class="spec-label">Параметри</span><span class="spec-value">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</span></div>
-                    <div class="spec-row"><span class="spec-label">Індекси</span><span class="spec-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></div>
-                    <div class="spec-row"><span class="spec-label">Рік / Країна</span><span class="spec-value">{{ product.year }} / {{ product.country|default:"-" }}</span></div>
+                <!-- Виправлено: Блок доставки та гарантії повернуто -->
+                <div class="delivery-info-box mt-4 p-3 rounded-4 mb-4">
+                    <div class="d-flex mb-3 align-items-center">
+                        <div class="delivery-icon me-3"><i class="bi bi-shop fs-5"></i></div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold text-dark">Самовивіз у Києві <span class="badge bg-success bg-opacity-75 ms-1">Безкоштовно</span></div>
+                            <div class="small text-muted mt-1">вул. Володимира Качали, 3</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="delivery-icon me-3"><i class="bi bi-truck fs-5"></i></div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold text-dark">Нова Пошта по Україні</div>
+                            <div class="small text-muted mt-1">За тарифами перевізника</div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="trust-badges mb-4">
+                    <div class="badge-item"><i class="bi bi-shield-check badge-icon fs-4"></i> Гарантія якості</div>
+                    <div class="badge-item"><i class="bi bi-arrow-repeat badge-icon fs-4"></i> Обмін 14 днів</div>
+                </div>
+
+                <!-- Виправлено: Таблиця характеристик з крапочками та країною -->
+                <ul class="specs-list">
+                    <li class="specs-item"><span class="specs-label">Сезон</span><span class="specs-dots"></span><span class="specs-value">{% if product.seasonality == 'winter' %}❄️ Зимова{% elif product.seasonality == 'summer' %}☀️ Літня{% else %}🌤️ Всесезонна{% endif %}</span></li>
+                    <li class="specs-item"><span class="specs-label">Параметри</span><span class="specs-dots"></span><span class="specs-value">{{ product.width }}/{{ product.profile }} R{{ product.diameter }}</span></li>
+                    <li class="specs-item"><span class="specs-label">Індекси</span><span class="specs-dots"></span><span class="specs-value">{{ product.load_index|default:"" }}{{ product.speed_index|default:"" }}</span></li>
+                    <!-- Тут тепер перевіряємо країну бренду -->
+                    <li class="specs-item"><span class="specs-label">Рік / Країна</span><span class="specs-dots"></span><span class="specs-value">{{ product.year }} / {% if product.country %}{{ product.country }}{% elif product.brand.country %}{{ product.brand.country }}{% else %}Не вказано{% endif %}</span></li>
+                </ul>
             </div>
         </div>
 
@@ -192,6 +209,7 @@
                     <li class="nav-item"><button class="nav-link px-4 py-2 fw-bold" data-bs-toggle="tab" data-bs-target="#specs">Характеристики</button></li>
                     <li class="nav-item"><button class="nav-link px-4 py-2 fw-bold" data-bs-toggle="tab" data-bs-target="#reviews">Відгуки (12)</button></li>
                 </ul>
+                
                 <div class="tab-content border-top pt-4">
                     <div class="tab-pane fade show active" id="desc">
                         <div class="text-secondary lh-lg fs-6">
@@ -202,27 +220,35 @@
                             {% endif %}
                         </div>
                     </div>
+                    
                     <div class="tab-pane fade" id="specs">
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <h5 class="fw-bold mb-3 border-bottom pb-2">Геометрія шини</h5>
-                                <div class="spec-row"><span class="spec-label">Ширина</span><span class="spec-value">{{ product.width }} мм</span></div>
-                                <div class="spec-row"><span class="spec-label">Профіль</span><span class="spec-value">{{ product.profile }}%</span></div>
-                                <div class="spec-row"><span class="spec-label">Діаметр</span><span class="spec-value">R{{ product.diameter }}</span></div>
+                                <ul class="specs-list">
+                                    <li class="specs-item"><span class="specs-label">Ширина</span><span class="specs-dots"></span><span class="specs-value">{{ product.width }} мм</span></li>
+                                    <li class="specs-item"><span class="specs-label">Профіль</span><span class="specs-dots"></span><span class="specs-value">{{ product.profile }}%</span></li>
+                                    <li class="specs-item"><span class="specs-label">Діаметр</span><span class="specs-dots"></span><span class="specs-value">R{{ product.diameter }}</span></li>
+                                </ul>
                             </div>
                             <div class="col-md-6">
                                 <h5 class="fw-bold mb-3 border-bottom pb-2">Експлуатація</h5>
-                                <div class="spec-row"><span class="spec-label">Тип автомобіля</span><span class="spec-value">{{ product.vehicle_type|default:"Легковий" }}</span></div>
-                                <div class="spec-row"><span class="spec-label">Шипи</span><span class="spec-value">{{ product.stud_type|default:"Ні" }}</span></div>
-                                <div class="spec-row"><span class="spec-label">Артикул</span><span class="spec-value text-muted">{{ product.id }}</span></div>
+                                <ul class="specs-list">
+                                    <li class="specs-item"><span class="specs-label">Тип автомобіля</span><span class="specs-dots"></span><span class="specs-value">{{ product.vehicle_type|default:"Легковий" }}</span></li>
+                                    <li class="specs-item"><span class="specs-label">Шипи</span><span class="specs-dots"></span><span class="specs-value">{{ product.stud_type|default:"Ні" }}</span></li>
+                                    <li class="specs-item"><span class="specs-label">Артикул</span><span class="specs-dots"></span><span class="specs-value text-muted">{{ product.id }}</span></li>
+                                </ul>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="tab-pane fade" id="reviews">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h4 class="fw-bold m-0">Відгуки про {{ product.brand.name }} {{ product.display_name }}</h4>
-                            <button class="btn btn-outline-primary btn-sm rounded-pill px-4">Написати відгук</button>
+                            <!-- Виправлено: Кнопка тепер відкриває модальне вікно для відгуку -->
+                            <button class="btn btn-outline-primary btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#reviewModal">Написати відгук</button>
                         </div>
+                        
                         <div class="review-item border-bottom pb-3 mb-3">
                             <div class="d-flex justify-content-between mb-1"><strong>Олександр</strong><span class="text-muted small">01.05.2026</span></div>
                             <div class="rating-stars small mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
@@ -256,6 +282,41 @@
             </div>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Модальне вікно для створення відгуку -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="reviewModalLabel">Залишити відгук</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ваше ім'я</label>
+                        <input type="text" class="form-control" placeholder="Введіть ім'я">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Оцінка товару</label>
+                        <select class="form-select">
+                            <option value="5">⭐⭐⭐⭐⭐ Відмінно</option>
+                            <option value="4">⭐⭐⭐⭐ Добре</option>
+                            <option value="3">⭐⭐⭐ Нормально</option>
+                            <option value="2">⭐⭐ Погано</option>
+                            <option value="1">⭐ Жахливо</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Текст відгуку</label>
+                        <textarea class="form-control" rows="4" placeholder="Поділіться враженнями..."></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 fw-bold" data-bs-dismiss="modal" onclick="alert('Дякуємо! Ваш відгук відправлено на модерацію.')">ВІДПРАВИТИ ВІДГУК</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -171,6 +171,7 @@
 
 <div class="container py-2">
 
+    {# ===== ПОПУЛЯРНІ КАТЕГОРІЇ (внутрішні посилання) ===== #}
     <h2 class="h5 fw-bold text-dark mb-3">Популярні розміри та категорії</h2>
     <nav class="category-links" aria-label="Популярні категорії шин">
         <a href="{% url 'store:catalog' %}?width=205&profile=55&diameter=16" class="category-link">Шини 205/55 R16</a>
@@ -184,6 +185,7 @@
         <a href="{% url 'store:catalog' %}?season=all-season" class="category-link">🌤 Всесезонні шини</a>
     </nav>
 
+    {# ===== ПОПУЛЯРНІ ПРОПОЗИЦІЇ ===== #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 fw-bold text-dark">🔥 Популярні пропозиції</h2>
         <a href="{% url 'store:catalog' %}" class="btn btn-outline-primary rounded-pill">В каталог <i class="bi bi-arrow-right"></i></a>
@@ -206,12 +208,19 @@
                     {% else %}<div class="season-badge all-season" title="Всесезонна"><i class="bi bi-brightness-alt-high-fill" style="font-size: 0.8rem;"></i></div>{% endif %}
 
                     <a href="{% url 'store:product_detail' product.slug %}">
-                        {# ПРІОРИТЕТ: product.photo.url -> product.photo_url #}
-                        <img src="{% if product.photo %}{{ product.photo.url }}{% elif product.photo_url %}{{ product.photo_url }}{% else %}https://placehold.co/600x600?text=No+Img{% endif %}" 
+                        <img src="{% if product.photo %}{{ product.photo.url }}{% elif product.photo_url %}{{ product.photo_url }}{% else %}{% static 'images/no-image.png' %}{% endif %}" 
                              class="product-image" loading="lazy"
                              alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
                              onerror="this.src='{% static 'images/no-image.png' %}'">
                     </a>
+
+                    {# --- БЛОК ЗІРОЧОК РЕЙТИНГУ --- #}
+                    <div class="d-flex align-items-center mb-1">
+                        <div class="text-warning" style="font-size: 0.8rem;">
+                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+                        </div>
+                        <span class="text-muted ms-1" style="font-size: 0.75rem;">(12)</span>
+                    </div>
 
                     <div class="product-name fw-bold mb-1">
                         <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">

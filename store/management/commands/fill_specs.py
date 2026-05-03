@@ -57,7 +57,7 @@ BRAND_COUNTRIES = {
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V7.4: Пріоритет на товари в наявності'
+    help = 'ШІ Бот-Експерт V7.5: Пріоритет на stock_quantity'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
@@ -95,21 +95,20 @@ class Command(BaseCommand):
             return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
-        # 🔥 ДОДАНО .order_by('-stock'). Мінус означає сортування від найбільшого до найменшого
-        # Якщо ваше поле наявності називається інакше (напр. quantity), змініть '-stock' на '-quantity'
+        # 🔥 ВИПРАВЛЕНО: сортуємо за stock_quantity
         products = Product.objects.filter(
             Q(description__isnull=True) | 
             Q(description='') | 
             ~Q(description__icontains='<ul>') | 
             Q(description__icontains='???')
-        ).distinct().order_by('-stock')
+        ).distinct().order_by('-stock_quantity')
         
         total = products.count()
         if total == 0:
             self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені!'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.4. Товарів до обробки: {total} (Спочатку в наявності)'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.5. Товарів до обробки: {total} (Спочатку в наявності)'))
 
         for i, product in enumerate(products, 1):
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"

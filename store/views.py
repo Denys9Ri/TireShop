@@ -860,52 +860,44 @@ def fix_product_names_view(request):
 
 
 # 🔥 БЕЗПЕЧНИЙ SITEMAP.XML 🔥
+import traceback
+
 def sitemap_xml_view(request):
-    base_url = "https://r16.com.ua"
-    xml_lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-    ]
+    try:
+        base_url = "https://r16.com.ua"
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
 
-    # 1. Статичні сторінки (безпечний reverse)
-    static_routes = [
-        ('/', '1.0', 'daily'),
-        ('/catalog/', '0.9', 'daily'),
-        ('/about/', '0.5', 'monthly'),
-        ('/contacts/', '0.5', 'monthly'),
-        ('/delivery/', '0.5', 'monthly'),
-        ('/warranty/', '0.5', 'monthly'),
-        ('/faq/', '0.6', 'monthly'),
-    ]
-    for path, priority, freq in static_routes:
-        xml_lines.append(f'  <url><loc>{base_url}{path}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>')
+        # 1. Статичні сторінки
+        static_routes = ['/', '/catalog/', '/about/', '/contacts/', '/delivery/', '/warranty/', '/faq/']
+        for path in static_routes:
+            xml_lines.append(f'  <url><loc>{base_url}{path}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
 
-    # 2. Сезонні сторінки
-    for slug in ['zimovi', 'litni', 'vsesezonni']:
-        xml_lines.append(f'  <url><loc>{base_url}/shiny/{slug}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
+        # 2. Сезонні сторінки
+        for slug in ['zimovi', 'litni', 'vsesezonni']:
+            xml_lines.append(f'  <url><loc>{base_url}/shiny/{slug}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
 
-    # 3. Бренди (тільки з валідним slug, використання values_list для пам'яті)
-    brand_slugs = Brand.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
-    for b_slug in brand_slugs:
-        xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b_slug}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
+        # 3. Бренди
+        brand_slugs = Brand.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
+        for b_slug in brand_slugs:
+            xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b_slug}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
 
-    # 4. Товари (тільки з валідним slug)
-    product_slugs = Product.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
-    for p_slug in product_slugs:
-        xml_lines.append(f'  <url><loc>{base_url}/product/{p_slug}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+        # 4. Товари (Тимчасово беремо тільки 1000 для перевірки на TimeOut)
+        product_slugs = Product.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)[:1000]
+        for p_slug in product_slugs:
+            xml_lines.append(f'  <url><loc>{base_url}/product/{p_slug}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
 
-    # 5. Популярні розміри (тільки в наявності)
-    sizes = Product.objects.filter(stock_quantity__gt=0).values('width', 'profile', 'diameter').distinct()
-    for s in sizes:
-        w, p, d = s['width'], s['profile'], s['diameter']
-        if w and p and d:
-            xml_lines.append(f'  <url><loc>{base_url}/shiny/{w}-{p}-r{d}/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
+        xml_lines.append('</urlset>')
+        
+        content = "\n".join(xml_lines).replace('&', '&amp;')
+        return HttpResponse(content, content_type="application/xml")
 
-    xml_lines.append('</urlset>')
-    
-    # Використовуємо replace для безпеки XML (заміна & на &amp;)
-    content = "\n".join(xml_lines).replace('&', '&amp;')
-    return HttpResponse(content, content_type="application/xml")
+    except Exception as e:
+        # 🔥 Якщо є помилка — ми побачимо її прямо на сторінці! 🔥
+        error_msg = f"ОТ ЖЕ ХАЛЕПА! ПОМИЛКА:\n{str(e)}\n\nДЕТАЛІ:\n{traceback.format_exc()}"
+        return HttpResponse(error_msg, content_type="text/plain", status=200)
 
 
 # 🔥 ОНОВЛЕНИЙ ГУГЛ ФІД 🔥

@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block meta_description %}
-    Купити шини {{ product.brand.name }} {{ product.display_name }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. 💰 Найкраща ціна: {{ product.price }} грн. 🚚 Доставка по Україні Новою Поштою. Гарантія якості.
+    Купити шини {{ product.brand.name }} {{ product.display_name }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. 💰 Найкраща ціна: {{ product.price }} грн. 🚚 Доставка Новою Поштою.
 {% endblock %}
 
 {% block content %}
@@ -44,8 +44,13 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Головна", "item": "https://r16.com.ua/" },
-      { "@type": "ListItem", "position": 2, "name": "Каталог", "item": "https://r16.com.ua{% url 'store:catalog' %}" },
-      { "@type": "ListItem", "position": 3, "name": "{{ product.brand.name }} {{ product.display_name }}", "item": "https://r16.com.ua{{ request.path }}" }
+      { "@type": "ListItem", "position": 2, "name": "Каталог", "item": "https://r16.com.ua{% url 'store:catalog' %}" }
+      {% if parent_category %}
+      ,{ "@type": "ListItem", "position": 3, "name": "{{ parent_category.name }}", "item": "https://r16.com.ua{{ parent_category.url }}" }
+      ,{ "@type": "ListItem", "position": 4, "name": "{{ product.brand.name }} {{ product.display_name }}", "item": "https://r16.com.ua{{ request.path }}" }
+      {% else %}
+      ,{ "@type": "ListItem", "position": 3, "name": "{{ product.brand.name }} {{ product.display_name }}", "item": "https://r16.com.ua{{ request.path }}" }
+      {% endif %}
     ]
   }
 ]
@@ -66,7 +71,7 @@
     .rating-value { font-weight: 700; color: #333; margin-left: 8px; }
 
     /* Покупка */
-    .brand-link { color: #0d6efd; font-weight: 700; text-transform: uppercase; text-decoration: none; font-size: 0.9rem; }
+    .brand-link { color: #0d6efd; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; }
     .product-title { font-size: 2.2rem; font-weight: 850; color: #1a1a1a; line-height: 1.2; margin-top: 5px; }
     .price-card { background: #f8fbff; border: 1px solid #e1e9f5; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
     .current-price { font-size: 2.8rem; font-weight: 900; color: #000; letter-spacing: -1px; }
@@ -95,6 +100,9 @@
         <ol class="breadcrumb small">
             <li class="breadcrumb-item"><a href="/" class="text-muted text-decoration-none">Головна</a></li>
             <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-muted text-decoration-none">Каталог</a></li>
+            {% if parent_category %}
+                <li class="breadcrumb-item"><a href="{{ parent_category.url }}" class="text-muted text-decoration-none">{{ parent_category.name }}</a></li>
+            {% endif %}
             <li class="breadcrumb-item active fw-bold">{{ product.brand.name }} {{ product.display_name }}</li>
         </ol>
     </nav>
@@ -123,7 +131,7 @@
 
             <!-- ІНФО ТА КУПІВЛЯ -->
             <div class="col-lg-6">
-                <a href="{% url 'store:brand_detail' product.brand.slug %}" class="brand-link">{{ product.brand.name }}</a>
+                <div class="brand-link mb-1">{{ product.brand.name }}</div>
                 <h1 class="product-title">{% if product.seo_h1 %}{{ product.seo_h1 }}{% else %}Купити {{ product.brand.name }} {{ product.display_name }}{% endif %}</h1>
                 
                 <div class="d-flex align-items-center mb-4">
@@ -151,14 +159,14 @@
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="mt-4">
                         {% csrf_token %}
                         <div class="row g-3">
-                            <div class="col-4 col-sm-3">
+                            <div class="col-4 col-sm-4 col-md-3">
                                 <div class="quantity-stepper">
                                     <button type="button" onclick="updateQty(-1)">−</button>
                                     <input type="number" name="quantity" id="qtyInput" value="4" min="1" max="{{ product.stock_quantity|default_if_none:99 }}" readonly>
                                     <button type="button" onclick="updateQty(1)">+</button>
                                 </div>
                             </div>
-                            <div class="col-8 col-sm-9">
+                            <div class="col-8 col-sm-8 col-md-9">
                                 <button type="submit" class="btn btn-buy-main h-100" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
                                     {% if product.stock_quantity > 0 %}ДОДАТИ В КОШИК{% else %}НЕМАЄ В НАЯВНОСТІ{% endif %}
                                 </button>

@@ -316,6 +316,9 @@ def home_view(request):
         'all_seasons': Product.SEASON_CHOICES,
     })
 
+def catalog_view(request):
+    return seo_matrix_view(request)
+
 def brand_landing_view(request, brand_slug):
     brand = Brand.objects.filter(Q(slug=brand_slug) | Q(name__iexact=brand_slug)).first()
     if not brand:
@@ -487,9 +490,6 @@ def seo_matrix_view(request, slug=None, brand_slug=None, season_slug=None, width
         'is_seo_page': True,
     })
 
-def catalog_view(request):
-    return seo_matrix_view(request)
-
 def product_detail_view(request, slug):
     product = get_object_or_404(Product, slug=slug)
     
@@ -655,114 +655,41 @@ def bot_callback_view(request):
     except Exception: return JsonResponse({'status': 'err'}, status=400)
 
 
-# 🔥 БЕЗПЕЧНИЙ SITEMAP.XML 🔥
+# 🔥 БЕЗПЕЧНИЙ SITEMAP.XML ДЛЯ ТЕСТУ ПАМ'ЯТІ ТА COOLIFY 🔥
 def sitemap_xml_view(request):
+    # ТЕСТОВИЙ РЕЖИМ: Якщо цей файл відкриється, значить проблема була в перевантаженні пам'яті сервака 
+    # попереднім великим запитом. Ми робимо малий запит.
     try:
-        base_url = "https://r16.com.ua"
-        urls = [
-            f"{base_url}/",
-            f"{base_url}/catalog/",
-            f"{base_url}/about/",
-            f"{base_url}/contacts/",
-            f"{base_url}/delivery/",
-            f"{base_url}/warranty/",
-            f"{base_url}/faq/",
-            f"{base_url}/shiny/zimovi/",
-            f"{base_url}/shiny/litni/",
-            f"{base_url}/shiny/vsesezonni/"
-        ]
-
-        xml_lines = [
-            '<?xml version="1.0" encoding="UTF-8"?>',
-            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        ]
-
-        # Статичні та сезони
-        for u in urls:
-            xml_lines.append(f'  <url><loc>{u}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
-
-        # Бренди
-        brands = Brand.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)
-        for b in brands:
-            xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
-
-        # Розміри (працює дуже швидко)
-        sizes = Product.objects.filter(stock_quantity__gt=0, width__gt=0, profile__gt=0, diameter__gt=0).values('width', 'profile', 'diameter').distinct()
-        for s in sizes:
-            xml_lines.append(f'  <url><loc>{base_url}/shiny/{s["width"]}-{s["profile"]}-r{s["diameter"]}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
-
-        # Товари (беремо тільки 4000 щоб не падав сервер від нестачі пам'яті)
-        products = Product.objects.exclude(slug__isnull=True).exclude(slug='').values_list('slug', flat=True)[:4000]
-        for p in products:
-            xml_lines.append(f'  <url><loc>{base_url}/product/{p}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
-
-        xml_lines.append('</urlset>')
-        
-        return HttpResponse("\n".join(xml_lines), content_type="application/xml")
+        count = Product.objects.count()
+        xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://r16.com.ua/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- В базі знайдено {count} товарів. Якщо ти бачиш цей текст, сервер працює нормально! -->
+</urlset>'''
+        # Змінено content_type на text/xml щоб уникнути конфліктів із Middlewares
+        return HttpResponse(xml, content_type="text/xml")
     except Exception as e:
-        return HttpResponse(f"CRITICAL ERROR: {str(e)}\n\n{traceback.format_exc()}", content_type="text/plain")
+        return HttpResponse(f"Помилка БД: {str(e)}", status=500)
 
 
-# 🔥 ОНОВЛЕНИЙ ГУГЛ ФІД 🔥
+# 🔥 БЕЗПЕЧНИЙ GOOGLE FEED ДЛЯ ТЕСТУ 🔥
 def google_shopping_feed(request):
-    base_url = "https://r16.com.ua"
-    # Обмежимо до 4500 щоб не перевищувати ліміт Google і не падати по TimeOut
-    products = Product.objects.filter(price__gt=0, stock_quantity__gt=0).exclude(slug__isnull=True).exclude(slug='').select_related('brand').order_by('-stock_quantity')[:4500]
-
-    out = StringIO()
-    handler = SimplerXMLGenerator(out, 'utf-8')
-    handler.startDocument()
-    handler.startElement('rss', {'version': '2.0', 'xmlns:g': 'http://base.google.com/ns/1.0'})
-    handler.startElement('channel', {})
-
-    def el(tag, text):
-        handler.startElement(tag, {})
-        handler.characters(str(text))
-        handler.endElement(tag)
-
-    el('title', 'R16.com.ua — Шини з доставкою по Україні')
-    el('link', base_url)
-    el('description', 'Інтернет-магазин шин R16.com.ua. Зимові, літні, всесезонні шини.')
-
-    for p in products:
-        try:
-            title = f"{p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}"
-            if len(title) > 150: title = title[:150]
-
-            if p.description:
-                desc = re.sub('<[^<]+?>', '', p.description)[:5000]
-            else:
-                desc = f"Шина {p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}. Доставка."
-
-            image_url = None
-            if p.photo: image_url = f"{base_url}{p.photo.url}"
-            elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: image_url = p.photo_url
-            if not image_url: continue
-
-            handler.startElement('item', {})
-            el('g:id', str(p.id))
-            el('g:title', title)
-            el('g:description', desc)
-            el('g:link', f"{base_url}/product/{p.slug}/")
-            el('g:image_link', image_url)
-            el('g:availability', 'in stock')
-            el('g:price', f"{p.price:.2f} UAH")
-            el('g:condition', 'new')
-            el('g:brand', p.brand.name)
-            el('g:google_product_category', '6093')
-            el('g:identifier_exists', 'no')
-            handler.startElement('g:shipping', {})
-            el('g:country', 'UA')
-            el('g:service', 'Нова Пошта')
-            el('g:price', '0.00 UAH')
-            handler.endElement('g:shipping')
-            handler.endElement('item')
-        except Exception:
-            continue
-
-    handler.endElement('channel')
-    handler.endElement('rss')
-    return HttpResponse(out.getvalue(), content_type='application/xml; charset=utf-8')
+    try:
+        count = Product.objects.count()
+        xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>R16.com.ua TEST FEED</title>
+    <description>Всього товарів у базі: {count}</description>
+  </channel>
+</rss>'''
+        return HttpResponse(xml, content_type="text/xml")
+    except Exception as e:
+        return HttpResponse(f"Помилка БД: {str(e)}", status=500)
 
 def robots_txt(request):
     return HttpResponse("User-agent: *\nDisallow: /admin/\nSitemap: https://r16.com.ua/sitemap.xml", content_type="text/plain")

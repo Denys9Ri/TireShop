@@ -12,16 +12,17 @@
             <g:description>Купити шини {{ product.brand.name|escape }} {{ product.display_name|escape }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {% if product.seasonality == 'winter' %}Зимові{% elif product.seasonality == 'summer' %}Літні{% else %}Всесезонні{% endif %}.</g:description>
             <g:link>https://r16.com.ua/product/{{ product.slug }}/</g:link>
             
-            {% if product.photo_url %}
-                <g:image_link>{{ product.photo_url|escape }}</g:image_link>
-            {% elif product.photo %}
+            {# ПРІОРИТЕТ: Спочатку завантажене фото, потім посилання, потім заглушка #}
+            {% if product.photo %}
                 <g:image_link>https://r16.com.ua{{ product.photo.url }}</g:image_link>
+            {% elif product.photo_url %}
+                <g:image_link>{{ product.photo_url|escape }}</g:image_link>
             {% else %}
                 <g:image_link>https://r16.com.ua/static/images/no-image.png</g:image_link>
             {% endif %}
             
             <g:condition>new</g:condition>
-            <g:availability>in_stock</g:availability>
+            <g:availability>{% if product.stock_quantity > 0 %}in_stock{% else %}out_of_stock{% endif %}</g:availability>
             <g:price>{{ product.price }} UAH</g:price>
             <g:brand>{{ product.brand.name|escape }}</g:brand>
             

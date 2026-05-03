@@ -16,7 +16,6 @@ SPEED_INDICES = {
     'V': '240', 'W': '270', 'Y': '300', 'ZR': 'понад 240'
 }
 
-# 🔥 РОЗШИРЕНА БАЗА ІНДЕКСІВ НАВАНТАЖЕННЯ (від компактних авто до вантажних бусів)
 LOAD_INDICES = {
     '65': '290', '66': '300', '67': '307', '68': '315', '69': '325',
     '70': '335', '71': '345', '72': '355', '73': '365', '74': '375',
@@ -58,7 +57,7 @@ BRAND_COUNTRIES = {
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V7.2: Розширені індекси навантаження та автовиправлення'
+    help = 'ШІ Бот-Експерт V7.4: Пріоритет на товари в наявності'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
@@ -96,21 +95,21 @@ class Command(BaseCommand):
             return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
-        # 🔥 Додали перевірку на '???' щоб бот сам виправив свої минулі помилки
+        # 🔥 ДОДАНО .order_by('-stock'). Мінус означає сортування від найбільшого до найменшого
+        # Якщо ваше поле наявності називається інакше (напр. quantity), змініть '-stock' на '-quantity'
         products = Product.objects.filter(
             Q(description__isnull=True) | 
             Q(description='') | 
             ~Q(description__icontains='<ul>') | 
-            Q(description__icontains='Країна виробник: Не вказано') |
             Q(description__icontains='???')
-        ).distinct()
+        ).distinct().order_by('-stock')
         
         total = products.count()
         if total == 0:
             self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені!'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.2. Товарів до обробки: {total}'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.4. Товарів до обробки: {total} (Спочатку в наявності)'))
 
         for i, product in enumerate(products, 1):
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
@@ -172,7 +171,7 @@ class Command(BaseCommand):
             product.description = html_description
             product.save(update_fields=['description'])
             
-            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name} (Навантаження: до {load_kg} кг)'))
+            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name}'))
             time.sleep(0.3)
 
         self.stdout.write(self.style.SUCCESS('🔥 Всі товари ідеально оновлено!'))

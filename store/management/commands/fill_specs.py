@@ -16,7 +16,11 @@ SPEED_INDICES = {
     'V': '240', 'W': '270', 'Y': '300', 'ZR': 'понад 240'
 }
 
+# 🔥 РОЗШИРЕНА БАЗА ІНДЕКСІВ НАВАНТАЖЕННЯ (від компактних авто до вантажних бусів)
 LOAD_INDICES = {
+    '65': '290', '66': '300', '67': '307', '68': '315', '69': '325',
+    '70': '335', '71': '345', '72': '355', '73': '365', '74': '375',
+    '75': '387', '76': '400', '77': '412', '78': '425', '79': '437',
     '80': '450', '81': '462', '82': '475', '83': '487', '84': '500', '85': '515',
     '86': '530', '87': '545', '88': '560', '89': '580', '90': '600', '91': '615',
     '92': '630', '93': '650', '94': '670', '95': '690', '96': '710', '97': '730',
@@ -24,86 +28,37 @@ LOAD_INDICES = {
     '104': '900', '105': '925', '106': '950', '107': '975', '108': '1000', '109': '1030',
     '110': '1060', '111': '1090', '112': '1120', '113': '1150', '114': '1180', '115': '1215',
     '116': '1250', '117': '1285', '118': '1320', '119': '1360', '120': '1400',
-    '121': '1450', '122': '1500', '123': '1550'
+    '121': '1450', '122': '1500', '123': '1550', '124': '1600', '125': '1650'
 }
 
-# 🔥 ВЕЛИЧЕЗНА ВШИТА БАЗА КРАЇН (всі ключі обов'язково маленькими літерами)
 BRAND_COUNTRIES = {
-    # За вашим запитом:
-    'leao': 'Сербія',
-    'hankook': 'Південна Корея',
-    
-    # Інші бренди зі списку та популярні:
-    'nexen': 'Південна Корея',
-    'bridgestone': 'Японія',
-    'michelin': 'Франція',
-    'goodyear': 'США',
-    'continental': 'Німеччина',
-    'pirelli': 'Італія',
-    'yokohama': 'Японія',
-    'toyo': 'Японія',
-    'kumho': 'Південна Корея',
-    'roadstone': 'Південна Корея',
-    'nokian': 'Фінляндія',
-    'nokian tyres': 'Фінляндія',
-    'kapsen': 'Китай',
-    'aplus': 'Китай',
-    'laufenn': 'Південна Корея',
-    'laufen': 'Південна Корея',
-    'ovation': 'Китай',
-    'росава': 'Україна',
-    'rosava': 'Україна',
-    'premiorri': 'Україна',
-    'sunny': 'Китай',
-    'ecovision': 'Китай',
-    'habilead': 'Китай',
-    'triangle': 'Китай',
-    'sailun': 'Китай',
-    'windforce': 'Китай',
-    'goform': 'Китай',
-    'lanvigator': 'Китай',
-    'mirage': 'Китай',
-    'hifly': 'Китай',
-    'goodride': 'Китай',
-    'sunfull': 'Китай',
-    'fronway': 'Китай',
-    'barum': 'Чехія',
-    'sava': 'Словенія',
-    'matador': 'Словаччина',
-    'tigar': 'Сербія',
-    'orium': 'Сербія',
-    'taurus': 'Сербія',
-    'strial': 'Сербія',
-    'kormoran': 'Сербія',
-    'riken': 'Сербія',
-    'debica': 'Польща',
-    'fulda': 'Німеччина',
-    'falken': 'Японія',
-    'dunlop': 'Велика Британія',
-    'maxxis': 'Тайвань',
-    'nankang': 'Тайвань',
-    'lassa': 'Туреччина',
-    'petlas': 'Туреччина',
-    'gislaved': 'Швеція',
-    'kleber': 'Франція',
-    'bfgoodrich': 'США',
-    'uniroyal': 'США',
-    'apollo': 'Індія',
-    'bkt': 'Індія',
-    'viatti': 'Росія',
-    'cachland': 'Китай',
-    'voyager': 'Китай',
-    'compasal': 'Китай',
-    'kingstar': 'Китай',
-    'ozka': 'Туреччина',
-    'wanli': 'Китай',
-    'crosswind': 'Китай',
-    'linglong': 'Китай',
-    'firestone': 'США'
+    'leao': 'Сербія', 'hankook': 'Південна Корея', 'nexen': 'Південна Корея',
+    'bridgestone': 'Японія', 'michelin': 'Франція', 'goodyear': 'США',
+    'continental': 'Німеччина', 'pirelli': 'Італія', 'yokohama': 'Японія',
+    'toyo': 'Японія', 'kumho': 'Південна Корея', 'roadstone': 'Південна Корея',
+    'nokian': 'Фінляндія', 'nokian tyres': 'Фінляндія', 'kapsen': 'Китай',
+    'aplus': 'Китай', 'laufenn': 'Південна Корея', 'laufen': 'Південна Корея',
+    'ovation': 'Китай', 'росава': 'Україна', 'rosava': 'Україна',
+    'premiorri': 'Україна', 'sunny': 'Китай', 'ecovision': 'Китай',
+    'habilead': 'Китай', 'triangle': 'Китай', 'sailun': 'Китай',
+    'windforce': 'Китай', 'goform': 'Китай', 'lanvigator': 'Китай',
+    'mirage': 'Китай', 'hifly': 'Китай', 'goodride': 'Китай',
+    'sunfull': 'Китай', 'fronway': 'Китай', 'barum': 'Чехія',
+    'sava': 'Словенія', 'matador': 'Словаччина', 'tigar': 'Сербія',
+    'orium': 'Сербія', 'taurus': 'Сербія', 'strial': 'Сербія',
+    'kormoran': 'Сербія', 'riken': 'Сербія', 'debica': 'Польща',
+    'fulda': 'Німеччина', 'falken': 'Японія', 'dunlop': 'Велика Британія',
+    'maxxis': 'Тайвань', 'nankang': 'Тайвань', 'lassa': 'Туреччина',
+    'petlas': 'Туреччина', 'gislaved': 'Швеція', 'kleber': 'Франція',
+    'bfgoodrich': 'США', 'uniroyal': 'США', 'apollo': 'Індія',
+    'bkt': 'Індія', 'viatti': 'Росія', 'cachland': 'Китай',
+    'voyager': 'Китай', 'compasal': 'Китай', 'kingstar': 'Китай',
+    'ozka': 'Туреччина', 'wanli': 'Китай', 'crosswind': 'Китай',
+    'linglong': 'Китай', 'firestone': 'США'
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V7.1: Тотальна автоматизація країн з великою базою'
+    help = 'ШІ Бот-Експерт V7.2: Розширені індекси навантаження та автовиправлення'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
@@ -141,11 +96,13 @@ class Command(BaseCommand):
             return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
+        # 🔥 Додали перевірку на '???' щоб бот сам виправив свої минулі помилки
         products = Product.objects.filter(
             Q(description__isnull=True) | 
             Q(description='') | 
             ~Q(description__icontains='<ul>') | 
-            Q(description__icontains='Країна виробник: Не вказано')
+            Q(description__icontains='Країна виробник: Не вказано') |
+            Q(description__icontains='???')
         ).distinct()
         
         total = products.count()
@@ -153,7 +110,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені!'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.1. Товарів до обробки: {total}'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.2. Товарів до обробки: {total}'))
 
         for i, product in enumerate(products, 1):
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
@@ -179,7 +136,6 @@ class Command(BaseCommand):
             brand_name = product.brand.name if product.brand else ""
             marketing_text, tread, fuel, noise, ai_country = self.get_ai_specs(brand_name, product.name, season_str, veh_type)
 
-            # --- ЗАЛІЗОБЕТОННИЙ ПОШУК КРАЇНИ ---
             country = None
             clean_brand_name = brand_name.lower().strip()
 
@@ -216,7 +172,7 @@ class Command(BaseCommand):
             product.description = html_description
             product.save(update_fields=['description'])
             
-            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ {brand_name} {product.name} (Країна: {country})'))
+            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name} (Навантаження: до {load_kg} кг)'))
             time.sleep(0.3)
 
         self.stdout.write(self.style.SUCCESS('🔥 Всі товари ідеально оновлено!'))

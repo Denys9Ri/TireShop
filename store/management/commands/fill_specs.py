@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from store.models import Product
+from django.db.models import Q
 from django.conf import settings
 import time
 import re
@@ -8,6 +9,7 @@ from openai import OpenAI
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+# --- БАЗИ ЗНАНЬ ---
 SPEED_INDICES = {
     'J': '100', 'K': '110', 'L': '120', 'M': '130', 'N': '140', 'P': '150',
     'Q': '160', 'R': '170', 'S': '180', 'T': '190', 'U': '200', 'H': '210',
@@ -25,26 +27,101 @@ LOAD_INDICES = {
     '121': '1450', '122': '1500', '123': '1550'
 }
 
+# 🔥 ВЕЛИЧЕЗНА ВШИТА БАЗА КРАЇН (всі ключі обов'язково маленькими літерами)
+BRAND_COUNTRIES = {
+    # За вашим запитом:
+    'leao': 'Сербія',
+    'hankook': 'Південна Корея',
+    
+    # Інші бренди зі списку та популярні:
+    'nexen': 'Південна Корея',
+    'bridgestone': 'Японія',
+    'michelin': 'Франція',
+    'goodyear': 'США',
+    'continental': 'Німеччина',
+    'pirelli': 'Італія',
+    'yokohama': 'Японія',
+    'toyo': 'Японія',
+    'kumho': 'Південна Корея',
+    'roadstone': 'Південна Корея',
+    'nokian': 'Фінляндія',
+    'nokian tyres': 'Фінляндія',
+    'kapsen': 'Китай',
+    'aplus': 'Китай',
+    'laufenn': 'Південна Корея',
+    'laufen': 'Південна Корея',
+    'ovation': 'Китай',
+    'росава': 'Україна',
+    'rosava': 'Україна',
+    'premiorri': 'Україна',
+    'sunny': 'Китай',
+    'ecovision': 'Китай',
+    'habilead': 'Китай',
+    'triangle': 'Китай',
+    'sailun': 'Китай',
+    'windforce': 'Китай',
+    'goform': 'Китай',
+    'lanvigator': 'Китай',
+    'mirage': 'Китай',
+    'hifly': 'Китай',
+    'goodride': 'Китай',
+    'sunfull': 'Китай',
+    'fronway': 'Китай',
+    'barum': 'Чехія',
+    'sava': 'Словенія',
+    'matador': 'Словаччина',
+    'tigar': 'Сербія',
+    'orium': 'Сербія',
+    'taurus': 'Сербія',
+    'strial': 'Сербія',
+    'kormoran': 'Сербія',
+    'riken': 'Сербія',
+    'debica': 'Польща',
+    'fulda': 'Німеччина',
+    'falken': 'Японія',
+    'dunlop': 'Велика Британія',
+    'maxxis': 'Тайвань',
+    'nankang': 'Тайвань',
+    'lassa': 'Туреччина',
+    'petlas': 'Туреччина',
+    'gislaved': 'Швеція',
+    'kleber': 'Франція',
+    'bfgoodrich': 'США',
+    'uniroyal': 'США',
+    'apollo': 'Індія',
+    'bkt': 'Індія',
+    'viatti': 'Росія',
+    'cachland': 'Китай',
+    'voyager': 'Китай',
+    'compasal': 'Китай',
+    'kingstar': 'Китай',
+    'ozka': 'Туреччина',
+    'wanli': 'Китай',
+    'crosswind': 'Китай',
+    'linglong': 'Китай',
+    'firestone': 'США'
+}
+
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V5.1: Виправлено країни та прибрано рік'
+    help = 'ШІ Бот-Експерт V7.1: Тотальна автоматизація країн з великою базою'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
         Ти — професійний маркетолог магазину шин 'R16'. 
-        Твоє завдання: створити опис та характеристики для шини {brand} {model}.
-        Сезон: {season}. Тип авто: {veh_type}.
+        Створи опис та характеристики для шини {brand} {model} ({season}, {veh_type}).
 
         1. Напиши 2-3 речення продаючого тексту. Наголос на безпеку та вигоду покупки в R16.
         2. Вкажи 3 характеристики. Використовуй дані лінійки {brand} {model}. 
-        ЗАБОРОНЕНО писати "Не вказано". Надай точні або середні значення.
+        ЗАБОРОНЕНО писати "Не вказано".
+        3. Визнач країну походження бренду {brand}.
 
-        Поверни результат ТІЛЬКИ у форматі JSON:
+        Поверни ТІЛЬКИ JSON:
         {{"marketing_text": "текст",
          "tread": "Асиметричний, Симетричний або Направлений",
          "fuel": "одна англійська літера A-G",
-         "noise": "рівень шуму (наприклад: 71 dB)"}}
+         "noise": "рівень шуму (наприклад: 71 dB)",
+         "country": "Назва країни"}}
         """
-        
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -57,37 +134,37 @@ class Command(BaseCommand):
                 data.get("marketing_text", ""),
                 data.get("tread", "Асиметричний"), 
                 data.get("fuel", "C"), 
-                data.get("noise", "71 dB")
+                data.get("noise", "71 dB"),
+                data.get("country", "Не вказано")
             )
         except Exception:
-            return "", "Асиметричний", "C", "71 dB"
+            return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
-        products = Product.objects.exclude(description__icontains='<ul>')
-        total = products.count()
+        products = Product.objects.filter(
+            Q(description__isnull=True) | 
+            Q(description='') | 
+            ~Q(description__icontains='<ul>') | 
+            Q(description__icontains='Країна виробник: Не вказано')
+        ).distinct()
         
+        total = products.count()
         if total == 0:
-            self.stdout.write(self.style.SUCCESS('🎉 Всі описи готові!'))
+            self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені!'))
             return
 
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.1. Товарів до обробки: {total}'))
+
         for i, product in enumerate(products, 1):
-            # --- 1. ГРАМАТИКА ---
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
             if "легков" in veh_type: veh_type = "легкова"
             elif "позашлях" in veh_type or "suv" in veh_type: veh_type = "для позашляховиків"
             
-            # Виправляємо "всесезонні" -> "всесезонна"
             season_str = product.get_seasonality_display().lower()
             if "всесезон" in season_str: season_str = "всесезонна"
             elif "зимов" in season_str: season_str = "зимова"
             elif "літн" in season_str: season_str = "літня"
 
-            # --- 2. КРАЇНА (Беремо з БД) ---
-            country = product.country.strip() if product.country else ""
-            if not country or country == "-":
-                country = "Не вказано"
-            
-            # --- 3. ІНДЕКСИ ---
             speed_val = product.speed_index or ""
             load_val = product.load_index or ""
             if not speed_val or not load_val:
@@ -99,11 +176,29 @@ class Command(BaseCommand):
             speed_kmh = SPEED_INDICES.get(speed_val.upper(), "???")
             load_kg = LOAD_INDICES.get(load_val, "???")
 
-            # --- 4. ШІ ---
             brand_name = product.brand.name if product.brand else ""
-            marketing_text, tread, fuel, noise = self.get_ai_specs(brand_name, product.name, season_str, veh_type)
+            marketing_text, tread, fuel, noise, ai_country = self.get_ai_specs(brand_name, product.name, season_str, veh_type)
 
-            # --- 5. HTML БЕЗ РОКУ ---
+            # --- ЗАЛІЗОБЕТОННИЙ ПОШУК КРАЇНИ ---
+            country = None
+            clean_brand_name = brand_name.lower().strip()
+
+            match_country = re.search(r'(?:вир-во|в-ва)\s+([А-Яа-яІіЇїЄє]+)', product.name, re.IGNORECASE)
+            if match_country:
+                country = match_country.group(1).title()
+
+            if not country and clean_brand_name in BRAND_COUNTRIES:
+                country = BRAND_COUNTRIES[clean_brand_name]
+
+            if not country and product.country and product.country.strip().lower() not in ["", "-", "не вказано", "none"]:
+                country = product.country.strip()
+
+            if not country and product.brand and product.brand.country and product.brand.country.strip().lower() not in ["", "-", "не вказано", "none"]:
+                country = product.brand.country.strip()
+
+            if not country:
+                country = ai_country if ai_country.lower() not in ["", "-", "не вказано", "none"] else "Не вказано"
+
             html_description = f"""<div class="product-description-block">
     <p class="mb-3">{marketing_text}</p>
     <p class="mb-2"><strong>Основні характеристики шини {brand_name} {product.name}:</strong></p>
@@ -124,4 +219,4 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ {brand_name} {product.name} (Країна: {country})'))
             time.sleep(0.3)
 
-        self.stdout.write(self.style.SUCCESS('🔥 Описи оновлено!'))
+        self.stdout.write(self.style.SUCCESS('🔥 Всі товари ідеально оновлено!'))

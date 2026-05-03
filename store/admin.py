@@ -20,7 +20,7 @@ from xhtml2pdf import pisa
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-from .models import Product, Brand, Order, OrderItem, ProductImage, SiteSettings, AboutImage
+from .models import Product, Brand, Order, OrderItem, ProductImage, SiteSettings, AboutImage, Review
 
 # ==========================================
 # 🔥 ЛОГІКА ГЕНЕРАЦІЇ PDF-ЧЕКА (КАТАЛОГ + ШРИФТИ) 🔥
@@ -236,7 +236,6 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # 🔥 ПОВЕРНУВ ТВОЇ ФУНКЦІЇ ЕКСПОРТУ/ІМПОРТУ 🔥
     def export_unique_models(self, request):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -522,3 +521,17 @@ class AboutImageAdmin(admin.ModelAdmin):
         if obj.image: return format_html('<img src="{}" style="height: 100px; border-radius: 4px;"/>', obj.image.url)
         return "-"
     image_preview.short_description = "Попередній перегляд"
+
+# 🔥 РЕЄСТРАЦІЯ МОДЕЛІ ВІДГУКІВ В АДМІНЦІ 🔥
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('product', 'name', 'rating', 'created_at', 'is_approved')
+    list_filter = ('is_approved', 'rating', 'created_at')
+    search_fields = ('name', 'text', 'product__name', 'product__brand__name')
+    list_editable = ('is_approved',)
+    
+    actions = ['approve_reviews']
+
+    def approve_reviews(self, request, queryset):
+        queryset.update(is_approved=True)
+    approve_reviews.short_description = "✅ Опублікувати обрані відгуки"

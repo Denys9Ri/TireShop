@@ -231,19 +231,19 @@
                             {% endif %}
 
                             <a href="{% url 'store:product_detail' product.slug %}">
-                                {% if product.photo_url and product.photo_url != 'None' and product.photo_url != 'NULL' %}
-                                    <img src="{{ product.photo_url }}"
-                                         class="product-image" loading="lazy"
-                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
-                                         onerror="this.src='{% static 'images/no-image.png' %}'">
-                                {% elif product.photo %}
-                                    <img src="{{ product.photo.url }}"
-                                         class="product-image" loading="lazy"
-                                         alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}">
-                                {% else %}
-                                    <img src="https://placehold.co/600x600?text=No+Photo" class="product-image" alt="Фото відсутнє">
-                                {% endif %}
+                                <img src="{% if product.photo %}{{ product.photo.url }}{% elif product.photo_url %}{{ product.photo_url }}{% else %}{% static 'images/no-image.png' %}{% endif %}" 
+                                     class="product-image" loading="lazy"
+                                     alt="Шина {{ product.brand.name }} {{ product.display_name }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}"
+                                     onerror="this.src='{% static 'images/no-image.png' %}'">
                             </a>
+
+                            {# --- БЛОК ЗІРОЧОК РЕЙТИНГУ --- #}
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="text-warning" style="font-size: 0.8rem;">
+                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+                                </div>
+                                <span class="text-muted ms-1" style="font-size: 0.75rem;">(12)</span>
+                            </div>
 
                             <div class="product-name fw-bold mb-1">
                                 <a href="{% url 'store:product_detail' product.slug %}" class="text-decoration-none text-dark">

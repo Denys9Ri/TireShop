@@ -26,88 +26,90 @@ LOAD_INDICES = {
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт для заповнення описів та характеристик шин через OpenAI'
+    help = 'ШІ Бот-Експерт V5.1: Виправлено країни та прибрано рік'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
-        Ти — найкращий експерт з автомобільних шин та головний маркетолог магазину 'R16'. 
-        Твоє завдання: створити рекламний опис та технічні характеристики для шини {brand} {model}.
+        Ти — професійний маркетолог магазину шин 'R16'. 
+        Твоє завдання: створити опис та характеристики для шини {brand} {model}.
         Сезон: {season}. Тип авто: {veh_type}.
 
-        1. Напиши 2-3 речення продаючого тексту про головні переваги цієї моделі (керованість, гальмування, зносостійкість). Нативно згадай магазин R16.
-        2. Вкажи 3 характеристики. Використовуй офіційні дані про лінійку {brand} {model}. ЗАБОРОНЕНО писати "Не вказано". Завжди надавай найбільш точне або середнє значення для цієї моделі на ринку.
+        1. Напиши 2-3 речення продаючого тексту. Наголос на безпеку та вигоду покупки в R16.
+        2. Вкажи 3 характеристики. Використовуй дані лінійки {brand} {model}. 
+        ЗАБОРОНЕНО писати "Не вказано". Надай точні або середні значення.
 
         Поверни результат ТІЛЬКИ у форматі JSON:
-        {{"marketing_text": "твій продаючий текст",
+        {{"marketing_text": "текст",
          "tread": "Асиметричний, Симетричний або Направлений",
-         "fuel": "одна англійська літера від A до G",
+         "fuel": "одна англійська літера A-G",
          "noise": "рівень шуму (наприклад: 71 dB)"}}
         """
         
         try:
             response = client.chat.completions.create(
-                model="gpt-4o-mini", # Використовуємо новішу і найрозумнішу модель
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],
                 response_format={"type": "json_object"},
                 temperature=0.3 
             )
-            
             data = json.loads(response.choices[0].message.content)
             return (
-                data.get("marketing_text", f"Надійні шини {brand} {model} для вашого автомобіля."),
+                data.get("marketing_text", ""),
                 data.get("tread", "Асиметричний"), 
                 data.get("fuel", "C"), 
                 data.get("noise", "71 dB")
             )
-            
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Помилка ШІ: {e}"))
+        except Exception:
             return "", "Асиметричний", "C", "71 dB"
 
     def handle(self, *args, **kwargs):
-        # Шукаємо товари, у яких в описі ще немає HTML-списку <ul>
         products = Product.objects.exclude(description__icontains='<ul>')
         total = products.count()
         
         if total == 0:
-            self.stdout.write(self.style.SUCCESS('🎉 Всі товари вже мають ідеальний опис!'))
+            self.stdout.write(self.style.SUCCESS('🎉 Всі описи готові!'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Ultimate ШІ Бота (GPT-4o-mini). Очікують: {total} товарів'))
-
         for i, product in enumerate(products, 1):
+            # --- 1. ГРАМАТИКА ---
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
             if "легков" in veh_type: veh_type = "легкова"
             elif "позашлях" in veh_type or "suv" in veh_type: veh_type = "для позашляховиків"
-            elif "вантаж" in veh_type or "коммерц" in veh_type: veh_type = "легковантажна"
             
+            # Виправляємо "всесезонні" -> "всесезонна"
             season_str = product.get_seasonality_display().lower()
-            country = product.country if (product.country and product.country != "-") else "Не вказано"
-            year = product.year
+            if "всесезон" in season_str: season_str = "всесезонна"
+            elif "зимов" in season_str: season_str = "зимова"
+            elif "літн" in season_str: season_str = "літня"
+
+            # --- 2. КРАЇНА (Беремо з БД) ---
+            country = product.country.strip() if product.country else ""
+            if not country or country == "-":
+                country = "Не вказано"
             
+            # --- 3. ІНДЕКСИ ---
             speed_val = product.speed_index or ""
             load_val = product.load_index or ""
-            
             if not speed_val or not load_val:
                 match = re.search(r'\b(\d{2,3})([A-Z]{1,2})\b', product.name.upper())
                 if match:
                     if not load_val: load_val = match.group(1)
                     if not speed_val: speed_val = match.group(2)
 
-            speed_kmh = SPEED_INDICES.get(speed_val.upper(), "???") if speed_val else "???"
-            load_kg = LOAD_INDICES.get(load_val, "???") if load_val else "???"
+            speed_kmh = SPEED_INDICES.get(speed_val.upper(), "???")
+            load_kg = LOAD_INDICES.get(load_val, "???")
 
+            # --- 4. ШІ ---
             brand_name = product.brand.name if product.brand else ""
-            self.stdout.write(f"[{i}/{total}] ШІ пише текст для: {brand_name} {product.name}...")
-            
             marketing_text, tread, fuel, noise = self.get_ai_specs(brand_name, product.name, season_str, veh_type)
 
+            # --- 5. HTML БЕЗ РОКУ ---
             html_description = f"""<div class="product-description-block">
     <p class="mb-3">{marketing_text}</p>
     <p class="mb-2"><strong>Основні характеристики шини {brand_name} {product.name}:</strong></p>
     <ul class="specs-list-ai">
         <li><strong>Сезон та тип:</strong> {veh_type.capitalize()}, {season_str}</li>
-        <li><strong>Країна виробник:</strong> {country} ({year} рік)</li>
+        <li><strong>Країна виробник:</strong> {country}</li>
         <li><strong>Індекс швидкості:</strong> {speed_val} (до {speed_kmh} км/год)</li>
         <li><strong>Індекс навантаження:</strong> {load_val} (до {load_kg} кг)</li>
         <li><strong>Тип протектору:</strong> {tread}</li>
@@ -119,8 +121,7 @@ class Command(BaseCommand):
             product.description = html_description
             product.save(update_fields=['description'])
             
-            self.stdout.write(self.style.SUCCESS(f'✅ Готово: Протектор: {tread} | Паливо: {fuel} | Шум: {noise}'))
-            
-            time.sleep(0.5)
+            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ {brand_name} {product.name} (Країна: {country})'))
+            time.sleep(0.3)
 
-        self.stdout.write(self.style.SUCCESS('🔥 Всі товари заповнені текстами та характеристиками!'))
+        self.stdout.write(self.style.SUCCESS('🔥 Описи оновлено!'))

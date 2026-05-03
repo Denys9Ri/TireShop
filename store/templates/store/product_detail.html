@@ -76,7 +76,7 @@
     .price-card { background: #f8fbff; border: 1px solid #e1e9f5; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
     .current-price { font-size: 2.8rem; font-weight: 900; color: #000; letter-spacing: -1px; }
     
-    /* --- СТАРИЙ ДИЗАЙН КНОПОК --- */
+    /* Кнопки + / - */
     .action-row { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
     .quantity-selector { display: inline-flex; align-items: center; background: #fff; border-radius: 50px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #cce0ff; flex-shrink: 0; }
     .qty-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; color: #0d6efd; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
@@ -85,11 +85,9 @@
     
     .btn-buy-glass { background: #0d6efd; color: white; padding: 12px 25px; border-radius: 50px; font-weight: 700; text-transform: uppercase; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); width: 100%; border: none; transition: transform 0.2s; white-space: nowrap; height: 46px; }
     .btn-buy-glass:hover:not(:disabled) { transform: translateY(-2px); background: #0b5ed7; }
-    @media (max-width: 768px) {
-        .btn-buy-glass { font-size: 0.95rem; padding: 10px 15px; }
-    }
+    @media (max-width: 768px) { .btn-buy-glass { font-size: 0.95rem; padding: 10px 15px; } }
 
-    /* Таблиця характеристик (з крапками) */
+    /* Таблиця характеристик */
     .specs-list { list-style: none; padding: 0; margin: 0; }
     .specs-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 1rem; }
     .specs-label { color: #555; }
@@ -174,7 +172,6 @@
                     
                     <form action="{% url 'store:cart_add' product.id %}" method="post" class="mt-4 ajax-cart-form">
                         {% csrf_token %}
-                        <!-- ВІДНОВЛЕНІ КНОПКИ -->
                         <div class="action-row">
                             <div class="quantity-selector">
                                 <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
@@ -234,10 +231,11 @@
                 <div class="tab-content border-top pt-4">
                     <div class="tab-pane fade show active" id="desc">
                         <div class="text-secondary lh-lg fs-6">
+                            <!-- ВИПРАВЛЕНО: Додано фільтр |safe, щоб HTML теги (<div>, <br>) рендерилися як треба, а не виводилися текстом -->
                             {% if product.seo_text %}
-                                {{ product.seo_text|linebreaks }}
+                                {{ product.seo_text|safe }}
                             {% else %}
-                                {{ product.description|linebreaks|default:"Опис товару наразі готується..." }}
+                                {{ product.description|safe|default:"Опис товару наразі готується..." }}
                             {% endif %}
                         </div>
                     </div>
@@ -284,12 +282,13 @@
             </div>
         </div>
 
-        <!-- СХОЖІ ТОВАРИ (ПОКАЗУЄ ТІЛЬКИ ТІ, ЩО Є В НАЯВНОСТІ) -->
+        <!-- СХОЖІ ТОВАРИ (ВИПРАВЛЕНО) -->
         {% if similar_products %}
         <div class="mt-5 pt-5 border-top">
             <h3 class="fw-bold mb-4">Інші шини в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}</h3>
             <div class="row row-cols-2 row-cols-md-4 g-3">
                 {% for sim in similar_products %}
+                    <!-- Показуємо тільки ті, що є в наявності -->
                     {% if sim.stock_quantity > 0 %}
                     <div class="col">
                         <div class="similar-item h-100 bg-white">
@@ -302,6 +301,8 @@
                     {% endif %}
                 {% endfor %}
             </div>
+            <!-- Якщо товарів в наявності немає, виводимо повідомлення (можна прибрати цей блок, якщо хочете щоб було просто пусто) -->
+            <div class="text-muted small mt-3">* Наразі інші моделі в цьому розмірі розпродані.</div>
         </div>
         {% endif %}
     </div>

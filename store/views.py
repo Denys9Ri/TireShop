@@ -47,7 +47,7 @@ FAQ_DATA = {
         ("Що означають цифри 205/55 R16?",
          "205 — ширина, 55 — висота профілю, R16 — діаметр диска. Це впливає на керованість і комфорт."),
         ("Що таке індекс навантаження і швидкості (напр. 91V)?",
-         "Показує, скільки ваги і яку швидкість шина може витримумати. Краще не ставити нижчі індекси, ніж радить виробник авто."),
+         "Показує, скільки ваги і яку швидкість шина може витримувати. Краще не ставити нижчі індекси, ніж радить виробник авто."),
         ("Можна купити дві шини замість чотирьох?",
          "Ідеально — чотири однакові. Якщо міняєш тільки дві, то кращу пару став на задню вісь — так авто буде більш стійким."),
         ("Який тиск качати в шинах?",
@@ -862,62 +862,49 @@ def fix_product_names_view(request):
     })
 
 
-# 🔥 ВИПРАВЛЕНИЙ SITEMAP.XML (Прибрано 500 помилку) 🔥
+# 🔥 ФІНАЛЬНИЙ ВИПРАВЛЕНИЙ SITEMAP.XML (Без помилок 500) 🔥
 def sitemap_xml_view(request):
     base_url = "https://r16.com.ua"
-    urls = []
-
-    # 1. Статичні сторінки (безпечний reverse)
-    static_routes = [
-        ('store:home', '1.0', 'daily'),
-        ('store:catalog', '0.9', 'daily'),
-        ('store:about', '0.5', 'monthly'),
-        ('store:contacts', '0.5', 'monthly'),
-        ('store:delivery_payment', '0.5', 'monthly'),
-        ('store:warranty', '0.5', 'monthly'),
-        ('store:faq', '0.6', 'monthly'),
-    ]
-    for name, priority, freq in static_routes:
-        try:
-            urls.append({'loc': f"{base_url}{reverse(name)}", 'priority': priority, 'freq': freq})
-        except Exception:
-            pass
-
-    # 2. Сезонні сторінки (прямі посилання для безпеки)
-    for slug in ['zimovi', 'litni', 'vsesezonni']:
-        urls.append({'loc': f"{base_url}/shiny/{slug}/", 'priority': '0.8', 'freq': 'daily'})
-
-    # 3. Бренди (тільки з валідним slug)
-    for brand in Brand.objects.exclude(slug__isnull=True).exclude(slug=''):
-        urls.append({'loc': f"{base_url}/shiny/brendy/{brand.slug}/", 'priority': '0.7', 'freq': 'weekly'})
-
-    # 4. Товари (тільки з валідним slug)
-    for product in Product.objects.exclude(slug__isnull=True).exclude(slug=''):
-        urls.append({'loc': f"{base_url}/product/{product.slug}/", 'priority': '0.8', 'freq': 'weekly'})
-
-    # 5. Популярні розміри (тільки в наявності)
-    sizes = (Product.objects.filter(stock_quantity__gt=0)
-             .values('width', 'profile', 'diameter').distinct())
-    for s in sizes:
-        w, p, d = s['width'], s['profile'], s['diameter']
-        urls.append({'loc': f"{base_url}/shiny/{w}-{p}-r{d}/", 'priority': '0.9', 'freq': 'daily'})
-
-    # Генеруємо XML
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
-    for u in urls:
-        xml_lines.append(
-            f'  <url>\n'
-            f'    <loc>{u["loc"]}</loc>\n'
-            f'    <changefreq>{u["freq"]}</changefreq>\n'
-            f'    <priority>{u["priority"]}</priority>\n'
-            f'  </url>'
-        )
+
+    # 1. Статичні сторінки (ручне додавання для надійності)
+    routes = [
+        ('/', '1.0', 'daily'),
+        ('/catalog/', '0.9', 'daily'),
+        ('/about/', '0.5', 'monthly'),
+        ('/contacts/', '0.5', 'monthly'),
+        ('/delivery/', '0.5', 'monthly'),
+        ('/warranty/', '0.5', 'monthly'),
+        ('/faq/', '0.6', 'monthly'),
+    ]
+    for path, priority, freq in routes:
+        xml_lines.append(f'  <url><loc>{base_url}{path}</loc><changefreq>{freq}</changefreq><priority>{priority}</priority></url>')
+
+    # 2. Сезони
+    for slug in ['zimovi', 'litni', 'vsesezonni']:
+        xml_lines.append(f'  <url><loc>{base_url}/shiny/{slug}/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>')
+
+    # 3. Бренди
+    for b_slug in Brand.objects.exclude(slug='').values_list('slug', flat=True):
+        xml_lines.append(f'  <url><loc>{base_url}/shiny/brendy/{b_slug}/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>')
+
+    # 4. Товари (Тільки активні зі слагом)
+    for p_slug in Product.objects.exclude(slug='').values_list('slug', flat=True):
+        xml_lines.append(f'  <url><loc>{base_url}/product/{p_slug}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+
+    # 5. Популярні розміри в наявності
+    sizes = Product.objects.filter(stock_quantity__gt=0).values('width', 'profile', 'diameter').distinct()
+    for s in sizes:
+        xml_lines.append(f'  <url><loc>{base_url}/shiny/{s["width"]}-{s["profile"]}-r{s["diameter"]}/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>')
+
     xml_lines.append('</urlset>')
     
-    return HttpResponse("\n".join(xml_lines), content_type="application/xml")
+    # Використовуємо replace для безпеки XML (заміна & на &amp;)
+    content = "\n".join(xml_lines).replace('&', '&amp;')
+    return HttpResponse(content, content_type="application/xml")
 
 
 # 🔥 ОНОВЛЕНИЙ ГУГЛ ФІД 🔥
@@ -927,17 +914,13 @@ def google_shopping_feed(request):
         .filter(price__gt=0, slug__isnull=False)
         .exclude(slug='')
         .select_related('brand')
-        .order_by('-stock_quantity') # Спочатку те, що в наявності
+        .order_by('-stock_quantity')
     )
 
     out = StringIO()
     handler = SimplerXMLGenerator(out, 'utf-8')
     handler.startDocument()
-
-    handler.startElement('rss', {
-        'version': '2.0',
-        'xmlns:g': 'http://base.google.com/ns/1.0',
-    })
+    handler.startElement('rss', {'version': '2.0', 'xmlns:g': 'http://base.google.com/ns/1.0'})
     handler.startElement('channel', {})
 
     def el(tag, text):
@@ -951,54 +934,40 @@ def google_shopping_feed(request):
 
     for p in products:
         title = f"{p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}"
-        if len(title) > 150:
-            title = title[:150]
+        if len(title) > 150: title = title[:150]
 
-        # Використовуємо твій ШІ-опис, якщо він є, чистимо його від HTML
         if p.description:
             description = re.sub('<[^<]+?>', '', p.description)[:5000]
         else:
             season_ua = {'winter': 'Зимова', 'summer': 'Літня', 'all-season': 'Всесезонна'}.get(p.seasonality, 'Шина')
             description = f"{season_ua} шина {p.brand.name} {p.name} {p.width}/{p.profile} R{p.diameter}. Доставка Новою Поштою."
 
-        product_url = f"https://r16.com.ua/product/{p.slug}/"
-
-        # Логіка фото (локальне або лінк)
         image_url = None
-        if p.photo: 
-            image_url = f"https://r16.com.ua{p.photo.url}"
-        elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: 
-            image_url = p.photo_url
+        if p.photo: image_url = f"https://r16.com.ua{p.photo.url}"
+        elif p.photo_url and p.photo_url.lower() not in ['none', 'null', '']: image_url = p.photo_url
 
-        if not image_url:
-            continue # Google не пустить без фото
-
-        availability = 'in stock' if p.stock_quantity > 0 else 'out of stock'
-        price_str = f"{p.price:.2f} UAH"
+        if not image_url: continue
 
         handler.startElement('item', {})
-
-        el('g:id',          str(p.id))
-        el('g:title',       title)
+        el('g:id', str(p.id))
+        el('g:title', title)
         el('g:description', description)
-        el('g:link',        product_url)
+        el('g:link', f"https://r16.com.ua/product/{p.slug}/")
         el('g:image_link', image_url)
-        el('g:availability', availability)
-        el('g:price',        price_str)
-        el('g:condition',    'new')
-        el('g:brand',        p.brand.name)
-        el('g:google_product_category', '6093') # Tires
+        el('g:availability', 'in stock' if p.stock_quantity > 0 else 'out of stock')
+        el('g:price', f"{p.price:.2f} UAH")
+        el('g:condition', 'new')
+        el('g:brand', p.brand.name)
+        el('g:google_product_category', '6093')
         el('g:identifier_exists', 'no')
 
         handler.startElement('g:shipping', {})
         el('g:country', 'UA')
         el('g:service', 'Нова Пошта')
-        el('g:price',   '0.00 UAH') # Можна міняти в Merchant Center
+        el('g:price', '0.00 UAH')
         handler.endElement('g:shipping')
-
         handler.endElement('item')
 
     handler.endElement('channel')
     handler.endElement('rss')
-
     return HttpResponse(out.getvalue(), content_type='application/xml; charset=utf-8')

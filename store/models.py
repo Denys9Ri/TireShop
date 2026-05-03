@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.core.validators import MinValueValidator, MaxValueValidator
 import decimal
 import re
 
@@ -150,9 +151,6 @@ class Product(models.Model):
             counter += 1
 
         # 🔥 РОЗУМНА ЛОГІКА ЦІНОУТВОРЕННЯ 🔥
-        # Рахуємо націнку (Собівартість * Відсоток) ТІЛЬКИ ЯКЩО:
-        # 1) Є собівартість (cost_price > 0)
-        # 2) І поточна ціна = 0 (тобто скрипт не передав нам готову ціну від Омеги)
         if self.cost_price > 0 and self.price == 0:
             try:
                 settings = SiteSettings.get_solo()
@@ -221,7 +219,7 @@ class OrderItem(models.Model):
         verbose_name = "Товар у замовленні"
         verbose_name_plural = "Товари у замовленнях"
 
-# --- 4. ДОДАТКОВІ ---
+# --- 4. ДОДАТКОВІ ТА ВІДГУКИ ---
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='product_gallery/', blank=True, null=True)
@@ -252,3 +250,20 @@ class AboutImage(models.Model):
     class Meta:
         verbose_name = "Фото про нас"
         verbose_name_plural = "Фото про нас"
+
+# 🔥 МОДЕЛЬ ВІДГУКІВ 🔥
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name="Товар")
+    name = models.CharField("Ім'я", max_length=100)
+    rating = models.IntegerField("Оцінка", validators=[MinValueValidator(1), MaxValueValidator(5)])
+    text = models.TextField("Текст відгуку")
+    created_at = models.DateTimeField("Дата створення", auto_now_add=True)
+    is_approved = models.BooleanField("Опубліковано", default=False)
+
+    class Meta:
+        verbose_name = "Відгук"
+        verbose_name_plural = "Відгуки"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Відгук від {self.name} на {self.product.name}"

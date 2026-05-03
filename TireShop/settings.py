@@ -2,6 +2,13 @@ import os
 import dj_database_url
 from pathlib import Path
 
+# Підключаємо python-dotenv для безпечного читання .env файлу
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-a_dummy_key_for_now_!@#$')
@@ -112,6 +119,9 @@ GSPREAD_CREDENTIALS_PATH = '/etc/secrets/credentials.json'
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
+# 🔥 Підхоплюємо ключ OpenAI з Coolify (або локального .env)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -158,6 +168,7 @@ JAZZMIN_SETTINGS = {
         "store.SiteSettings": "fas fa-cogs",
         "store.SiteBanner": "fas fa-images",
         "store.AboutImage": "fas fa-camera",
+        "store.Review": "fas fa-star", # Додано іконку для відгуків
     },
-    "order_with_respect_to": ["store.Order", "store.Product", "store.Brand", "store.SiteBanner"],
+    "order_with_respect_to": ["store.Order", "store.Product", "store.Brand", "store.SiteBanner", "store.Review"],
 }

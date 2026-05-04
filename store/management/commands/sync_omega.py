@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from django import db
 
 class Command(BaseCommand):
-    help = 'GOLD Універсальна синхронізація з виправленням дублікатів брендів'
+    help = 'GOLD Універсальна синхронізація з виправленням дублікатів брендів (Без затирання ШІ-описів)'
 
     def handle(self, *args, **options):
         KEY = os.environ.get("OMEGA_API_KEY", "ORMX5xgdRK5aqkFU8nlKfRv1rtnJmwc7")
@@ -93,7 +93,9 @@ class Command(BaseCommand):
                     if product:
                         product.stock_quantity = total_stock
                         product.cost_price = price_omega
-                        product.description = item.get('Info', '')
+                        
+                        # 🔥 ЗАКОМЕНТОВАНО: Щоб не затирати наші красиві ШІ-описи!
+                        # product.description = item.get('Info', '') 
                         
                         # Оновлюємо URL фото, якщо свого файлу ще немає
                         if image_url and (not product.photo or product.photo == ''):
@@ -109,7 +111,7 @@ class Command(BaseCommand):
                             width=w, profile=p, diameter=d,
                             cost_price=price_omega,
                             stock_quantity=total_stock,
-                            description=item.get('Info', ''),
+                            description=item.get('Info', ''), # Новим товарам даємо хоч якийсь текст, потім ШІ його перепише
                             photo_url=image_url
                         )
                         created_count += 1

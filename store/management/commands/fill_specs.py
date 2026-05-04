@@ -5,7 +5,11 @@ from django.conf import settings
 import time
 import re
 import json
+import logging
 from openai import OpenAI
+
+# 🔥 Глушимо системний спам від OpenAI (HTTP 200 OK) 🔥
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -57,7 +61,7 @@ BRAND_COUNTRIES = {
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V7.5: Пріоритет на stock_quantity'
+    help = 'ШІ Бот-Експерт V8.0: Фікс зберігання та виводу'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
@@ -91,24 +95,26 @@ class Command(BaseCommand):
                 data.get("noise", "71 dB"),
                 data.get("country", "Не вказано")
             )
-        except Exception:
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Помилка OpenAI: {e}'))
             return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
-        # 🔥 ВИПРАВЛЕНО: сортуємо за stock_quantity
+        # 🔥 ЖОРСТКИЙ ФІЛЬТР: виключаємо всі, що вже мають 'specs-list-ai'
         products = Product.objects.filter(
             Q(description__isnull=True) | 
-            Q(description='') | 
-            ~Q(description__icontains='<ul>') | 
+            Q(description__exact='') | 
             Q(description__icontains='???')
-        ).distinct().order_by('-stock_quantity')
+        ).exclude(
+            description__icontains='specs-list-ai'
+        ).order_by('-stock_quantity')
         
         total = products.count()
         if total == 0:
-            self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені!'))
+            self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені! (Нуль товарів у черзі)'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V7.5. Товарів до обробки: {total} (Спочатку в наявності)'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V8.0. Товарів до обробки: {total}'))
 
         for i, product in enumerate(products, 1):
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
@@ -138,8 +144,7 @@ class Command(BaseCommand):
             clean_brand_name = brand_name.lower().strip()
 
             match_country = re.search(r'(?:вир-во|в-ва)\s+([А-Яа-яІіЇїЄє]+)', product.name, re.IGNORECASE)
-            if match_country:
-                country = match_country.group(1).title()
+            if match_country: country = match_country.group(1).title()
 
             if not country and clean_brand_name in BRAND_COUNTRIES:
                 country = BRAND_COUNTRIES[clean_brand_name]
@@ -168,9 +173,14 @@ class Command(BaseCommand):
 </div>"""
 
             product.description = html_description
-            product.save(update_fields=['description'])
             
-            self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name}'))
+            # 🔥 Ловимо помилки бази даних, якщо вони є! 🔥
+            try:
+                product.save(update_fields=['description'])
+                self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name}'))
+            except Exception as db_err:
+                self.stdout.write(self.style.ERROR(f'[{i}/{total}] ❌ ПОМИЛКА ЗБЕРЕЖЕННЯ В БАЗУ (ID {product.id}): {db_err}'))
+
             time.sleep(0.3)
 
         self.stdout.write(self.style.SUCCESS('🔥 Всі товари ідеально оновлено!'))

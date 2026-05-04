@@ -61,7 +61,7 @@ BRAND_COUNTRIES = {
 }
 
 class Command(BaseCommand):
-    help = 'ШІ Бот-Експерт V8.0: Фікс зберігання та виводу'
+    help = 'ШІ Бот-Експерт V8.1: Перезаписуємо старі короткі описи'
 
     def get_ai_specs(self, brand, model, season, veh_type):
         prompt = f"""
@@ -100,13 +100,10 @@ class Command(BaseCommand):
             return "", "Асиметричний", "C", "71 dB", "Не вказано"
 
     def handle(self, *args, **kwargs):
-        # 🔥 ЖОРСТКИЙ ФІЛЬТР: виключаємо всі, що вже мають 'specs-list-ai'
+        # 🔥 ГОЛОВНИЙ ФІКС: Беремо ВСІ товари, де в описі НЕМАЄ класу 'specs-list-ai' 🔥
+        # Це означає, що він візьме і пусті, і зі старим текстом, і перезапише їх.
         products = Product.objects.filter(
-            Q(description__isnull=True) | 
-            Q(description__exact='') | 
-            Q(description__icontains='???')
-        ).exclude(
-            description__icontains='specs-list-ai'
+            ~Q(description__icontains='specs-list-ai') | Q(description__isnull=True)
         ).order_by('-stock_quantity')
         
         total = products.count()
@@ -114,7 +111,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('🎉 Всі товари ідеально заповнені! (Нуль товарів у черзі)'))
             return
 
-        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V8.0. Товарів до обробки: {total}'))
+        self.stdout.write(self.style.WARNING(f'🚀 Запуск Бота V8.1. Товарів до обробки: {total}'))
 
         for i, product in enumerate(products, 1):
             veh_type = product.vehicle_type.lower() if product.vehicle_type else "легковий"
@@ -174,7 +171,6 @@ class Command(BaseCommand):
 
             product.description = html_description
             
-            # 🔥 Ловимо помилки бази даних, якщо вони є! 🔥
             try:
                 product.save(update_fields=['description'])
                 self.stdout.write(self.style.SUCCESS(f'[{i}/{total}] ✅ Оновлено: {brand_name} {product.name}'))

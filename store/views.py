@@ -76,7 +76,7 @@ FAQ_DATA = {
          "Небезпечно. Взимку важливий протектор для гальмування і контролю. Краще міняти вчасно."),
     ],
     'summer': [
-        ("Коли ставити літню гуму?",
+        ("Кому ставити літню гуму?",
          "Коли температура стабільно вище +7°C. Літня гума на теплій дорозі тримає краще."),
         ("Яки літні шини кращі: для міста чи траси?",
          "<b>Місто</b> — тихі, зносостійкі.<br><b>Траса</b> — стабільні на швидкості, добре тримають дорогу у дощ.<br>"
@@ -676,20 +676,14 @@ def sitemap_xml_view(request):
         return HttpResponse(f"Помилка БД: {str(e)}", status=500)
 
 
-# 🔥 БЕЗПЕЧНИЙ GOOGLE FEED ДЛЯ ТЕСТУ 🔥
+# 🔥 ГОТОВИЙ РОБОЧИЙ ФІД ДЛЯ GOOGLE MERCHANT CENTER 🔥
 def google_shopping_feed(request):
     try:
-        count = Product.objects.count()
-        xml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-  <channel>
-    <title>R16.com.ua TEST FEED</title>
-    <description>Всього товарів у базі: {count}</description>
-  </channel>
-</rss>'''
-        return HttpResponse(xml, content_type="text/xml")
+        # Відбираємо тільки ті товари, у яких є ціна (щоб Google не сварився на пусті позиції)
+        products = Product.objects.select_related('brand').filter(price__gt=0)
+        return render(request, 'store/google_feed.xml', {'products': products}, content_type='application/xml')
     except Exception as e:
-        return HttpResponse(f"Помилка БД: {str(e)}", status=500)
+        return HttpResponse(f"Помилка генерації фіду: {str(e)}", status=500)
 
 def robots_txt(request):
     return HttpResponse("User-agent: *\nDisallow: /admin/\nSitemap: https://r16.com.ua/sitemap.xml", content_type="text/plain")

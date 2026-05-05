@@ -679,8 +679,8 @@ def sitemap_xml_view(request):
 # 🔥 ГОТОВИЙ РОБОЧИЙ ФІД ДЛЯ GOOGLE MERCHANT CENTER 🔥
 def google_shopping_feed(request):
     try:
-        # Відбираємо тільки ті товари, у яких є ціна (щоб Google не сварився на пусті позиції)
-        products = Product.objects.select_related('brand').filter(price__gt=0)
+        # ТИМЧАСОВО обмежуємо до 500 товарів, щоб пройти початкову модерацію Гугла
+        products = Product.objects.select_related('brand').filter(price__gt=0)[:500]
         return render(request, 'store/google_feed.xml', {'products': products}, content_type='application/xml')
     except Exception as e:
         return HttpResponse(f"Помилка генерації фіду: {str(e)}", status=500)

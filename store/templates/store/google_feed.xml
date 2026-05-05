@@ -8,8 +8,8 @@
         {% for product in products %}
         <item>
             <g:id>{{ product.id }}</g:id>
-            <g:title>{{ product.brand.name|escape }} {{ product.display_name|escape }} {{ product.width }}/{{ product.profile }} R{{ product.diameter }}</g:title>
-            <g:description>Купити шини {{ product.brand.name|escape }} {{ product.display_name|escape }} в розмірі {{ product.width }}/{{ product.profile }} R{{ product.diameter }}. Сезон: {% if product.seasonality == 'winter' %}Зимові{% elif product.seasonality == 'summer' %}Літні{% else %}Всесезонні{% endif %}.</g:description>
+            <g:title><![CDATA[{{ product.brand.name|default:"R16" }} {{ product.display_name }}]]></g:title>
+            <g:description><![CDATA[{{ product.description|default:product.name|safe }}]]></g:description>
             <g:link>https://r16.com.ua/product/{{ product.slug }}/</g:link>
             
             {# ПРІОРИТЕТ: Спочатку завантажене фото, потім посилання, потім заглушка #}
@@ -24,9 +24,9 @@
             <g:condition>new</g:condition>
             <g:availability>{% if product.stock_quantity > 0 %}in_stock{% else %}out_of_stock{% endif %}</g:availability>
             <g:price>{{ product.price }} UAH</g:price>
-            <g:brand>{{ product.brand.name|escape }}</g:brand>
+            <g:brand><![CDATA[{{ product.brand.name|default:"R16" }}]]></g:brand>
             
-            <g:product_type>Шини &gt; {% if product.seasonality == 'winter' %}Зимові шини{% elif product.seasonality == 'summer' %}Літні шини{% else %}Всесезонні шини{% endif %}</g:product_type>
+            <g:product_type><![CDATA[Шини > {% if product.seasonality == 'winter' %}Зимові шини{% elif product.seasonality == 'summer' %}Літні шини{% else %}Всесезонні шини{% endif %}]]></g:product_type>
             <g:mpn>{{ product.id }}</g:mpn>
         </item>
         {% endfor %}

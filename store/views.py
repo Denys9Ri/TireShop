@@ -680,7 +680,7 @@ def sitemap_xml_view(request):
 def google_shopping_feed(request):
     try:
         # ТИМЧАСОВО обмежуємо до 500 товарів, щоб пройти початкову модерацію Гугла
-        products = Product.objects.select_related('brand').filter(price__gt=0)[:10]
+        products = Product.objects.select_related('brand').filter(price__gt=0)[:2]
         return render(request, 'store/google_feed.xml', {'products': products}, content_type='application/xml')
     except Exception as e:
         return HttpResponse(f"Помилка генерації фіду: {str(e)}", status=500)

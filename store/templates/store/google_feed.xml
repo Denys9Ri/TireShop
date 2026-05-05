@@ -12,7 +12,6 @@
             <g:description><![CDATA[{{ product.description|default:product.name|safe }}]]></g:description>
             <g:link>https://r16.com.ua/product/{{ product.slug }}/</g:link>
             
-            {# ПРІОРИТЕТ: Спочатку завантажене фото, потім посилання, потім заглушка #}
             {% if product.photo %}
                 <g:image_link>https://r16.com.ua{{ product.photo.url }}</g:image_link>
             {% elif product.photo_url %}
@@ -25,6 +24,9 @@
             <g:availability>{% if product.stock_quantity > 0 %}in_stock{% else %}out_of_stock{% endif %}</g:availability>
             <g:price>{{ product.price }} UAH</g:price>
             <g:brand><![CDATA[{{ product.brand.name|default:"R16" }}]]></g:brand>
+            
+            <!-- Ось цей рядок рятує від блокування Google -->
+            <g:identifier_exists>no</g:identifier_exists>
             
             <g:product_type><![CDATA[Шини > {% if product.seasonality == 'winter' %}Зимові шини{% elif product.seasonality == 'summer' %}Літні шини{% else %}Всесезонні шини{% endif %}]]></g:product_type>
             <g:mpn>{{ product.id }}</g:mpn>
